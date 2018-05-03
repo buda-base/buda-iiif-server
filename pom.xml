@@ -4,9 +4,9 @@
   <modelVersion>4.0.0</modelVersion>
   
   <groupId>de.digitalcollections</groupId>
-  <artifactId>hymir-bdrc</artifactId>
+  <artifactId>my-hymir-server</artifactId>
   <version>1.0.0-SNAPSHOT</version>
-  <packaging>war</packaging>
+  <packaging>jar</packaging>
   
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -19,22 +19,6 @@
   </properties>
   
   <dependencies>
-       <!--dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-starter-web</artifactId>
-                <version>${version.spring-boot}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-tomcat</artifactId>
-            <scope>provided</scope>
-        </dependency-->
-    <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-tomcat</artifactId>
-        <version>${version.spring-boot}</version> 
-        <scope>provided</scope>       
-    </dependency>
     <dependency>
       <groupId>de.digitalcollections</groupId>
       <artifactId>iiif-server-hymir</artifactId>
@@ -50,7 +34,6 @@
       <artifactId>dc-core-backend-file</artifactId>
       <version>2.0.3</version>
     </dependency>
-    
      <!-- Used by S3 ResourceRepository -->
     <dependency>
       <groupId>com.amazonaws</groupId>
@@ -61,48 +44,22 @@
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-java-sdk-s3</artifactId>
       <version>1.11.220</version>
-    </dependency>    
-  </dependencies>  
+    </dependency>  
+  </dependencies>
+  
   <build>
     <plugins>
       <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-compiler-plugin</artifactId>
-            <version>2.5.1</version>
-            <inherited>true</inherited>
-            <configuration>
-                <source>1.8</source>
-                <target>1.8</target>
-            </configuration>
-      </plugin>
-      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-resources-plugin</artifactId>        
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>${version.maven-compiler-plugin}</version>
         <configuration>
-          <delimiters>
-            <delimiter>@</delimiter>
-          </delimiters>
-          <useDefaultDelimiters>false</useDefaultDelimiters>
+          <showDeprecation>true</showDeprecation>
+          <encoding>${project.build.sourceEncoding}</encoding>
+          <source>${maven.compiler.source}</source>
+          <target>${maven.compiler.target}</target>
         </configuration>
       </plugin>
-      <plugin>
-         <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-war-plugin -->          
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-war-plugin</artifactId>
-            <version>3.2.0</version>
-            <configuration>
-                <attachClasses>true</attachClasses>
-                <webResources>
-                    <resource>
-                        <directory>src/main/webapp</directory>
-                        <filtering>true</filtering>
-                    </resource>
-                    <resource>
-                        <directory>src/main/resources</directory>                                               
-                    </resource>                              
-                </webResources>                
-            </configuration>            
-         </plugin>
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>

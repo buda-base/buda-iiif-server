@@ -49,21 +49,15 @@ public class S3ResourceRepositoryImpl implements ResourceRepository<Resource> {
     static Properties props = new Properties();
     static Properties local=new Properties();
     
-    static final String S3_ENDPOINT;
-    static final String S3_BUCKET;
-    static final String S3_REGION;
-    static final String S3_ACCESS_KEY_ID;
-    static final String S3_SECRET_KEY;
-    static final String S3_MAX_CONNECTIONS;
+    static final String S3_ENDPOINT="S3_ENDPOINT";
+    static final String S3_BUCKET="S3_BUCKET";
+    static final String S3_REGION="S3_REGION";
+    static final String S3_ACCESS_KEY_ID="S3_ACCESS_KEY_ID";
+    static final String S3_SECRET_KEY="S3_SECRET_KEY";
+    static final String S3_MAX_CONNECTIONS="S3_MAX_CONNECTIONS";
     
     static {
         loadS3Props();
-        S3_ENDPOINT=local.getProperty("S3_ENDPOINT");
-        S3_BUCKET=local.getProperty("S3_BUCKET");
-        S3_REGION=local.getProperty("S3_REGION");
-        S3_ACCESS_KEY_ID=local.getProperty("S3_ACCESS_KEY_ID");
-        S3_SECRET_KEY=local.getProperty("S3_SECRET_KEY");
-        S3_MAX_CONNECTIONS=local.getProperty("S3_MAX_CONNECTIONS");
     }
 
     @Override
@@ -159,15 +153,12 @@ public class S3ResourceRepositoryImpl implements ResourceRepository<Resource> {
      * s3.properties contains the actual s3 properties under keys defined in local props
      */
     private static void loadS3Props() {        
-        try {
-          InputStream in = S3ResourceRepositoryImpl.class.getClassLoader().getResourceAsStream("s3repo.properties");          
-          local.load(in);          
-          in.close();          
-          FileReader fr= new FileReader(new File(local.getProperty("s3propsPath")));          
-          props.load(fr);
+        try {      
+          FileReader fr= new FileReader(new File(System.getProperty("s3propsPath")));          
+          props.load(fr);          
           fr.close();
         } catch (IOException ex) {
-            String msg="Coudn't load S3 properties... ";
+            String msg="Coudn't load S3 properties... from : "+System.getProperty("s3propsPath");
             log.error(msg, ex);
             throw new IllegalStateException(ex);
         }      
