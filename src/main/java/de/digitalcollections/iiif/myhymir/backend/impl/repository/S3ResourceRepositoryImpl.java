@@ -148,9 +148,7 @@ public class S3ResourceRepositoryImpl implements ResourceRepository<Resource> {
   
     /**
      * Loads properties for S3
-     * local.properties contains both "real" s3 properties files path (external to the project)
-     * and properties keys.
-     * s3.properties contains the actual s3 properties under keys defined in local props
+     * from file defined by "s3propsPath" System property
      */
     private static void loadS3Props() {        
         try {      

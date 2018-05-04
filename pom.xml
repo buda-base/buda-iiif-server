@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   
   <groupId>de.digitalcollections</groupId>
-  <artifactId>my-hymir-server</artifactId>
+  <artifactId>buda-hymir</artifactId>
   <version>1.0.0-SNAPSHOT</version>
   <packaging>jar</packaging>
   
@@ -13,17 +13,19 @@
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
     
-    <version.hymir>3.5.0-SNAPSHOT</version.hymir>
+    <version.hymir>3.5.1-SNAPSHOT</version.hymir>
     <version.maven-compiler-plugin>3.7.0</version.maven-compiler-plugin>
     <version.spring-boot>1.5.8.RELEASE</version.spring-boot>
   </properties>
   
   <dependencies>
+    <!-- https://mvnrepository.com/artifact/de.digitalcollections/iiif-server-hymir -->
     <dependency>
-      <groupId>de.digitalcollections</groupId>
-      <artifactId>iiif-server-hymir</artifactId>
-      <version>${version.hymir}</version>
+        <groupId>de.digitalcollections</groupId>
+        <artifactId>iiif-server-hymir</artifactId>
+        <version>3.5.1</version>
     </dependency>
+
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-core</artifactId>
@@ -44,7 +46,7 @@
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-java-sdk-s3</artifactId>
       <version>1.11.220</version>
-    </dependency>  
+    </dependency>      
   </dependencies>
   
   <build>
