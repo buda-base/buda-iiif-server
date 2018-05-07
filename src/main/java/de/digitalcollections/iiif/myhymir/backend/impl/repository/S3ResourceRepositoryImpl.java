@@ -134,36 +134,11 @@ public class S3ResourceRepositoryImpl implements ResourceRepository<Resource> {
       //To change body of generated methods, choose Tools | Templates.
     }
   
-    /**
-     * Loads properties for S3
-     * from file defined by "s3propsPath" System property
-     */
-    /*private static void loadS3Props() {        
-        try {      
-          FileReader fr= new FileReader(new File(System.getProperty("s3propsPath")));          
-          props.load(fr);          
-          fr.close();
-        } catch (IOException ex) {
-            String msg="Coudn't load S3 properties... from : "+System.getProperty("s3propsPath");
-            log.error(msg, ex);
-            throw new IllegalStateException(ex);
-        }      
-    }*/
-    
-    /**
+   /**
      * @return a client to interact with S3 bucket
      */
     private static synchronized AmazonS3 getClientInstance() {
         
-        /*BasicAWSCredentials bac=new BasicAWSCredentials(props.getProperty(S3_ACCESS_KEY_ID),props.getProperty(S3_SECRET_KEY));
-        ClientConfiguration ccfg = new ClientConfiguration();
-        ccfg.setMaxConnections(Integer.parseInt(props.getProperty(S3_MAX_CONNECTIONS)));
-        
-        return AmazonS3ClientBuilder.standard()
-        .withEndpointConfiguration(new EndpointConfiguration(props.getProperty(S3_ENDPOINT),props.getProperty(S3_REGION)))
-        .withCredentials(new AWSStaticCredentialsProvider(bac))
-        .withClientConfiguration(ccfg)        
-        .build();*/
         return AmazonS3ClientBuilder.defaultClient();
     }
 
