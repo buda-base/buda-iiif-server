@@ -38,6 +38,9 @@ spring:
   thymeleaf:
     cache: false
     mode: HTML
+    
+buda:
+  S3resolver : 'io.bdrc.iiif.resolver.BdrcS3Resolver'
 
 ---
 
@@ -55,3 +58,6 @@ spring:
   profiles: PROD
   thymeleaf:
     cache: true
+    
+buda:
+  S3resolver : 'io.bdrc.iiif.resolver.BdrcS3Resolver'

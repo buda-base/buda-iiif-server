@@ -20,6 +20,7 @@ import de.digitalcollections.iiif.myhymir.backend.impl.repository.S3ResourceRepo
 @Component
 public class S3ResourcePersistenceTypeHandler implements ResourcePersistenceTypeHandler{
 
+    
     private static final Logger LOGGER = LoggerFactory.getLogger(S3ResourcePersistenceTypeHandler.class);
     
     static Properties local=new Properties();
