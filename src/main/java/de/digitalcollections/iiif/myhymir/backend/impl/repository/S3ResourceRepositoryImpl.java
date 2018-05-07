@@ -46,19 +46,7 @@ public class S3ResourceRepositoryImpl implements ResourceRepository<Resource> {
     private static final Logger log = LoggerFactory.getLogger(S3ResourceRepositoryImpl.class);    
     
     
-    static Properties props = new Properties();
-    static Properties local=new Properties();
-    
-    static final String S3_ENDPOINT="S3_ENDPOINT";
-    static final String S3_BUCKET="S3_BUCKET";
-    static final String S3_REGION="S3_REGION";
-    static final String S3_ACCESS_KEY_ID="S3_ACCESS_KEY_ID";
-    static final String S3_SECRET_KEY="S3_SECRET_KEY";
-    static final String S3_MAX_CONNECTIONS="S3_MAX_CONNECTIONS";
-    
-    static {
-        loadS3Props();
-    }
+    final static String S3_BUCKET = "archive.tbrc.org";
 
     @Override
     public S3Resource create(String key, ResourcePersistenceType resourcePersistenceType, MimeType mimeType) throws ResourceIOException {
@@ -115,7 +103,7 @@ public class S3ResourceRepositoryImpl implements ResourceRepository<Resource> {
         S3Object obj=null;
         try {
             GetObjectRequest request = new GetObjectRequest(
-                    props.getProperty(S3_BUCKET),
+                    S3_BUCKET,
                     r.getIdentifier());
             obj=s3.getObject(request);
             log.info("Obj from s3 >> "+obj);
@@ -150,7 +138,7 @@ public class S3ResourceRepositoryImpl implements ResourceRepository<Resource> {
      * Loads properties for S3
      * from file defined by "s3propsPath" System property
      */
-    private static void loadS3Props() {        
+    /*private static void loadS3Props() {        
         try {      
           FileReader fr= new FileReader(new File(System.getProperty("s3propsPath")));          
           props.load(fr);          
@@ -160,14 +148,14 @@ public class S3ResourceRepositoryImpl implements ResourceRepository<Resource> {
             log.error(msg, ex);
             throw new IllegalStateException(ex);
         }      
-    }
+    }*/
     
     /**
      * @return a client to interact with S3 bucket
      */
     private static synchronized AmazonS3 getClientInstance() {
         
-        BasicAWSCredentials bac=new BasicAWSCredentials(props.getProperty(S3_ACCESS_KEY_ID),props.getProperty(S3_SECRET_KEY));
+        /*BasicAWSCredentials bac=new BasicAWSCredentials(props.getProperty(S3_ACCESS_KEY_ID),props.getProperty(S3_SECRET_KEY));
         ClientConfiguration ccfg = new ClientConfiguration();
         ccfg.setMaxConnections(Integer.parseInt(props.getProperty(S3_MAX_CONNECTIONS)));
         
@@ -175,7 +163,8 @@ public class S3ResourceRepositoryImpl implements ResourceRepository<Resource> {
         .withEndpointConfiguration(new EndpointConfiguration(props.getProperty(S3_ENDPOINT),props.getProperty(S3_REGION)))
         .withCredentials(new AWSStaticCredentialsProvider(bac))
         .withClientConfiguration(ccfg)        
-        .build();
+        .build();*/
+        return AmazonS3ClientBuilder.defaultClient();
     }
 
 }
