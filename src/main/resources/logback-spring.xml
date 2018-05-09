@@ -3,12 +3,12 @@
   <!-- see https://docs.spring.io/spring-boot/docs/current/reference/html/boot-features-logging.html#_profile_specific_configuration -->
   <springProfile name="PROD">
     <appender name="default" class="ch.qos.logback.core.rolling.RollingFileAppender">
-      <file>/var/log/myhymir/myhymir-iiif-server.log</file>
+      <file>./log/myhymir-iiif-server.log</file>
       <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-        <fileNamePattern>/var/log/myhymir/myhymir-iiif-server.%d{yyyy-MM-dd}.log</fileNamePattern>
+        <fileNamePattern>./log/myhymir-iiif-server.%d{yyyy-MM-dd}.log</fileNamePattern>
       </rollingPolicy>
       <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-        <fileNamePattern>/var/log/myhymir/myhymir-iiif-server.%d{yyyy-MM}.%i.log.gz</fileNamePattern>
+        <fileNamePattern>./log/myhymir-iiif-server.%d{yyyy-MM}.%i.log.gz</fileNamePattern>
         <maxFileSize>100MB</maxFileSize>
         <maxHistory>90</maxHistory>
         <totalSizeCap>5GB</totalSizeCap>
