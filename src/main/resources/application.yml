@@ -17,7 +17,7 @@ info:
 
 management:
   context-path: '/monitoring'
-  port: 9001
+  port: 13581
   security:
     enabled: false
 
@@ -29,7 +29,7 @@ security:
     cache: false
 
 server:
-  contextPath: /iiif
+  contextPath: /
   server-header: "@project.name@ v@project.version@"
 
 spring:
@@ -40,7 +40,7 @@ spring:
     mode: HTML
     
 buda:
-  S3resolver : 'io.bdrc.iiif.resolver.BdrcS3Resolver'
+  S3resolver: 'io.bdrc.iiif.resolver.BdrcS3Resolver'
 
 ---
 
@@ -60,4 +60,4 @@ spring:
     cache: true
     
 buda:
-  S3resolver : 'io.bdrc.iiif.resolver.BdrcS3Resolver'
+  S3resolver: 'io.bdrc.iiif.resolver.BdrcS3Resolver'
