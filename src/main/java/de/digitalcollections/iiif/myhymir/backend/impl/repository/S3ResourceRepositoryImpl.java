@@ -110,6 +110,7 @@ public class S3ResourceRepositoryImpl implements ResourceRepository<Resource> {
         } 
         catch (AmazonS3Exception e) { 
             String msg=r.getIdentifier();
+            System.out.println("S3 client failed for identifier >> "+msg);
             throw new ResourceIOException(msg+System.lineSeparator()+e.getMessage());            
         }
         InputStream stream=obj.getObjectContent();
