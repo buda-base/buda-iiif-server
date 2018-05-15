@@ -2,6 +2,7 @@ package io.bdrc.iiif.resolver;
 
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
+import java.util.regex.Pattern;
 
 import org.apache.commons.codec.binary.Hex;
 import org.slf4j.Logger;
@@ -18,6 +19,7 @@ public class BdrcS3Resolver implements S3Resolver {
     public String getS3Identifier(String identifier) throws ResourceIOException {
         // Resolving : "bdr:V29329_I1KG15042::I1KG150420003.jpg"
         // to s3 path: "Works/21/W29329/images/W29329-I1KG15042/I1KG150420003.jpg"
+        Pattern oldImageGroupPattern = Pattern.compile("^I\\d{4}$");
         try {
             String id="Works/";
             String[] parts=identifier.split("::");
@@ -32,6 +34,9 @@ public class BdrcS3Resolver implements S3Resolver {
                 md.reset();
                 md.update(work.getBytes(Charset.forName("UTF8")));
                 final String hash = new String(Hex.encodeHex(md.digest())).substring(0,2);
+                if (oldImageGroupPattern.matcher(imgGroup).matches()) {
+                    imgGroup= imgGroup.substring(1);
+                }
                 id=id+hash+"/"+work+"/images/"+work+"-"+imgGroup+"/"+parts[1]; 
             }else {
                 id="static/error"+format;
