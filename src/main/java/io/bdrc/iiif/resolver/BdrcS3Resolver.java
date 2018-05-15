@@ -14,12 +14,13 @@ import de.digitalcollections.core.model.api.resource.exceptions.ResourceIOExcept
 public class BdrcS3Resolver implements S3Resolver {
 
     private static final Logger log = LoggerFactory.getLogger(BdrcS3Resolver.class);
+    private static final Pattern oldImageGroupPattern = Pattern.compile("^I\\d{4}$");
     
     @Override
     public String getS3Identifier(String identifier) throws ResourceIOException {
         // Resolving : "bdr:V29329_I1KG15042::I1KG150420003.jpg"
         // to s3 path: "Works/21/W29329/images/W29329-I1KG15042/I1KG150420003.jpg"
-        Pattern oldImageGroupPattern = Pattern.compile("^I\\d{4}$");
+        
         try {
             String id="Works/";
             String[] parts=identifier.split("::");

@@ -108,8 +108,9 @@ public class S3ResourceRepositoryImpl implements ResourceRepository<Resource> {
             obj=s3.getObject(request);
             log.info("Obj from s3 >> "+obj);
         } 
-        catch (AmazonS3Exception e) {            
-            throw new ResourceIOException(e.getMessage());            
+        catch (AmazonS3Exception e) { 
+            String msg=r.getIdentifier();
+            throw new ResourceIOException(msg+System.lineSeparator()+e.getMessage());            
         }
         InputStream stream=obj.getObjectContent();
         log.info("Obj from s3 >> "+stream);
