@@ -81,7 +81,6 @@ public class BDRCImageServiceImpl implements ImageService {
     /** Update ImageService based on the image **/
     private void enrichInfo(ImageReader reader, de.digitalcollections.iiif.model.image.ImageService info) throws IOException {
       
-      System.out.println("ENRICHING INFO >>>> "+reader.getWidth(0)+"  "+reader.getHeight(0));  
       ImageApiProfile profile = new ImageApiProfile();
       profile.addFeature(
               ImageApiProfile.Feature.BASE_URI_REDIRECT,
@@ -154,6 +153,7 @@ public class BDRCImageServiceImpl implements ImageService {
       // which is BDRC basic use case
       TileInfo tile = new TileInfo(reader.getWidth(0));
       tile.setHeight(reader.getHeight(0));
+      tile.addScaleFactor(1, 2, 4, 8);
       info.addTile(tile);
     }
 
