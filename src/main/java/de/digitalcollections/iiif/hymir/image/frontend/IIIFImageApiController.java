@@ -109,8 +109,8 @@ public class IIIFImageApiController {
       throw new InvalidParametersException(e);
     }
     String canonicalUrl = getUrlBase(request) + path.substring(0, path.indexOf(identifier)) + canonicalForm;
-    //System.out.println("CANONICAL FORM >>>>>>>>>>>"+canonicalForm);
-    //System.out.println("SELECTOR FORM >>>>>>>>>>>"+selector.toString());
+    System.out.println("CANONICAL FORM >>>>>>>>>>>"+canonicalForm);
+    System.out.println("SELECTOR FORM >>>>>>>>>>>"+selector.toString());
     /*if (!canonicalForm.equals(selector.toString())) {
       response.setHeader("Link", String.format("<%s>;rel=\"canonical\"", canonicalUrl));
       response.sendRedirect(canonicalUrl);

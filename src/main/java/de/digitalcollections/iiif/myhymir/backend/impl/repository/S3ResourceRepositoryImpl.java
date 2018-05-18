@@ -7,25 +7,19 @@ import de.digitalcollections.core.model.api.resource.Resource;
 import de.digitalcollections.core.model.api.resource.enums.ResourcePersistenceType;
 import de.digitalcollections.core.model.api.resource.exceptions.ResourceIOException;
 import de.digitalcollections.core.model.impl.resource.S3Resource;
+import de.digitalcollections.iiif.hymir.image.frontend.IIIFImageApiController;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.net.URI;
-import java.util.Properties;
 import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Repository;
 
-import com.amazonaws.ClientConfiguration;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
@@ -45,7 +39,8 @@ public class S3ResourceRepositoryImpl implements ResourceRepository<Resource> {
     
     private static final Logger log = LoggerFactory.getLogger(S3ResourceRepositoryImpl.class);    
     
-    
+    @Autowired
+    S3ResourcePersistenceTypeHandler spt;
     final static String S3_BUCKET = "archive.tbrc.org";
 
     @Override
@@ -62,8 +57,7 @@ public class S3ResourceRepositoryImpl implements ResourceRepository<Resource> {
         }
         if (ResourcePersistenceType.MANAGED.equals(resourcePersistenceType)) {
           resource.setUuid(UUID.fromString(key));
-        }
-        S3ResourcePersistenceTypeHandler spt=new S3ResourcePersistenceTypeHandler();
+        }        
         resource.setIdentifier(spt.getIdentifier(key));        
         return resource;        
     }
