@@ -5,8 +5,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -20,8 +18,7 @@ import de.digitalcollections.core.model.api.resource.exceptions.ResourceIOExcept
 public class S3ResourcePersistenceTypeHandler implements ResourcePersistenceTypeHandler{
 
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(S3ResourcePersistenceTypeHandler.class);
-    
+       
     static Properties local=new Properties();
     final String S3_RESOLVER="S3_RESOLVER";
     @Value("${buda.S3resolver}") String s3Resolver;

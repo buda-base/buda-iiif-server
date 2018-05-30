@@ -13,7 +13,7 @@
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
     
-    <version.hymir>3.5.1-SNAPSHOT</version.hymir>
+    
     <version.maven-compiler-plugin>3.7.0</version.maven-compiler-plugin>
     <version.spring-boot>1.5.8.RELEASE</version.spring-boot>
   </properties>
@@ -23,9 +23,9 @@
     <dependency>
         <groupId>de.digitalcollections</groupId>
         <artifactId>iiif-server-hymir</artifactId>
-        <version>3.5.1</version>
+        <version>3.5.2</version>
         <exclusions>
-        <exclusion>  <!-- declare the exclusion here -->
+        <exclusion>  
           <groupId>de.digitalcollections.iiif</groupId> 
           <artifactId>iiif-apis</artifactId>
         </exclusion>

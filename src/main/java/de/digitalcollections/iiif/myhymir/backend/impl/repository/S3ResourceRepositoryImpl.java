@@ -7,7 +7,6 @@ import de.digitalcollections.core.model.api.resource.Resource;
 import de.digitalcollections.core.model.api.resource.enums.ResourcePersistenceType;
 import de.digitalcollections.core.model.api.resource.exceptions.ResourceIOException;
 import de.digitalcollections.core.model.impl.resource.S3Resource;
-import de.digitalcollections.iiif.hymir.image.frontend.IIIFImageApiController;
 
 import java.io.InputStream;
 import java.io.Reader;
