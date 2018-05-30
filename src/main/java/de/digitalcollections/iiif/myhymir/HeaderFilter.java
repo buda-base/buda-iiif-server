@@ -10,11 +10,15 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletResponse;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
 public class HeaderFilter implements Filter {
 
+    @Value("${cache-control.maxage}")
+    private String maxAge;
+    
     @Override
     public void destroy() {
         // TODO Auto-generated method stub
@@ -24,16 +28,14 @@ public class HeaderFilter implements Filter {
     @Override
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
             throws IOException, ServletException {
-        
         HttpServletResponse response = (HttpServletResponse) res;
-        response.addHeader("Cache-Control", "max-age=888888");        
+        response.addHeader("Cache-Control", "max-age="+maxAge);        
         chain.doFilter(req, res);
     }
 
     @Override
     public void init(FilterConfig arg0) throws ServletException {
         // TODO Auto-generated method stub
-        
     }
 
 }
