@@ -29,7 +29,7 @@ public class HeaderFilter implements Filter {
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
             throws IOException, ServletException {
         HttpServletResponse response = (HttpServletResponse) res;
-        response.addHeader("Cache-Control", "max-age="+maxAge);        
+        response.addHeader("Cache-Control", " public, max-age="+maxAge);        
         chain.doFilter(req, res);
     }
 
