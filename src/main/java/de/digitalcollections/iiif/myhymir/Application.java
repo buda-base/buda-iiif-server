@@ -14,6 +14,7 @@ import org.springframework.context.annotation.Configuration;
 @EnableAutoConfiguration 
 @ComponentScan(
         basePackages = {
+          "io.bdrc.pdf",
           "de.digitalcollections.iiif.hymir",
           "de.digitalcollections.iiif.myhymir",
           "de.digitalcollections.core.backend.impl.file.repository.resource.util"

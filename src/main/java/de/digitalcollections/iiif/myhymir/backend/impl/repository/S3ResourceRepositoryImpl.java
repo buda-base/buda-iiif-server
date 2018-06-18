@@ -132,7 +132,7 @@ public class S3ResourceRepositoryImpl implements ResourceRepository<Resource> {
    /**
      * @return a client to interact with S3 bucket
      */
-    private static synchronized AmazonS3 getClientInstance() {
+    public static synchronized AmazonS3 getClientInstance() {
         
         return AmazonS3ClientBuilder.defaultClient();
     }
