@@ -1,16 +1,15 @@
 package io.bdrc.pdf;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 
-import java.util.ArrayList;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -52,14 +51,11 @@ public class PdfController {
         System.out.println("DEB >>>>>>>>>>> "+System.currentTimeMillis()+" imgList >> "+imageList);  
         IdentifierInfo inf=new IdentifierInfo(volume);
         ExecutorService service=Executors.newFixedThreadPool(50);
-        AmazonS3 s3=S3ResourceRepositoryImpl.getClientInstance();        
-        //String volume="bdr:V23873_I1KG12099";
-       // String imageList="I1KG120990001.jpg:651";
-        //String imageList="08080001.tif:576";
+        AmazonS3 s3=S3ResourceRepositoryImpl.getClientInstance();
         TreeMap<Integer,String> idList=getIdentifierList(volume,imageList,numPage);
         TreeMap<Integer,PdfImageProducer> p_map=new TreeMap<>();
         TreeMap<Integer,Future<?>> t_map=new TreeMap<>();
-        System.out.println("DEB1 >>>>>>>>>>> "+System.currentTimeMillis());
+        
         for(Entry<Integer,String> e:idList.entrySet()) {
             PdfImageProducer tmp=new PdfImageProducer(s3,e.getValue(), inf);
             p_map.put(e.getKey(),tmp);
@@ -68,8 +64,8 @@ public class PdfController {
         }
         
         Document document = new Document();
-        String output = "/home/marc/capture.pdf";
-        FileOutputStream fos = new FileOutputStream(output);
+        String output = volume+".pdf";
+        FileOutputStream fos = new FileOutputStream(output);        
         PdfWriter writer = PdfWriter.getInstance(document, fos);
         writer.open();
         document.open();
@@ -85,23 +81,12 @@ public class PdfController {
                 document.add(i);
                 System.out.println("Added page >>> "+k);
             }
-        }   
-        /*for(int j:p_map.keySet()) {
-            Image i=p_map.get(j).getImg();
-            if(i!=null) {
-                document.setPageSize(new Rectangle(i.getWidth(),i.getHeight()));
-                document.newPage();
-                document.add(i);
-                System.out.println("Added page >>> "+j);
-            }
-        }*/
-        System.out.println("DEB1 >>>>>>>>>>> "+System.currentTimeMillis());
+        }
         document.close();
         writer.close();
-        System.out.println("Fin1 >>>>>>>>>>> "+System.currentTimeMillis());
+        
         HttpHeaders headers = new HttpHeaders();
-        File pdfFile = new File(output);
-        System.out.println("Fin >>>>>>>>>>> "+System.currentTimeMillis());
+        File pdfFile = new File(output);       
         headers.setContentType(MediaType.parseMediaType("application/pdf"));
         ResponseEntity<InputStreamResource> response = new ResponseEntity<InputStreamResource>(
                 new InputStreamResource(new FileInputStream(pdfFile)), headers, HttpStatus.OK);
