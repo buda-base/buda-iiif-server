@@ -48,7 +48,7 @@ public class PdfController {
                                 HttpServletRequest req,
                                 WebRequest webRequest) throws Exception {  
         // Getting volume info
-        System.out.println("DEB >>>>>>>>>>> "+System.currentTimeMillis()+" imgList >> "+imageList);  
+        System.out.println("call to getPdf() >>> imgList >> "+imageList+" volume >> "+volume+ " numPage >> "+numPage);  
         IdentifierInfo inf=new IdentifierInfo(volume);
         ExecutorService service=Executors.newFixedThreadPool(50);
         AmazonS3 s3=S3ResourceRepositoryImpl.getClientInstance();
@@ -79,7 +79,6 @@ public class PdfController {
                 document.setPageSize(new Rectangle(i.getWidth(),i.getHeight()));
                 document.newPage();
                 document.add(i);
-                System.out.println("Added page >>> "+k);
             }
         }
         document.close();
