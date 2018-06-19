@@ -2,6 +2,7 @@ package io.bdrc.iiif.resolver;
 
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.regex.Pattern;
 
 import org.apache.commons.codec.binary.Hex;
@@ -28,7 +29,7 @@ public class BdrcS3Resolver implements S3Resolver {
             String access=info.getAccess().substring(info.getAccess().lastIndexOf('/')+1);
             String format=parts[1].substring(parts[1].lastIndexOf('.'));
             if(access.equalsIgnoreCase("AccessOpen")) {
-                log.info("S3 Resolver IdentifierInfo >>>>>>>> "+info+ " Access >>"+access+ " Format >> "+format);            
+                //log.info("S3 Resolver IdentifierInfo >>>>>>>> "+info+ " Access >>"+access+ " Format >> "+format);            
                 String work=info.getWork().substring(info.getWork().lastIndexOf('/')+1);
                 String imgGroup=parts[0].substring(parts[0].lastIndexOf('_')+1);
                 MessageDigest md = MessageDigest.getInstance("MD5");
@@ -50,9 +51,27 @@ public class BdrcS3Resolver implements S3Resolver {
         }
     }
     
+    public String getIdentifier(String identifier,IdentifierInfo info) throws NoSuchAlgorithmException {
+        String id="Works/";
+        String[] parts=identifier.split("::");           
+        String format=parts[1].substring(parts[1].lastIndexOf('.'));
+        //log.info("S3 Resolver IdentifierInfo >>>>>>>> "+info+ " Format >> "+format);            
+        String work=info.getWork().substring(info.getWork().lastIndexOf('/')+1);
+        String imgGroup=parts[0].substring(parts[0].lastIndexOf('_')+1);
+        MessageDigest md = MessageDigest.getInstance("MD5");
+        md.reset();
+        md.update(work.getBytes(Charset.forName("UTF8")));
+        final String hash = new String(Hex.encodeHex(md.digest())).substring(0,2);
+        if (oldImageGroupPattern.matcher(imgGroup).matches()) {
+            imgGroup= imgGroup.substring(1);
+        }
+        id=id+hash+"/"+work+"/images/"+work+"-"+imgGroup+"/"+parts[1];
+        return id;
+    }
+    
     public static void main(String[] args) throws ResourceIOException {
         BdrcS3Resolver s3=new BdrcS3Resolver();
-        log.info("Path s3 >>"+s3.getS3Identifier("bdr:V29329_I1KG15042::I1KG150420003.jpg"));        
+        //log.info("Path s3 >>"+s3.getS3Identifier("bdr:V29329_I1KG15042::I1KG150420003.jpg"));        
     }
 
 }

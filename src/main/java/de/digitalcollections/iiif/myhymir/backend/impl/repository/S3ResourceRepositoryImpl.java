@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Repository;
 
+import com.amazonaws.ClientConfiguration;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
@@ -92,7 +93,7 @@ public class S3ResourceRepositoryImpl implements ResourceRepository<Resource> {
     
     public InputStream getInputStream(S3Resource r) throws ResourceIOException{
         log.info("Getting input stream for resource >> "+r.toString());
-        AmazonS3 s3=S3ResourceRepositoryImpl.getClientInstance();
+        AmazonS3 s3=S3ResourceRepositoryImpl.getClientInstance();        
         S3Object obj=null;
         try {
             GetObjectRequest request = new GetObjectRequest(
@@ -133,7 +134,12 @@ public class S3ResourceRepositoryImpl implements ResourceRepository<Resource> {
      * @return a client to interact with S3 bucket
      */
     public static synchronized AmazonS3 getClientInstance() {
-        
+        ClientConfiguration config=new ClientConfiguration();
+        config.setConnectionTimeout(300000);
+        config.setMaxConnections(50);
+        config.setMaxErrorRetry(100);
+        config.setSocketTimeout(300000);
+        AmazonS3ClientBuilder.standard().withClientConfiguration(config);
         return AmazonS3ClientBuilder.defaultClient();
     }
 

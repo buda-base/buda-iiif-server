@@ -3,7 +3,14 @@ package io.bdrc.pdf;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.net.URL;
+
+import java.util.ArrayList;
+import java.util.Map.Entry;
+import java.util.TreeMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -25,50 +32,70 @@ import com.itextpdf.text.Rectangle;
 import com.itextpdf.text.pdf.PdfWriter;
 
 import de.digitalcollections.iiif.myhymir.backend.impl.repository.S3ResourceRepositoryImpl;
+import io.bdrc.iiif.resolver.IdentifierInfo;
 
 @Controller
 @RequestMapping("/pdfdownload/")
 public class PdfController {
     
-    private String getUrlBase(HttpServletRequest request) {
-        String scheme = request.getHeader("X-Forwarded-Proto");
-        if (scheme == null) {
-          scheme = request.getScheme();
-        }
-
-        String host = request.getHeader("X-Forwarded-Host");
-        if (host == null) {
-          host = request.getHeader("Host");
-        }
-        if (host == null) {
-          host = request.getRemoteHost();
-        }
-        String base = String.format("%s://%s", scheme, host);
-        if (!request.getContextPath().isEmpty()) {
-          base += request.getContextPath();
-        }
-        return base;
-      }
+    final static String S3_BUCKET = "archive.tbrc.org";
     
-    @RequestMapping(value = "{identifier}/pdf",
+       
+    @RequestMapping(value = "{volume}/pdf/{imageList}/{numPage}",
             method = {RequestMethod.GET, RequestMethod.HEAD})
-    public ResponseEntity<InputStreamResource> getInfo(@PathVariable String identifier, HttpServletRequest req,
-            WebRequest webRequest) throws Exception {        
-        //System.out.println("PDF >>>>>>>>> "+getUrlBase(req)+"/image/v2/"+identifier+"/full/full/0/default.jpg");
-        System.out.println("DEB >>>>>>>>>>> "+System.currentTimeMillis());
-        Image img=Image.getInstance(new URL(getUrlBase(req)+"/image/v2/"+identifier+"/full/full/0/default.jpg"));
-        Image img1=Image.getInstance(new URL(getUrlBase(req)+"/image/v2/bdr:V29329_I1KG15042::I1KG150420323.jpg/full/full/0/default.jpg"));
-        //Image img=Image.getInstance("/home/marc/0.jpg");
-        //Image img1=Image.getInstance("/home/marc/1.jpg");
-        String output = "/home/marc/capture.pdf";
+    public ResponseEntity<InputStreamResource> getPdf(@PathVariable String volume, 
+                                @PathVariable String imageList,
+                                @PathVariable String numPage,
+                                HttpServletRequest req,
+                                WebRequest webRequest) throws Exception {  
+        // Getting volume info
+        System.out.println("DEB >>>>>>>>>>> "+System.currentTimeMillis()+" imgList >> "+imageList);  
+        IdentifierInfo inf=new IdentifierInfo(volume);
+        ExecutorService service=Executors.newFixedThreadPool(50);
+        AmazonS3 s3=S3ResourceRepositoryImpl.getClientInstance();        
+        //String volume="bdr:V23873_I1KG12099";
+       // String imageList="I1KG120990001.jpg:651";
+        //String imageList="08080001.tif:576";
+        TreeMap<Integer,String> idList=getIdentifierList(volume,imageList,numPage);
+        TreeMap<Integer,PdfImageProducer> p_map=new TreeMap<>();
+        TreeMap<Integer,Future<?>> t_map=new TreeMap<>();
         System.out.println("DEB1 >>>>>>>>>>> "+System.currentTimeMillis());
-        Document document = new Document(new Rectangle(img.getWidth(),img.getHeight()),0f,0f,0f,0f);
+        for(Entry<Integer,String> e:idList.entrySet()) {
+            PdfImageProducer tmp=new PdfImageProducer(s3,e.getValue(), inf);
+            p_map.put(e.getKey(),tmp);
+            Future<?> fut=service.submit(tmp);
+            t_map.put(e.getKey(),fut);
+        }
+        
+        Document document = new Document();
+        String output = "/home/marc/capture.pdf";
         FileOutputStream fos = new FileOutputStream(output);
         PdfWriter writer = PdfWriter.getInstance(document, fos);
         writer.open();
         document.open();
-        document.add(img);
-        document.add(img1);
+        for(int k=1;k<=t_map.keySet().size();k++) {
+            Future<?> tmp=t_map.get(k);
+            while(!tmp.isDone()) {
+                
+            };
+            Image i=p_map.get(k).getImg();
+            if(i!=null) {
+                document.setPageSize(new Rectangle(i.getWidth(),i.getHeight()));
+                document.newPage();
+                document.add(i);
+                System.out.println("Added page >>> "+k);
+            }
+        }   
+        /*for(int j:p_map.keySet()) {
+            Image i=p_map.get(j).getImg();
+            if(i!=null) {
+                document.setPageSize(new Rectangle(i.getWidth(),i.getHeight()));
+                document.newPage();
+                document.add(i);
+                System.out.println("Added page >>> "+j);
+            }
+        }*/
+        System.out.println("DEB1 >>>>>>>>>>> "+System.currentTimeMillis());
         document.close();
         writer.close();
         System.out.println("Fin1 >>>>>>>>>>> "+System.currentTimeMillis());
@@ -80,5 +107,19 @@ public class PdfController {
                 new InputStreamResource(new FileInputStream(pdfFile)), headers, HttpStatus.OK);
         return response;
     }
+    
+    public TreeMap<Integer,String> getIdentifierList(String volume,String imgList,String numPage) {
+        TreeMap<Integer,String> idt=new TreeMap<>();
+        String[] part=imgList.split(":");
+        String pages[]=part[0].split("\\.");
+        String firstPage=pages[0].substring(pages[0].length()-4);
+        String root=pages[0].substring(0,pages[0].length()-4);
+        //for(int x=Integer.parseInt(firstPage);x<Integer.parseInt(part[1])+1;x++) {
+        for(int x=Integer.parseInt(firstPage);x<Integer.parseInt(numPage)+1;x++) {
+            idt.put(x,volume+"::"+root+String.format("%04d", x)+"."+pages[1]);
+        }
+        return idt;
+    }
+    
 
 }

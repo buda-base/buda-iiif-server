@@ -112,6 +112,4 @@ public class S3Resource implements Resource{
                 + mimeType + ", size=" + size + ", uuid=" + uuid + ", readonly=" + readonly + ", uri=" + uri
                 + ", identifier=" + identifier + "]";
     }
-    
-
 }
