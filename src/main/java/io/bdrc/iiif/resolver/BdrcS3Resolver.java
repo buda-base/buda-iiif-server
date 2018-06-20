@@ -54,7 +54,6 @@ public class BdrcS3Resolver implements S3Resolver {
     public String getIdentifier(String identifier,IdentifierInfo info) throws NoSuchAlgorithmException {
         String id="Works/";
         String[] parts=identifier.split("::");           
-        String format=parts[1].substring(parts[1].lastIndexOf('.'));
         //log.info("S3 Resolver IdentifierInfo >>>>>>>> "+info+ " Format >> "+format);            
         String work=info.getWork().substring(info.getWork().lastIndexOf('/')+1);
         String imgGroup=parts[0].substring(parts[0].lastIndexOf('_')+1);
@@ -67,11 +66,6 @@ public class BdrcS3Resolver implements S3Resolver {
         }
         id=id+hash+"/"+work+"/images/"+work+"-"+imgGroup+"/"+parts[1];
         return id;
-    }
-    
-    public static void main(String[] args) throws ResourceIOException {
-        BdrcS3Resolver s3=new BdrcS3Resolver();
-        //log.info("Path s3 >>"+s3.getS3Identifier("bdr:V29329_I1KG15042::I1KG150420003.jpg"));        
     }
 
 }

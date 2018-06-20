@@ -1,10 +1,13 @@
 package io.bdrc.pdf;
 
-import java.io.ByteArrayOutputStream;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutorService;
@@ -13,6 +16,7 @@ import java.util.concurrent.Future;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.commons.lang3.text.StrSubstitutor;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -42,11 +46,13 @@ public class PdfController {
        
     @RequestMapping(value = "{volume}/pdf/{imageList}/{numPage}",
             method = {RequestMethod.GET, RequestMethod.HEAD})
-    public ResponseEntity<InputStreamResource> getPdf(@PathVariable String volume, 
+    public ResponseEntity<String> getPdf(@PathVariable String volume, 
                                 @PathVariable String imageList,
                                 @PathVariable String numPage,
                                 HttpServletRequest req,
                                 WebRequest webRequest) throws Exception {  
+        
+        
         // Getting volume info
         System.out.println("call to getPdf() >>> imgList >> "+imageList+" volume >> "+volume+ " numPage >> "+numPage);  
         IdentifierInfo inf=new IdentifierInfo(volume);
@@ -64,7 +70,8 @@ public class PdfController {
         }
         
         Document document = new Document();
-        String output = volume+".pdf";
+        String output = volume+":1-"+numPage+".pdf";
+        
         FileOutputStream fos = new FileOutputStream(output);        
         PdfWriter writer = PdfWriter.getInstance(document, fos);
         writer.open();
@@ -84,9 +91,27 @@ public class PdfController {
         document.close();
         writer.close();
         
+        HashMap<String,String> map=new HashMap<>();
+        map.put("pdf", output);
+        map.put("link", "/pdfdownload/file/"+output);
+        String html=getTemplate("downloadPdf.tpl");
+        StrSubstitutor s=new StrSubstitutor(map);
+        html=s.replace(html);
         HttpHeaders headers = new HttpHeaders();
-        File pdfFile = new File(output);       
+        headers.setContentType(MediaType.parseMediaType("text/html"));
+        ResponseEntity<String> response = new ResponseEntity<String>(html, headers, HttpStatus.OK);
+        return response;
+    }
+    
+    @RequestMapping(value = "file/{pdf}",
+            method = {RequestMethod.GET,RequestMethod.HEAD})
+    public ResponseEntity<InputStreamResource> downloadPdf(@PathVariable String pdf) throws Exception {
+        
+        File pdfFile=new File(pdf+".pdf");
+        HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.parseMediaType("application/pdf"));
+        headers.setContentDispositionFormData("attachment", pdfFile.getName());
+
         ResponseEntity<InputStreamResource> response = new ResponseEntity<InputStreamResource>(
                 new InputStreamResource(new FileInputStream(pdfFile)), headers, HttpStatus.OK);
         return response;
@@ -103,6 +128,23 @@ public class PdfController {
             idt.put(x,volume+"::"+root+String.format("%04d", x)+"."+pages[1]);
         }
         return idt;
+    }
+    
+    public static String getTemplate(String template) {
+        InputStream stream = PdfController.class.getClassLoader().getResourceAsStream("templates/"+template);
+        BufferedReader buffer = new BufferedReader(new InputStreamReader(stream));
+        StringBuffer sb=new StringBuffer();
+        try {
+            String line=buffer.readLine();
+            while(line!=null) {
+                sb.append(line+System.lineSeparator());
+                line=buffer.readLine();
+                
+            }
+        } catch (IOException e) {
+            e.printStackTrace();         
+        }
+        return sb.toString();
     }
     
 

@@ -11,7 +11,6 @@ import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.itextpdf.text.BadElementException;
 import com.itextpdf.text.Image;
 
-import de.digitalcollections.iiif.myhymir.backend.impl.repository.S3ResourceRepositoryImpl;
 import io.bdrc.iiif.resolver.BdrcS3Resolver;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 
@@ -36,8 +35,6 @@ public class PdfImageProducer implements Runnable{
                 identifier);
         return Image.getInstance(IOUtils.toByteArray(s3.getObject(request).getObjectContent()));              
     }
-    
-    
     
     public Image getImg() {
         return img;
