@@ -36,6 +36,9 @@ import com.itextpdf.text.pdf.PdfWriter;
 
 import de.digitalcollections.iiif.myhymir.backend.impl.repository.S3ResourceRepositoryImpl;
 import io.bdrc.iiif.resolver.IdentifierInfo;
+import io.bdrc.pdf.presentation.VolumeInfoService;
+import io.bdrc.pdf.presentation.models.Identifier;
+import io.bdrc.pdf.presentation.models.VolumeInfo;
 
 @Controller
 @RequestMapping("/pdfdownload/")
@@ -46,54 +49,22 @@ public class PdfController {
        
     @RequestMapping(value = "{volume}/pdf/{imageList}/{numPage}",
             method = {RequestMethod.GET, RequestMethod.HEAD})
-    public ResponseEntity<String> getPdf(@PathVariable String volume, 
-                                @PathVariable String imageList,
-                                @PathVariable String numPage,
-                                HttpServletRequest req,
-                                WebRequest webRequest) throws Exception {  
-        
-        
-        // Getting volume info
-        System.out.println("call to getPdf() >>> imgList >> "+imageList+" volume >> "+volume+ " numPage >> "+numPage);  
+    public ResponseEntity<String> getPdf(@PathVariable String volume,@PathVariable String imageList,
+                                         @PathVariable String numPage,HttpServletRequest req,
+                                         WebRequest webRequest) throws Exception {
+        // Getting volume info        
         IdentifierInfo inf=new IdentifierInfo(volume);
-        ExecutorService service=Executors.newFixedThreadPool(50);
-        AmazonS3 s3=S3ResourceRepositoryImpl.getClientInstance();
-        TreeMap<Integer,String> idList=getIdentifierList(volume,imageList,numPage);
-        TreeMap<Integer,PdfImageProducer> p_map=new TreeMap<>();
-        TreeMap<Integer,Future<?>> t_map=new TreeMap<>();
-        
-        for(Entry<Integer,String> e:idList.entrySet()) {
-            PdfImageProducer tmp=new PdfImageProducer(s3,e.getValue(), inf);
-            p_map.put(e.getKey(),tmp);
-            Future<?> fut=service.submit(tmp);
-            t_map.put(e.getKey(),fut);
-        }
-        
-        Document document = new Document();
         String output = volume+":1-"+numPage+".pdf";
+        TreeMap<Integer,String> idList=getIdentifierList(volume,imageList,Integer.parseInt(numPage),-1,-1);
         
-        FileOutputStream fos = new FileOutputStream(output);        
-        PdfWriter writer = PdfWriter.getInstance(document, fos);
-        writer.open();
-        document.open();
-        for(int k=1;k<=t_map.keySet().size();k++) {
-            Future<?> tmp=t_map.get(k);
-            while(!tmp.isDone()) {
-                
-            };
-            Image i=p_map.get(k).getImg();
-            if(i!=null) {
-                document.setPageSize(new Rectangle(i.getWidth(),i.getHeight()));
-                document.newPage();
-                document.add(i);
-            }
-        }
-        document.close();
-        writer.close();
+        // Build pdf
+        PdfBuilder.buildPdf(idList,inf,output);
         
         HashMap<String,String> map=new HashMap<>();
         map.put("pdf", output);
         map.put("link", "/pdfdownload/file/"+output);
+        
+        // Create template and serve html link
         String html=getTemplate("downloadPdf.tpl");
         StrSubstitutor s=new StrSubstitutor(map);
         html=s.replace(html);
@@ -101,6 +72,31 @@ public class PdfController {
         headers.setContentType(MediaType.parseMediaType("text/html"));
         ResponseEntity<String> response = new ResponseEntity<String>(html, headers, HttpStatus.OK);
         return response;
+    }
+    
+    @RequestMapping(value = "{id}",
+            method = {RequestMethod.GET,RequestMethod.HEAD})
+    public ResponseEntity<String> getPdfLink(@PathVariable String id) throws Exception {
+        Identifier idf=new Identifier(id,Identifier.MANIFEST_ID);
+        int bPage=idf.getBPageNum().intValue();
+        int ePage=idf.getEPageNum().intValue();
+        VolumeInfo vi = VolumeInfoService.getVolumeInfo(idf.getVolumeId());
+        TreeMap<Integer,String> idList = getIdentifierList(idf.getVolumeId(),vi.getImageList(),-1,bPage,ePage);
+        String output = idf.getVolumeId()+":"+bPage+"-"+ePage+".pdf";
+     // Build pdf
+        PdfBuilder.buildPdf(idList,new IdentifierInfo(idf.getVolumeId()),output);
+        HashMap<String,String> map=new HashMap<>();
+        map.put("pdf", output);
+        map.put("link", "/pdfdownload/file/"+output);
+        
+        // Create template and serve html link
+        String html=getTemplate("downloadPdf.tpl");
+        StrSubstitutor s=new StrSubstitutor(map);
+        html=s.replace(html);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType("text/html"));
+        ResponseEntity<String> response = new ResponseEntity<String>(html, headers, HttpStatus.OK);
+        return response;  
     }
     
     @RequestMapping(value = "file/{pdf}",
@@ -117,15 +113,22 @@ public class PdfController {
         return response;
     }
     
-    public TreeMap<Integer,String> getIdentifierList(String volume,String imgList,String numPage) {
+    public TreeMap<Integer,String> getIdentifierList(
+            String volume,String imgList,int numPage,int startPage,int endPage) {
         TreeMap<Integer,String> idt=new TreeMap<>();
         String[] part=imgList.split(":");
         String pages[]=part[0].split("\\.");
-        String firstPage=pages[0].substring(pages[0].length()-4);
+        int firstPage=Integer.parseInt(pages[0].substring(pages[0].length()-4));
         String root=pages[0].substring(0,pages[0].length()-4);
-        //for(int x=Integer.parseInt(firstPage);x<Integer.parseInt(part[1])+1;x++) {
-        for(int x=Integer.parseInt(firstPage);x<Integer.parseInt(numPage)+1;x++) {
-            idt.put(x,volume+"::"+root+String.format("%04d", x)+"."+pages[1]);
+        if(numPage !=-1) {
+            for(int x=firstPage;x<numPage+1;x++) {
+                idt.put(x,volume+"::"+root+String.format("%04d", x)+"."+pages[1]);
+            }
+        }
+        if(startPage !=-1 && endPage !=-1) {
+            for(int x=startPage;x<endPage+1;x++) {
+                idt.put(x,volume+"::"+root+String.format("%04d", x)+"."+pages[1]);
+            }
         }
         return idt;
     }
@@ -147,5 +150,5 @@ public class PdfController {
         return sb.toString();
     }
     
-
+    
 }
