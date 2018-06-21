@@ -2,11 +2,13 @@ package io.bdrc.pdf.presentation.models;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Iterator;
 
 import org.apache.jena.query.QuerySolution;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.bdrc.pdf.presentation.VolumeInfoService;
@@ -48,9 +50,9 @@ public class VolumeInfo {
             }
         }
     }
-    
-    public String getImageList() {
-        return imageList;
+
+    public Iterator<String> getImageListIterator(int beginIdx, int endIdx) {
+        return new ImageListIterator(imageList, beginIdx, endIdx);
     }
 
     public VolumeInfo() { }
