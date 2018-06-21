@@ -14,13 +14,15 @@ public class IdentifierInfo {
     
     public String work;
     public String asset;
-    public String access;    
+    public String access;  
+    public String volumeId;
     
     @SuppressWarnings("unchecked")
     public IdentifierInfo(String volumeImageAsset) {
         HttpClient httpClient = HttpClientBuilder.create().build();
         HttpPost request = new HttpPost("http://purl.bdrc.io/query/IdentifierInfo");
         JSONObject object = new JSONObject();
+        this.volumeId=volumeImageAsset;
         
         try {
             object.put("R_RES", volumeImageAsset);            
@@ -63,10 +65,15 @@ public class IdentifierInfo {
     public void setAccess(String access) {
         this.access = access;
     }
-    
+
+    public String getVolumeId() {
+        return volumeId;
+    }
+
     @Override
     public String toString() {
-        return "IdentifierInfo [work=" + work + ", asset=" + asset + ", access=" + access + "]";
+        return "IdentifierInfo [work=" + work + ", asset=" + asset + ", access=" + access + ", volumeId=" + volumeId
+                + "]";
     }
 
     public static void main(String[] args) throws Exception {

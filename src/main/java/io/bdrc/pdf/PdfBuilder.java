@@ -29,9 +29,9 @@ public class PdfBuilder {
         AmazonS3 s3=S3ResourceRepositoryImpl.getClientInstance();        
         TreeMap<Integer,PdfImageProducer> p_map=new TreeMap<>();
         TreeMap<Integer,Future<?>> t_map=new TreeMap<>();
-        int i = 0;
+        int i = 1;
         while(idList.hasNext()) {
-            final String id = idList.next();  
+            final String id = inf.getVolumeId()+"::"+idList.next();  
             PdfImageProducer tmp=new PdfImageProducer(s3, id, inf);
             p_map.put(i,tmp);
             Future<?> fut=service.submit(tmp);
@@ -39,7 +39,7 @@ public class PdfBuilder {
             i += 1;
         }
         Document document = new Document();
-        FileOutputStream fos = new FileOutputStream(output);        
+        FileOutputStream fos = new FileOutputStream("pdf/"+output);        
         PdfWriter writer = PdfWriter.getInstance(document, fos);
         writer.open();
         document.open();
