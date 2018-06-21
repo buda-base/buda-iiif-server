@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutorService;
@@ -45,35 +46,7 @@ import io.bdrc.pdf.presentation.models.VolumeInfo;
 public class PdfController {
     
     final static String S3_BUCKET = "archive.tbrc.org";
-    
-       
-    @RequestMapping(value = "{volume}/pdf/{imageList}/{numPage}",
-            method = {RequestMethod.GET, RequestMethod.HEAD})
-    public ResponseEntity<String> getPdf(@PathVariable String volume,@PathVariable String imageList,
-                                         @PathVariable String numPage,HttpServletRequest req,
-                                         WebRequest webRequest) throws Exception {
-        // Getting volume info        
-        IdentifierInfo inf=new IdentifierInfo(volume);
-        String output = volume+":1-"+numPage+".pdf";
-        TreeMap<Integer,String> idList=getIdentifierList(volume,imageList,Integer.parseInt(numPage),-1,-1);
-        
-        // Build pdf
-        PdfBuilder.buildPdf(idList,inf,output);
-        
-        HashMap<String,String> map=new HashMap<>();
-        map.put("pdf", output);
-        map.put("link", "/pdfdownload/file/"+output);
-        
-        // Create template and serve html link
-        String html=getTemplate("downloadPdf.tpl");
-        StrSubstitutor s=new StrSubstitutor(map);
-        html=s.replace(html);
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.parseMediaType("text/html"));
-        ResponseEntity<String> response = new ResponseEntity<String>(html, headers, HttpStatus.OK);
-        return response;
-    }
-    
+
     @RequestMapping(value = "{id}",
             method = {RequestMethod.GET,RequestMethod.HEAD})
     public ResponseEntity<String> getPdfLink(@PathVariable String id) throws Exception {
@@ -81,10 +54,10 @@ public class PdfController {
         int bPage=idf.getBPageNum().intValue();
         int ePage=idf.getEPageNum().intValue();
         VolumeInfo vi = VolumeInfoService.getVolumeInfo(idf.getVolumeId());
-        TreeMap<Integer,String> idList = getIdentifierList(idf.getVolumeId(),vi.getImageList(),-1,bPage,ePage);
+        Iterator<String> idIterator = vi.getImageListIterator(bPage, ePage);
         String output = idf.getVolumeId()+":"+bPage+"-"+ePage+".pdf";
      // Build pdf
-        PdfBuilder.buildPdf(idList,new IdentifierInfo(idf.getVolumeId()),output);
+        PdfBuilder.buildPdf(idIterator, new IdentifierInfo(idf.getVolumeId()),output);
         HashMap<String,String> map=new HashMap<>();
         map.put("pdf", output);
         map.put("link", "/pdfdownload/file/"+output);
@@ -112,27 +85,7 @@ public class PdfController {
                 new InputStreamResource(new FileInputStream(pdfFile)), headers, HttpStatus.OK);
         return response;
     }
-    
-    public TreeMap<Integer,String> getIdentifierList(
-            String volume,String imgList,int numPage,int startPage,int endPage) {
-        TreeMap<Integer,String> idt=new TreeMap<>();
-        String[] part=imgList.split(":");
-        String pages[]=part[0].split("\\.");
-        int firstPage=Integer.parseInt(pages[0].substring(pages[0].length()-4));
-        String root=pages[0].substring(0,pages[0].length()-4);
-        if(numPage !=-1) {
-            for(int x=firstPage;x<numPage+1;x++) {
-                idt.put(x,volume+"::"+root+String.format("%04d", x)+"."+pages[1]);
-            }
-        }
-        if(startPage !=-1 && endPage !=-1) {
-            for(int x=startPage;x<endPage+1;x++) {
-                idt.put(x,volume+"::"+root+String.format("%04d", x)+"."+pages[1]);
-            }
-        }
-        return idt;
-    }
-    
+
     public static String getTemplate(String template) {
         InputStream stream = PdfController.class.getClassLoader().getResourceAsStream("templates/"+template);
         BufferedReader buffer = new BufferedReader(new InputStreamReader(stream));

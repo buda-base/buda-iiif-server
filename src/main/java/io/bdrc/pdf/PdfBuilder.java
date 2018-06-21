@@ -4,6 +4,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.security.NoSuchAlgorithmException;
 import java.util.TreeMap;
+import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -21,20 +22,21 @@ import io.bdrc.iiif.resolver.IdentifierInfo;
 
 public class PdfBuilder {
     
-    public static void buildPdf(TreeMap<Integer,String> idList,
+    public static void buildPdf(Iterator<String> idList,
                                 IdentifierInfo inf,
                                 String output) throws NoSuchAlgorithmException, FileNotFoundException, DocumentException {
-        
         ExecutorService service=Executors.newFixedThreadPool(50);
         AmazonS3 s3=S3ResourceRepositoryImpl.getClientInstance();        
         TreeMap<Integer,PdfImageProducer> p_map=new TreeMap<>();
         TreeMap<Integer,Future<?>> t_map=new TreeMap<>();
-        
-        for(Entry<Integer,String> e:idList.entrySet()) {
-            PdfImageProducer tmp=new PdfImageProducer(s3,e.getValue(), inf);
-            p_map.put(e.getKey(),tmp);
+        int i = 0;
+        while(idList.hasNext()) {
+            final String id = idList.next();  
+            PdfImageProducer tmp=new PdfImageProducer(s3, id, inf);
+            p_map.put(i,tmp);
             Future<?> fut=service.submit(tmp);
-            t_map.put(e.getKey(),fut);
+            t_map.put(i,fut);
+            i += 1;
         }
         Document document = new Document();
         FileOutputStream fos = new FileOutputStream(output);        
@@ -46,11 +48,11 @@ public class PdfBuilder {
             while(!tmp.isDone()) {
                 
             };
-            Image i=p_map.get(k).getImg();
-            if(i!=null) {
-                document.setPageSize(new Rectangle(i.getWidth(),i.getHeight()));
+            Image img=p_map.get(k).getImg();
+            if(img!=null) {
+                document.setPageSize(new Rectangle(img.getWidth(),img.getHeight()));
                 document.newPage();
-                document.add(i);
+                document.add(img);
             }
         }
         document.close();
