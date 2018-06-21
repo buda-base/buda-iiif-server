@@ -324,7 +324,6 @@ public class BDRCImageServiceImpl implements ImageService {
       writer.dispose();
       ios.flush();
     }
-
     
     public Instant getImageModificationDate(String identifier) throws ResourceNotFoundException {
       if (imageSecurityService != null && !imageSecurityService.isAccessAllowed(identifier)) {

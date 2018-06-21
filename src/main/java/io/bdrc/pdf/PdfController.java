@@ -36,8 +36,10 @@ import com.itextpdf.text.pdf.PdfWriter;
 
 import de.digitalcollections.iiif.myhymir.backend.impl.repository.S3ResourceRepositoryImpl;
 import io.bdrc.iiif.resolver.IdentifierInfo;
+import io.bdrc.pdf.presentation.ItemInfoService;
 import io.bdrc.pdf.presentation.VolumeInfoService;
 import io.bdrc.pdf.presentation.models.Identifier;
+import io.bdrc.pdf.presentation.models.ItemInfo;
 import io.bdrc.pdf.presentation.models.VolumeInfo;
 
 @Controller
@@ -77,14 +79,30 @@ public class PdfController {
     @RequestMapping(value = "{id}",
             method = {RequestMethod.GET,RequestMethod.HEAD})
     public ResponseEntity<String> getPdfLink(@PathVariable String id) throws Exception {
+        String output =null;
         Identifier idf=new Identifier(id,Identifier.MANIFEST_ID);
-        int bPage=idf.getBPageNum().intValue();
-        int ePage=idf.getEPageNum().intValue();
-        VolumeInfo vi = VolumeInfoService.getVolumeInfo(idf.getVolumeId());
-        TreeMap<Integer,String> idList = getIdentifierList(idf.getVolumeId(),vi.getImageList(),-1,bPage,ePage);
-        String output = idf.getVolumeId()+":"+bPage+"-"+ePage+".pdf";
-     // Build pdf
-        PdfBuilder.buildPdf(idList,new IdentifierInfo(idf.getVolumeId()),output);
+        System.out.println("IDT >>>>>>>"+idf);
+        int subType=idf.getSubType();
+        switch(subType) {
+            //Case  work item   
+            case 4:
+                ItemInfo item=ItemInfoService.fetchLdsVolumeInfo(idf.getItemId());
+                System.out.println("ITEM >>>>>>>"+item);
+                break;
+            //Case volume imageRange
+            case 5:
+            case 6:
+                int bPage=idf.getBPageNum().intValue();
+                int ePage=idf.getEPageNum().intValue();
+                VolumeInfo vi = VolumeInfoService.getVolumeInfo(idf.getVolumeId());
+                System.out.println("Volume info >>>>>>>"+vi);
+                TreeMap<Integer,String> idList = getIdentifierList(idf.getVolumeId(),vi.getImageList(),-1,bPage,ePage);
+                output = idf.getVolumeId()+":"+bPage+"-"+ePage+".pdf";
+                // Build pdf
+                PdfBuilder.buildPdf(idList,new IdentifierInfo(idf.getVolumeId()),output);
+                break;
+        }
+        
         HashMap<String,String> map=new HashMap<>();
         map.put("pdf", output);
         map.put("link", "/pdfdownload/file/"+output);
