@@ -5,7 +5,7 @@
 <title>Download pdf</title>
 </head>
 <body>
-    <h3>Download link :</h3>    
-    <a href="${link}">${pdf}</a>
+    <h3>Available volumes :</h3>    
+    ${links}
 </body>
 </html>

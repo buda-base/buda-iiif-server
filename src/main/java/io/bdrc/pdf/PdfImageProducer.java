@@ -25,8 +25,7 @@ public class PdfImageProducer implements Runnable{
     public PdfImageProducer(AmazonS3 s3, String identifier,IdentifierInfo inf) throws NoSuchAlgorithmException {
         this.s3=s3;        
         BdrcS3Resolver resolver=new BdrcS3Resolver();
-        this.identifier=resolver.getIdentifier(identifier, inf);
-        System.out.println("PDF Producer >>>>>> "+identifier);
+        this.identifier=resolver.getIdentifier(identifier, inf);        
     }
 
     public Image getImage() throws BadElementException, MalformedURLException, IOException {
@@ -45,7 +44,7 @@ public class PdfImageProducer implements Runnable{
         // TODO Auto-generated method stub
         try {
             img=getImage();
-            System.out.println("FINISHED >>> "+identifier);
+            //System.out.println("FINISHED >>> "+identifier);
         } catch (BadElementException | IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();

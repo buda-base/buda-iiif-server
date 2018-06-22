@@ -50,6 +50,24 @@ public class ItemInfo {
                 return "Volume "+volumeNumber;
         }
 
+        public Integer getVolumeNumber() {
+            return volumeNumber;
+        }
+
+        public String getVolumeId() {
+            return volumeId;
+        }
+
+        public String getPrefixedId() {
+            return prefixedId;
+        }
+
+        @Override
+        public String toString() {
+            return "VolumeInfoSmall [volumeNumber=" + volumeNumber + ", volumeId=" + volumeId + ", iiifManifest="
+                    + iiifManifest + ", prefixedId=" + prefixedId + "]";
+        }
+
         @Override
         public int compareTo(VolumeInfoSmall compared) {
             if (this.volumeNumber == null || compared.volumeNumber == null)
@@ -119,6 +137,22 @@ public class ItemInfo {
                 return null;
         }
         return null;
+    }
+    
+    public String getWorkId() {
+        return workId;
+    }
+
+    public AccessType getAccess() {
+        return access;
+    }
+
+    public LicenseType getLicense() {
+        return license;
+    }
+
+    public List<VolumeInfoSmall> getVolumes() {
+        return volumes;
     }
 
     @Override
