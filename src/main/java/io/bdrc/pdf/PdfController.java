@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
+import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.lang3.text.StrSubstitutor;
 import org.springframework.core.io.InputStreamResource;
@@ -21,6 +22,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.bdrc.iiif.resolver.IdentifierInfo;
 import io.bdrc.pdf.presentation.ItemInfoService;
@@ -36,26 +39,38 @@ import io.bdrc.pdf.presentation.models.VolumeInfo;
 public class PdfController {
 
     @RequestMapping(value = "{id}", method = {RequestMethod.GET,RequestMethod.HEAD})
-    public ResponseEntity<String> getPdfLink(@PathVariable String id) throws Exception {
+    public ResponseEntity<String> getPdfLink(@PathVariable String id,HttpServletRequest request) throws Exception {
+        String format=request.getHeader("Accept");
+        boolean json=format.contains("application/json");
         String output =null;
         Identifier idf=new Identifier(id,Identifier.MANIFEST_ID);
-        System.out.println(idf);
         HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.parseMediaType("text/html"));
+        if(json) {
+            headers.setContentType(MediaType.parseMediaType("application/json"));
+        }else {
+            headers.setContentType(MediaType.parseMediaType("text/html"));
+        }
         HashMap<String,String> map=new HashMap<>();
         StrSubstitutor s=null;
-        
-        int subType=idf.getSubType();
+        String html="";
+        int subType=idf.getSubType();        
         switch(subType) {
             //Case work item   
             case 4:
+                System.out.println("SUBTYPE 4 >>>"+subType);
                 ItemInfo item=ItemInfoService.fetchLdsVolumeInfo(idf.getItemId());
-                String html=getTemplate("volumes.tpl");                
-                map.put("links", getVolumeDownLoadLinks(item,idf)); 
-                s=new StrSubstitutor(map);
-                html=s.replace(html);
-                ResponseEntity<String> response = new ResponseEntity<String>(html, headers, HttpStatus.OK);
-                return response; 
+                 
+                if(json) {
+                    map=getJsonVolumePdfLinks(item);
+                    ObjectMapper mapper=new ObjectMapper();
+                    html=mapper.writerWithDefaultPrettyPrinter().writeValueAsString(map);
+                }else {
+                    map.put("links", getVolumeDownLoadLinks(item,idf));
+                    html=getTemplate("volumes.tpl"); 
+                    s=new StrSubstitutor(map);
+                    html=s.replace(html);
+                }
+                break;
             //Case volume imageRange
             case 5:
             case 6:
@@ -69,15 +84,19 @@ public class PdfController {
                 PdfBuilder.buildPdf(idIterator,new IdentifierInfo(idf.getVolumeId()),output);                
                 
                 // Create template and serve html link
-                String html1=getTemplate("downloadPdf.tpl");
-                map.put("pdf", output);
-                map.put("link", "/pdfdownload/file/"+output);
-                s=new StrSubstitutor(map);
-                html1=s.replace(html1);
-                ResponseEntity<String> response1 = new ResponseEntity<String>(html1, headers, HttpStatus.OK);
-                return response1;
+                map.put("links", "/pdfdownload/file/"+output);
+                if(json) {
+                    ObjectMapper mapper=new ObjectMapper();                    
+                    html=mapper.writerWithDefaultPrettyPrinter().writeValueAsString(map);
+                }else {
+                    html=getTemplate("downloadPdf.tpl");
+                    map.put("pdf", output);
+                    s=new StrSubstitutor(map);
+                    html=s.replace(html);
+                }
+                break;
         } 
-        ResponseEntity<String> response = new ResponseEntity<String>("Resource Not found", headers, HttpStatus.NOT_FOUND);
+        ResponseEntity<String> response = new ResponseEntity<String>(html, headers, HttpStatus.OK);
         return response;
           
     }
@@ -119,6 +138,17 @@ public class PdfController {
             links=links+"<a href=\"/pdfdownload/v:"+vis.getPrefixedId()+"::1-"+vi.totalPages+"\">Vol."+vis.getVolumeNumber()+" ("+vi.totalPages+" pages) - "+vis.getPrefixedId()+"</a><br/>";
         }
         return links;
+    }
+    
+    public HashMap<String,String> getJsonVolumePdfLinks(ItemInfo item) throws BDRCAPIException {
+        HashMap<String,String> map=new HashMap<>();        
+        List<VolumeInfoSmall> vlist=item.getVolumes();
+        for(VolumeInfoSmall vis:vlist) {
+            VolumeInfo vi = VolumeInfoService.getVolumeInfo(vis.getPrefixedId());
+            map.put(vis.getPrefixedId(), "/pdfdownload/v:"+vis.getPrefixedId()+"::1-"+vi.totalPages);
+            
+        }
+        return map;
     }
     
     
