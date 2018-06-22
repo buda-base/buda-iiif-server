@@ -29,6 +29,7 @@ import io.bdrc.iiif.resolver.IdentifierInfo;
 import io.bdrc.pdf.presentation.ItemInfoService;
 import io.bdrc.pdf.presentation.VolumeInfoService;
 import io.bdrc.pdf.presentation.exceptions.BDRCAPIException;
+import io.bdrc.pdf.presentation.models.AccessType;
 import io.bdrc.pdf.presentation.models.Identifier;
 import io.bdrc.pdf.presentation.models.ItemInfo;
 import io.bdrc.pdf.presentation.models.ItemInfo.VolumeInfoSmall;
@@ -43,32 +44,29 @@ public class PdfController {
         String format=request.getHeader("Accept");
         boolean json=format.contains("application/json");
         String output =null;
-        Identifier idf=new Identifier(id,Identifier.MANIFEST_ID);
-        HttpHeaders headers = new HttpHeaders();
-        if(json) {
-            headers.setContentType(MediaType.parseMediaType("application/json"));
-        }else {
-            headers.setContentType(MediaType.parseMediaType("text/html"));
-        }
+        Identifier idf=new Identifier(id,Identifier.MANIFEST_ID);        
+        HttpHeaders headers = new HttpHeaders();        
         HashMap<String,String> map=new HashMap<>();
         StrSubstitutor s=null;
         String html="";
+        AccessType access=null;
         int subType=idf.getSubType();        
         switch(subType) {
             //Case work item   
-            case 4:
-                System.out.println("SUBTYPE 4 >>>"+subType);
+            case 4:                
                 ItemInfo item=ItemInfoService.fetchLdsVolumeInfo(idf.getItemId());
-                 
-                if(json) {
-                    map=getJsonVolumePdfLinks(item);
-                    ObjectMapper mapper=new ObjectMapper();
-                    html=mapper.writerWithDefaultPrettyPrinter().writeValueAsString(map);
-                }else {
-                    map.put("links", getVolumeDownLoadLinks(item,idf));
-                    html=getTemplate("volumes.tpl"); 
-                    s=new StrSubstitutor(map);
-                    html=s.replace(html);
+                access=item.getAccess(); 
+                if(access.equals(AccessType.OPEN)) {
+                    if(json) {
+                        map=getJsonVolumePdfLinks(item);
+                        ObjectMapper mapper=new ObjectMapper();
+                        html=mapper.writerWithDefaultPrettyPrinter().writeValueAsString(map);
+                    }else {
+                        map.put("links", getVolumeDownLoadLinks(item,idf));
+                        html=getTemplate("volumes.tpl"); 
+                        s=new StrSubstitutor(map);
+                        html=s.replace(html);
+                    }
                 }
                 break;
             //Case volume imageRange
@@ -76,26 +74,38 @@ public class PdfController {
             case 6:
                 int bPage=idf.getBPageNum().intValue();
                 int ePage=idf.getEPageNum().intValue();
-                VolumeInfo vi = VolumeInfoService.getVolumeInfo(idf.getVolumeId());                
-                Iterator<String> idIterator = vi.getImageListIterator(bPage, ePage);
-                output = idf.getVolumeId()+":"+bPage+"-"+ePage+".pdf";
-                
-                // Build pdf
-                PdfBuilder.buildPdf(idIterator,new IdentifierInfo(idf.getVolumeId()),output);                
-                
-                // Create template and serve html link
-                map.put("links", "/pdfdownload/file/"+output);
-                if(json) {
-                    ObjectMapper mapper=new ObjectMapper();                    
-                    html=mapper.writerWithDefaultPrettyPrinter().writeValueAsString(map);
-                }else {
-                    html=getTemplate("downloadPdf.tpl");
-                    map.put("pdf", output);
-                    s=new StrSubstitutor(map);
-                    html=s.replace(html);
+                VolumeInfo vi = VolumeInfoService.getVolumeInfo(idf.getVolumeId()); 
+                access=vi.getAccess();
+                if(access.equals(AccessType.OPEN)) {
+                    Iterator<String> idIterator = vi.getImageListIterator(bPage, ePage);
+                    output = idf.getVolumeId()+":"+bPage+"-"+ePage+".pdf";
+                    
+                    // Build pdf
+                    PdfBuilder.buildPdf(idIterator,new IdentifierInfo(idf.getVolumeId()),output);                
+                    
+                    // Create template and serve html link
+                    map.put("links", "/pdfdownload/file/"+output);
+                    if(json) {
+                        ObjectMapper mapper=new ObjectMapper();                    
+                        html=mapper.writerWithDefaultPrettyPrinter().writeValueAsString(map);
+                    }else {
+                        html=getTemplate("downloadPdf.tpl");
+                        map.put("pdf", output);
+                        s=new StrSubstitutor(map);
+                        html=s.replace(html);
+                    }
                 }
                 break;
-        } 
+        }
+        if(!access.equals(AccessType.OPEN)) {            
+            ResponseEntity<String> response = new ResponseEntity<String>("Unauthorized Access", headers, HttpStatus.UNAUTHORIZED);
+            return response;
+        }
+        if(json) {
+            headers.setContentType(MediaType.parseMediaType("application/json"));
+        }else {
+            headers.setContentType(MediaType.parseMediaType("text/html"));
+        }
         ResponseEntity<String> response = new ResponseEntity<String>(html, headers, HttpStatus.OK);
         return response;
           

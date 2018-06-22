@@ -53,7 +53,7 @@ public class BdrcS3Resolver implements S3Resolver {
     
     public String getIdentifier(String identifier,IdentifierInfo info) throws NoSuchAlgorithmException {
         String id="Works/";
-        String[] parts=identifier.split("::");           
+        String[] parts=identifier.split("::");
         //log.info("S3 Resolver IdentifierInfo >>>>>>>> "+info+ " Format >> "+format);            
         String work=info.getWork().substring(info.getWork().lastIndexOf('/')+1);
         String imgGroup=parts[0].substring(parts[0].lastIndexOf('_')+1);

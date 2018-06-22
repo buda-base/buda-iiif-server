@@ -16,6 +16,7 @@ import com.itextpdf.text.Image;
 import com.itextpdf.text.Rectangle;
 import com.itextpdf.text.pdf.PdfWriter;
 
+import de.digitalcollections.core.model.api.resource.exceptions.ResourceIOException;
 import de.digitalcollections.iiif.myhymir.backend.impl.repository.S3ResourceRepositoryImpl;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 
@@ -23,7 +24,7 @@ public class PdfBuilder {
     
     public static void buildPdf(Iterator<String> idList,
                                 IdentifierInfo inf,
-                                String output) throws NoSuchAlgorithmException, FileNotFoundException, DocumentException {
+                                String output) throws NoSuchAlgorithmException, FileNotFoundException, DocumentException, ResourceIOException {
         ExecutorService service=Executors.newFixedThreadPool(50);
         AmazonS3 s3=S3ResourceRepositoryImpl.getClientInstance();        
         TreeMap<Integer,PdfImageProducer> p_map=new TreeMap<>();
@@ -31,7 +32,7 @@ public class PdfBuilder {
         int i = 1;
         while(idList.hasNext()) {
             final String id = inf.getVolumeId()+"::"+idList.next();  
-            PdfImageProducer tmp=new PdfImageProducer(s3, id, inf);
+            PdfImageProducer tmp=new PdfImageProducer(s3, id);
             p_map.put(i,tmp);
             Future<?> fut=service.submit(tmp);
             t_map.put(i,fut);
@@ -57,5 +58,4 @@ public class PdfBuilder {
         document.close();
         writer.close();
     }
-
 }

@@ -11,6 +11,7 @@ import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.itextpdf.text.BadElementException;
 import com.itextpdf.text.Image;
 
+import de.digitalcollections.core.model.api.resource.exceptions.ResourceIOException;
 import io.bdrc.iiif.resolver.BdrcS3Resolver;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 
@@ -22,10 +23,10 @@ public class PdfImageProducer implements Runnable{
     String identifier;
     Image img;
     
-    public PdfImageProducer(AmazonS3 s3, String identifier,IdentifierInfo inf) throws NoSuchAlgorithmException {
+    public PdfImageProducer(AmazonS3 s3, String identifier) throws NoSuchAlgorithmException, ResourceIOException {
         this.s3=s3;        
         BdrcS3Resolver resolver=new BdrcS3Resolver();
-        this.identifier=resolver.getIdentifier(identifier, inf);        
+        this.identifier=resolver.getS3Identifier(identifier); 
     }
 
     public Image getImage() throws BadElementException, MalformedURLException, IOException {
