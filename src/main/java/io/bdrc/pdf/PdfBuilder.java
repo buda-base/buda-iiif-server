@@ -22,6 +22,8 @@ import io.bdrc.iiif.resolver.IdentifierInfo;
 
 public class PdfBuilder {
     
+    public static PdfServiceRegistry registry = PdfServiceRegistry.getInstance();
+    
     public static void buildPdf(Iterator<String> idList,
                                 IdentifierInfo inf,
                                 String output) throws NoSuchAlgorithmException, FileNotFoundException, DocumentException, ResourceIOException {
@@ -38,6 +40,7 @@ public class PdfBuilder {
             t_map.put(i,fut);
             i += 1;
         }
+        registry.addPdfService(output, false);
         Document document = new Document();
         FileOutputStream fos = new FileOutputStream("pdf/"+output);        
         PdfWriter writer = PdfWriter.getInstance(document, fos);
@@ -57,5 +60,6 @@ public class PdfBuilder {
         }
         document.close();
         writer.close();
+        registry.setCompleted(output);
     }
 }
