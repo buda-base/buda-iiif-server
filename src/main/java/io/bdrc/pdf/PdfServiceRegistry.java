@@ -1,6 +1,7 @@
 package io.bdrc.pdf;
 
 import java.util.HashMap;
+import java.util.Set;
 
 public class PdfServiceRegistry {
     
@@ -32,5 +33,9 @@ public class PdfServiceRegistry {
     
     public void removePdfService(String id) {
         REGISTRY.remove(id);
+    }
+    
+    public Set<String> getCurrentRefs(){
+        return REGISTRY.keySet();
     }
 }

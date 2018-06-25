@@ -38,6 +38,7 @@ public class IdentifierInfo {
         
         } catch (Exception ex) {
             System.out.println("Error: " + ex.getMessage());
+            ex.printStackTrace();
         }
     }
 
@@ -74,14 +75,5 @@ public class IdentifierInfo {
     public String toString() {
         return "IdentifierInfo [work=" + work + ", asset=" + asset + ", access=" + access + ", volumeId=" + volumeId
                 + "]";
-    }
-
-    public static void main(String[] args) throws Exception {
-        System.out.println(new IdentifierInfo("bdr:V29329_I1KG15042"));
-        /*String url="http://localhost:8080/query/IdentifierInfo?R_RES=bdr:V29329_I1KG15042&jsonOut";
-        ObjectMapper mapper = new ObjectMapper();
-        Object obj = mapper.readValue(new URL(url),Object.class);
-        JsonNode node=mapper.readTree(obj.toString());
-        System.out.println(node.toString());*/
     }
 }

@@ -8,6 +8,8 @@ import org.springframework.boot.web.support.SpringBootServletInitializer;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 
+import io.bdrc.pdf.PdfCacheCleaner;
+
 
 @SpringBootApplication
 @Configuration
@@ -26,6 +28,9 @@ public class Application extends SpringBootServletInitializer{
 
     public static void main(String[] args) throws Exception {
         SpringApplication.run(Application.class, args);
+        PdfCacheCleaner cleaner=new PdfCacheCleaner();
+        cleaner.setDaemon(true);
+        cleaner.start();
     }
     
     @Override

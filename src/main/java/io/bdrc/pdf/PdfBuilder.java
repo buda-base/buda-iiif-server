@@ -60,6 +60,6 @@ public class PdfBuilder {
         }
         document.close();
         writer.close();
-        registry.setCompleted(output);
+        registry.setCompleted(output); 
     }
 }

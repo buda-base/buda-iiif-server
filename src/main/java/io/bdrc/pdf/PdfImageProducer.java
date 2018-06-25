@@ -13,7 +13,6 @@ import com.itextpdf.text.Image;
 
 import de.digitalcollections.core.model.api.resource.exceptions.ResourceIOException;
 import io.bdrc.iiif.resolver.BdrcS3Resolver;
-import io.bdrc.iiif.resolver.IdentifierInfo;
 
 public class PdfImageProducer implements Runnable{
     

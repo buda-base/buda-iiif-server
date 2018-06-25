@@ -38,6 +38,8 @@ import io.bdrc.pdf.presentation.models.VolumeInfo;
 @Controller
 @RequestMapping("/pdfdownload/")
 public class PdfController {
+    
+    public static PdfServiceRegistry registry = PdfServiceRegistry.getInstance();
 
     @RequestMapping(value = "{id}", method = {RequestMethod.GET,RequestMethod.HEAD})
     public ResponseEntity<String> getPdfLink(@PathVariable String id,HttpServletRequest request) throws Exception {
@@ -79,10 +81,10 @@ public class PdfController {
                 if(access.equals(AccessType.OPEN)) {
                     Iterator<String> idIterator = vi.getImageListIterator(bPage, ePage);
                     output = idf.getVolumeId()+":"+bPage+"-"+ePage+".pdf";
-                    
-                    // Build pdf
-                    PdfBuilder.buildPdf(idIterator,new IdentifierInfo(idf.getVolumeId()),output);                
-                    
+                    if(!new File("pdf/"+output).exists()) {
+                        // Build pdf since the pdf file doesn't exist yet
+                        PdfBuilder.buildPdf(idIterator,new IdentifierInfo(idf.getVolumeId()),output);                        
+                    }
                     // Create template and serve html link
                     map.put("links", "/pdfdownload/file/"+output);
                     if(json) {
@@ -119,8 +121,10 @@ public class PdfController {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.parseMediaType("application/pdf"));
         headers.setContentDispositionFormData("attachment", pdfFile.getName());
+        // Remove pdf reference in registry after download
+        registry.removePdfService(pdf+".pdf");
         ResponseEntity<InputStreamResource> response = new ResponseEntity<InputStreamResource>(
-                new InputStreamResource(new FileInputStream(pdfFile)), headers, HttpStatus.OK);
+                new InputStreamResource(new FileInputStream(pdfFile)), headers, HttpStatus.OK);        
         return response;
     }
 
