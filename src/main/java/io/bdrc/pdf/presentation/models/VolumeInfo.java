@@ -1,5 +1,6 @@
 package io.bdrc.pdf.presentation.models;
 
+import java.io.Serializable;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Iterator;
@@ -12,7 +13,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.bdrc.pdf.presentation.VolumeInfoService;
 
-public class VolumeInfo {
+@SuppressWarnings("serial")
+public class VolumeInfo implements Serializable{
+    
     @JsonProperty("access")
     public AccessType access;
     @JsonProperty("license")

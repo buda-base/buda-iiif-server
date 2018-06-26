@@ -1,8 +1,6 @@
 package io.bdrc.pdf;
 
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -13,7 +11,7 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.lang3.text.StrSubstitutor;
-import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -25,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import de.digitalcollections.iiif.myhymir.ServerCache;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 import io.bdrc.pdf.presentation.ItemInfoService;
 import io.bdrc.pdf.presentation.VolumeInfoService;
@@ -81,7 +80,8 @@ public class PdfController {
                 if(access.equals(AccessType.OPEN)) {
                     Iterator<String> idIterator = vi.getImageListIterator(bPage, ePage);
                     output = idf.getVolumeId()+":"+bPage+"-"+ePage+".pdf";
-                    if(!new File("pdf/"+output).exists()) {
+                    Object pdf_cached =ServerCache.getObjectFromCache(output);
+                    if(pdf_cached==null) {
                         // Build pdf since the pdf file doesn't exist yet
                         PdfBuilder.buildPdf(idIterator,new IdentifierInfo(idf.getVolumeId()),output);                        
                     }
@@ -115,16 +115,16 @@ public class PdfController {
     
     @RequestMapping(value = "file/{pdf}",
             method = {RequestMethod.GET,RequestMethod.HEAD})
-    public ResponseEntity<InputStreamResource> downloadPdf(@PathVariable String pdf) throws Exception {
+    public ResponseEntity<ByteArrayResource> downloadPdf(@PathVariable String pdf) throws Exception {
         
-        File pdfFile=new File("pdf/"+pdf+".pdf");
+        byte[] array=(byte[])ServerCache.getObjectFromCache(pdf+".pdf");
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.parseMediaType("application/pdf"));
-        headers.setContentDispositionFormData("attachment", pdfFile.getName());
+        headers.setContentDispositionFormData("attachment", pdf+".pdf");
         // Remove pdf reference in registry after download
         registry.removePdfService(pdf+".pdf");
-        ResponseEntity<InputStreamResource> response = new ResponseEntity<InputStreamResource>(
-                new InputStreamResource(new FileInputStream(pdfFile)), headers, HttpStatus.OK);        
+        ResponseEntity<ByteArrayResource> response = new ResponseEntity<ByteArrayResource>(
+                new ByteArrayResource(array), headers, HttpStatus.OK);        
         return response;
     }
 

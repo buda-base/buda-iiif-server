@@ -1,7 +1,7 @@
 package io.bdrc.pdf;
 
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.TreeMap;
 import java.util.Iterator;
@@ -16,7 +16,7 @@ import com.itextpdf.text.Image;
 import com.itextpdf.text.Rectangle;
 import com.itextpdf.text.pdf.PdfWriter;
 
-import de.digitalcollections.core.model.api.resource.exceptions.ResourceIOException;
+import de.digitalcollections.iiif.myhymir.ServerCache;
 import de.digitalcollections.iiif.myhymir.backend.impl.repository.S3ResourceRepositoryImpl;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 
@@ -26,7 +26,7 @@ public class PdfBuilder {
     
     public static void buildPdf(Iterator<String> idList,
                                 IdentifierInfo inf,
-                                String output) throws NoSuchAlgorithmException, FileNotFoundException, DocumentException, ResourceIOException {
+                                String output) throws NoSuchAlgorithmException, DocumentException, IOException {
         ExecutorService service=Executors.newFixedThreadPool(50);
         AmazonS3 s3=S3ResourceRepositoryImpl.getClientInstance();        
         TreeMap<Integer,PdfImageProducer> p_map=new TreeMap<>();
@@ -42,8 +42,8 @@ public class PdfBuilder {
         }
         registry.addPdfService(output, false);
         Document document = new Document();
-        FileOutputStream fos = new FileOutputStream("pdf/"+output);        
-        PdfWriter writer = PdfWriter.getInstance(document, fos);
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        PdfWriter writer = PdfWriter.getInstance(document, stream);
         writer.open();
         document.open();
         for(int k=1;k<=t_map.keySet().size();k++) {
@@ -59,6 +59,7 @@ public class PdfBuilder {
             }
         }
         document.close();
+        ServerCache.addToCache(output, stream.toByteArray());
         writer.close();
         registry.setCompleted(output); 
     }
