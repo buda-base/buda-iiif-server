@@ -33,7 +33,8 @@ public class VolumeInfoService {
     
     static {
         try {
-            cache = JCS.getInstance("default");
+            cache = JCS.getInstance("info");
+            System.out.println("CACHE >>> "+cache);
         } catch (CacheException e) {
             logger.error("cache initialization error, this shouldn't happen!", e);
         }
@@ -72,15 +73,16 @@ public class VolumeInfoService {
     }
     
     public static VolumeInfo getVolumeInfo(final String volumeId) throws BDRCAPIException {
-        VolumeInfo resVolumeInfo = cache.get(volumeId);
-        if (resVolumeInfo != null) {
+        VolumeInfo resVolumeInfo = (VolumeInfo)cache.get(volumeId);
+        
+        if (resVolumeInfo != null) {            
             logger.debug("found volumeInfo in cache for "+volumeId);
             return resVolumeInfo;
         }
         resVolumeInfo = fetchLdsVolumeInfo(volumeId);
         if (resVolumeInfo == null)
             return null;
-        cache.put(volumeId, resVolumeInfo);
+        cache.put(volumeId, resVolumeInfo);        
         return resVolumeInfo;
     }
     

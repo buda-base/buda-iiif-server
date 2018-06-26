@@ -3,16 +3,19 @@
 jcs.default=IIIF
 jcs.default.cacheattributes=org.apache.commons.jcs.engine.CompositeCacheAttributes
 jcs.default.cacheattributes.MaxObjects=0
-#jcs.default.cacheattributes.DiskUsagePatternName=SWAP
 jcs.default.cacheattributes.MemoryCacheName=org.apache.commons.jcs.engine.memory.lru.LRUMemoryCache
 
-##############################################################
-##### CACHE REGIONS
-jcs.region.myRegion1=IIIF
-jcs.region.myRegion1.cacheattributes=org.apache.commons.jcs.engine.CompositeCacheAttributes
-jcs.region.myRegion1.cacheattributes.MaxObjects=0
-jcs.region.myRegion1.cacheattributes.DiskUsagePatternName=SWAP
-jcs.region.myRegion1.cacheattributes.MemoryCacheName=org.apache.commons.jcs.engine.memory.lru.LRUMemoryCache
+# PRE-DEFINED CACHE REGIONS
+jcs.region.info=VI
+jcs.region.info.cacheattributes=org.apache.commons.jcs.engine.CompositeCacheAttributes
+jcs.region.info.cacheattributes.MaxObjects=1000
+jcs.region.info.cacheattributes.MemoryCacheName=org.apache.commons.jcs.engine.memory.lru.LRUMemoryCache
+jcs.region.info.cacheattributes.UseMemoryShrinker=false
+jcs.region.info.cacheattributes.MaxMemoryIdleTime=3600
+jcs.region.info.cacheattributes.ShrinkerInterval=60
+jcs.region.info.cacheattributes.MaxSpoolPerRun=500
+jcs.region.info.elementattributes=org.apache.commons.jcs.engine.ElementAttributes
+jcs.region.info.elementattributes.IsEternal=false
 
 ##############################################################
 ##### AUXILIARY CACHES
@@ -23,3 +26,5 @@ jcs.auxiliary.IIIF.attributes.DiskPath=pdf_cache
 jcs.auxiliary.IIIF.attributes.MaxPurgatorySize=10000
 jcs.auxiliary.IIIF.attributes.MaxKeySize=1000000
 jcs.auxiliary.IIIF.attributes.DiskLimitType=SIZE
+
+

@@ -30,7 +30,7 @@ public class ItemInfoService {
     
     static {
         try {
-            cache = JCS.getInstance("default");
+            cache = JCS.getInstance("info");
         } catch (CacheException e) {
             logger.error("cache initialization error, this shouldn't happen!", e);
         }
@@ -66,7 +66,7 @@ public class ItemInfoService {
     }
     
     public static ItemInfo getItemInfo(final String itemId) throws BDRCAPIException {
-        ItemInfo resItemInfo = cache.get(itemId);
+        ItemInfo resItemInfo = (ItemInfo)cache.get(itemId);
         if (resItemInfo != null) {
             logger.debug("found itemInfo in cache for "+itemId);
             return resItemInfo;
