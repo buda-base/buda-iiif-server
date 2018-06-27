@@ -46,7 +46,7 @@ jcs.region.infotest.elementattributes.IsEternal=false
 jcs.auxiliary.IIIF=org.apache.commons.jcs.auxiliary.disk.indexed.IndexedDiskCacheFactory
 jcs.auxiliary.IIIF.attributes=org.apache.commons.jcs.auxiliary.disk.indexed.IndexedDiskCacheAttributes
 jcs.auxiliary.IIIF.attributes.DiskPath=pdf_cache
-jcs.auxiliary.IIIF.attributes.MaxPurgatorySize=1000000
+jcs.auxiliary.IIIF.attributes.MaxPurgatorySize=500
             ##  10 Gig size limit
 jcs.auxiliary.IIIF.attributes.MaxKeySize=10000000
 jcs.auxiliary.IIIF.attributes.DiskLimitType=SIZE
@@ -56,9 +56,9 @@ jcs.auxiliary.IIIF.attributes.DiskLimitType=SIZE
 jcs.auxiliary.IIIFtest=org.apache.commons.jcs.auxiliary.disk.indexed.IndexedDiskCacheFactory
 jcs.auxiliary.IIIFtest.attributes=org.apache.commons.jcs.auxiliary.disk.indexed.IndexedDiskCacheAttributes
 jcs.auxiliary.IIIFtest.attributes.DiskPath=pdf_cache_test
-jcs.auxiliary.IIIFtest.attributes.MaxPurgatorySize=1000000
+jcs.auxiliary.IIIFtest.attributes.MaxPurgatorySize=500
             ##  10 Gig size limit
-jcs.auxiliary.IIIFtest.attributes.MaxKeySize=10000000
+jcs.auxiliary.IIIFtest.attributes.MaxKeySize=1000000
 jcs.auxiliary.IIIFtest.attributes.DiskLimitType=SIZE
 
 ##### AUXILIARY IIIFtestspace disk CACHES for testspace region
@@ -66,7 +66,7 @@ jcs.auxiliary.IIIFtest.attributes.DiskLimitType=SIZE
 jcs.auxiliary.IIIFtestspace=org.apache.commons.jcs.auxiliary.disk.indexed.IndexedDiskCacheFactory
 jcs.auxiliary.IIIFtestspace.attributes=org.apache.commons.jcs.auxiliary.disk.indexed.IndexedDiskCacheAttributes
 jcs.auxiliary.IIIFtestspace.attributes.DiskPath=pdf_cache_test_space
-jcs.auxiliary.IIIFtestspace.attributes.MaxPurgatorySize=5000
-            ##  10 Meg size limit
-jcs.auxiliary.IIIFtestspace.attributes.MaxKeySize=10000
+jcs.auxiliary.IIIFtestspace.attributes.MaxPurgatorySize=0
+            ##  10 Meg size limit 
+jcs.auxiliary.IIIFtestspace.attributes.MaxKeySize=1000
 jcs.auxiliary.IIIFtestspace.attributes.DiskLimitType=SIZE
