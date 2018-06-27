@@ -5,7 +5,19 @@ jcs.default.cacheattributes=org.apache.commons.jcs.engine.CompositeCacheAttribut
 jcs.default.cacheattributes.MaxObjects=0
 jcs.default.cacheattributes.MemoryCacheName=org.apache.commons.jcs.engine.memory.lru.LRUMemoryCache
 
-# PRE-DEFINED CACHE REGIONS
+##### Test Region Configuration
+jcs.region.test=IIIFtest
+jcs.region.test.cacheattributes=org.apache.commons.jcs.engine.CompositeCacheAttributes
+jcs.region.test.cacheattributes.MaxObjects=0
+jcs.region.test.cacheattributes.MemoryCacheName=org.apache.commons.jcs.engine.memory.lru.LRUMemoryCache
+
+##### Test space Region Configuration
+jcs.region.testspace=IIIFtestspace
+jcs.region.testspace.cacheattributes=org.apache.commons.jcs.engine.CompositeCacheAttributes
+jcs.region.testspace.cacheattributes.MaxObjects=0
+jcs.region.testspace.cacheattributes.MemoryCacheName=org.apache.commons.jcs.engine.memory.lru.LRUMemoryCache
+
+##### MEMORY ONLY - CACHE REGION for info services
 jcs.region.info=VI
 jcs.region.info.cacheattributes=org.apache.commons.jcs.engine.CompositeCacheAttributes
 jcs.region.info.cacheattributes.MaxObjects=1000
@@ -17,14 +29,44 @@ jcs.region.info.cacheattributes.MaxSpoolPerRun=500
 jcs.region.info.elementattributes=org.apache.commons.jcs.engine.ElementAttributes
 jcs.region.info.elementattributes.IsEternal=false
 
-##############################################################
-##### AUXILIARY CACHES
+##### MEMORY ONLY - CACHE TEST REGION for info services
+jcs.region.infotest=VI_TEST
+jcs.region.infotest.cacheattributes=org.apache.commons.jcs.engine.CompositeCacheAttributes
+jcs.region.infotest.cacheattributes.MaxObjects=1000
+jcs.region.infotest.cacheattributes.MemoryCacheName=org.apache.commons.jcs.engine.memory.lru.LRUMemoryCache
+jcs.region.infotest.cacheattributes.UseMemoryShrinker=false
+jcs.region.infotest.cacheattributes.MaxMemoryIdleTime=3600
+jcs.region.infotest.cacheattributes.ShrinkerInterval=60
+jcs.region.infotest.cacheattributes.MaxSpoolPerRun=500
+jcs.region.infotest.elementattributes=org.apache.commons.jcs.engine.ElementAttributes
+jcs.region.infotest.elementattributes.IsEternal=false
+
+##### AUXILIARY IIIF disk CACHES for default region
 # Indexed Disk Cache
 jcs.auxiliary.IIIF=org.apache.commons.jcs.auxiliary.disk.indexed.IndexedDiskCacheFactory
 jcs.auxiliary.IIIF.attributes=org.apache.commons.jcs.auxiliary.disk.indexed.IndexedDiskCacheAttributes
 jcs.auxiliary.IIIF.attributes.DiskPath=pdf_cache
-jcs.auxiliary.IIIF.attributes.MaxPurgatorySize=10000
-jcs.auxiliary.IIIF.attributes.MaxKeySize=1000000
+jcs.auxiliary.IIIF.attributes.MaxPurgatorySize=1000000
+            ##  10 Gig size limit
+jcs.auxiliary.IIIF.attributes.MaxKeySize=10000000
 jcs.auxiliary.IIIF.attributes.DiskLimitType=SIZE
 
+##### AUXILIARY IIIFtest disk CACHES for test region
+# Indexed Disk Cache
+jcs.auxiliary.IIIFtest=org.apache.commons.jcs.auxiliary.disk.indexed.IndexedDiskCacheFactory
+jcs.auxiliary.IIIFtest.attributes=org.apache.commons.jcs.auxiliary.disk.indexed.IndexedDiskCacheAttributes
+jcs.auxiliary.IIIFtest.attributes.DiskPath=pdf_cache_test
+jcs.auxiliary.IIIFtest.attributes.MaxPurgatorySize=1000000
+            ##  10 Gig size limit
+jcs.auxiliary.IIIFtest.attributes.MaxKeySize=10000000
+jcs.auxiliary.IIIFtest.attributes.DiskLimitType=SIZE
 
+##### AUXILIARY IIIFtestspace disk CACHES for testspace region
+# Indexed Disk Cache
+jcs.auxiliary.IIIFtestspace=org.apache.commons.jcs.auxiliary.disk.indexed.IndexedDiskCacheFactory
+jcs.auxiliary.IIIFtestspace.attributes=org.apache.commons.jcs.auxiliary.disk.indexed.IndexedDiskCacheAttributes
+jcs.auxiliary.IIIFtestspace.attributes.DiskPath=pdf_cache_test_space
+jcs.auxiliary.IIIFtestspace.attributes.MaxPurgatorySize=5000
+            ##  10 Meg size limit
+jcs.auxiliary.IIIFtestspace.attributes.MaxKeySize=10000
+jcs.auxiliary.IIIFtestspace.attributes.DiskLimitType=SIZE
