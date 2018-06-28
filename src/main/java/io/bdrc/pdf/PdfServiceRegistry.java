@@ -28,6 +28,9 @@ public class PdfServiceRegistry {
     }
     
     public boolean isDone(String id) {
+        if(REGISTRY.get(id)==null) {
+            return false;
+        }
         return REGISTRY.get(id);
     }
     

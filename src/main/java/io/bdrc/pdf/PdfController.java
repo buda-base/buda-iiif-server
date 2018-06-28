@@ -127,6 +127,23 @@ public class PdfController {
                 new ByteArrayResource(array), headers, HttpStatus.OK);        
         return response;
     }
+    
+    @RequestMapping(value = "job/{id}",
+            method = {RequestMethod.GET,RequestMethod.HEAD})
+    public ResponseEntity<String> jobState(@PathVariable String id) throws Exception {
+        Identifier idf=new Identifier(id,Identifier.MANIFEST_ID);        
+        String url="pdfdownload/file/"+idf.getVolumeId()+":"+idf.getBPageNum()+"-"+idf.getEPageNum()+".pdf";
+        boolean done=registry.isDone(idf.getVolumeId()+":"+idf.getBPageNum()+"-"+idf.getEPageNum()+".pdf");
+        HashMap<String,Object> json=new HashMap<>();
+        json.put("done", done);
+        json.put("link",url);
+        ObjectMapper mapper=new ObjectMapper();
+        String html=mapper.writerWithDefaultPrettyPrinter().writeValueAsString(json);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType("application/json"));
+        ResponseEntity<String> response = new ResponseEntity<String>(html, headers, HttpStatus.OK);        
+        return response;
+    }
 
     public static String getTemplate(String template) {
         InputStream stream = PdfController.class.getClassLoader().getResourceAsStream("templates/"+template);
