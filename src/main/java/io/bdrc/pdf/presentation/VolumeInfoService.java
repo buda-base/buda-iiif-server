@@ -34,7 +34,6 @@ public class VolumeInfoService {
     static {
         try {
             cache = JCS.getInstance("info");
-            System.out.println("CACHE >>> "+cache);
         } catch (CacheException e) {
             logger.error("cache initialization error, this shouldn't happen!", e);
         }

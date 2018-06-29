@@ -9,20 +9,20 @@ import org.slf4j.LoggerFactory;
 
 public class ServerCache {
     
-    protected static CacheAccess<String,Object> CACHE = JCS.getInstance("IIIF");
     public final static Logger log=LoggerFactory.getLogger(ServerCache.class.getName());
     
-    public static void addToCache(String name,Object res) {        
+       
+    public static void addToCache(String cacheName,String name,Object res) {        
         try{
-            CACHE.put(name, res );            
+            JCS.getInstance(cacheName).put(name, res );            
             res=null;
         }
         catch (CacheException e ){
-            log.error("Problem putting pdf -->"+name+" in the cache >> Exception: "+e.getMessage());
+            log.error("Problem putting object -->"+name+" in the cache >> "+cacheName+" Exception: "+e.getMessage());
         }
     }
     
-    public static Object getObjectFromCache(String name) {        
-        return CACHE.get(name);
+    public static Object getObjectFromCache(String cacheName,String name) {        
+        return JCS.getInstance(cacheName).get(name);
     }
 }

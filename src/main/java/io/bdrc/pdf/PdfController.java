@@ -39,6 +39,8 @@ import io.bdrc.pdf.presentation.models.VolumeInfo;
 public class PdfController {
     
     public static PdfServiceRegistry registry = PdfServiceRegistry.getInstance();
+    public static final String IIIF="IIIF";
+    
 
     @RequestMapping(value = "{id}", method = {RequestMethod.GET,RequestMethod.HEAD})
     public ResponseEntity<String> getPdfLink(@PathVariable String id,HttpServletRequest request) throws Exception {
@@ -80,7 +82,7 @@ public class PdfController {
                 if(access.equals(AccessType.OPEN)) {
                     Iterator<String> idIterator = vi.getImageListIterator(bPage, ePage);
                     output = idf.getVolumeId()+":"+bPage+"-"+ePage+".pdf";
-                    Object pdf_cached =ServerCache.getObjectFromCache(output);
+                    Object pdf_cached =ServerCache.getObjectFromCache(IIIF,output);
                     if(pdf_cached==null) {
                         // Build pdf since the pdf file doesn't exist yet
                         PdfBuilder.buildPdf(idIterator,new IdentifierInfo(idf.getVolumeId()),output);                        
@@ -117,7 +119,7 @@ public class PdfController {
             method = {RequestMethod.GET,RequestMethod.HEAD})
     public ResponseEntity<ByteArrayResource> downloadPdf(@PathVariable String pdf) throws Exception {
         
-        byte[] array=(byte[])ServerCache.getObjectFromCache(pdf+".pdf");
+        byte[] array=(byte[])ServerCache.getObjectFromCache(IIIF,pdf+".pdf");
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.parseMediaType("application/pdf"));
         headers.setContentDispositionFormData("attachment", pdf+".pdf");

@@ -1,6 +1,6 @@
 ##############################################################
-##### Default Region Configuration
-jcs.default=IIIF
+##### Default Region Configuration (pdf)
+jcs.default=IIIF,IIIF_IMG
 jcs.default.cacheattributes=org.apache.commons.jcs.engine.CompositeCacheAttributes
 jcs.default.cacheattributes.MaxObjects=0
 jcs.default.cacheattributes.MemoryCacheName=org.apache.commons.jcs.engine.memory.lru.LRUMemoryCache
@@ -29,6 +29,26 @@ jcs.region.info.cacheattributes.MaxSpoolPerRun=500
 jcs.region.info.elementattributes=org.apache.commons.jcs.engine.ElementAttributes
 jcs.region.info.elementattributes.IsEternal=false
 
+# Indexed Disk Cache for pdf
+jcs.auxiliary.IIIF=org.apache.commons.jcs.auxiliary.disk.indexed.IndexedDiskCacheFactory
+jcs.auxiliary.IIIF.attributes=org.apache.commons.jcs.auxiliary.disk.indexed.IndexedDiskCacheAttributes
+jcs.auxiliary.IIIF.attributes.DiskPath=pdf_cache
+jcs.auxiliary.IIIF.attributes.MaxPurgatorySize=500
+            ##  10 Gig size limit
+jcs.auxiliary.IIIF.attributes.MaxKeySize=10000000
+jcs.auxiliary.IIIF.attributes.DiskLimitType=SIZE
+
+# Indexed Disk Cache for images
+jcs.auxiliary.IIIF_IMG=org.apache.commons.jcs.auxiliary.disk.indexed.IndexedDiskCacheFactory
+jcs.auxiliary.IIIF_IMG.attributes=org.apache.commons.jcs.auxiliary.disk.indexed.IndexedDiskCacheAttributes
+jcs.auxiliary.IIIF_IMG.attributes.DiskPath=img_cache
+jcs.auxiliary.IIIF_IMG.attributes.MaxPurgatorySize=500
+            ##  10 Gig size limit
+jcs.auxiliary.IIIF_IMG.attributes.MaxKeySize=10000000
+jcs.auxiliary.IIIF_IMG.attributes.DiskLimitType=SIZE
+
+
+################# TEST STUFF #############################
 ##### MEMORY ONLY - CACHE TEST REGION for info services
 jcs.region.infotest=VI_TEST
 jcs.region.infotest.cacheattributes=org.apache.commons.jcs.engine.CompositeCacheAttributes
@@ -40,16 +60,6 @@ jcs.region.infotest.cacheattributes.ShrinkerInterval=60
 jcs.region.infotest.cacheattributes.MaxSpoolPerRun=500
 jcs.region.infotest.elementattributes=org.apache.commons.jcs.engine.ElementAttributes
 jcs.region.infotest.elementattributes.IsEternal=false
-
-##### AUXILIARY IIIF disk CACHES for default region
-# Indexed Disk Cache
-jcs.auxiliary.IIIF=org.apache.commons.jcs.auxiliary.disk.indexed.IndexedDiskCacheFactory
-jcs.auxiliary.IIIF.attributes=org.apache.commons.jcs.auxiliary.disk.indexed.IndexedDiskCacheAttributes
-jcs.auxiliary.IIIF.attributes.DiskPath=pdf_cache
-jcs.auxiliary.IIIF.attributes.MaxPurgatorySize=500
-            ##  10 Gig size limit
-jcs.auxiliary.IIIF.attributes.MaxKeySize=10000000
-jcs.auxiliary.IIIF.attributes.DiskLimitType=SIZE
 
 ##### AUXILIARY IIIFtest disk CACHES for test region
 # Indexed Disk Cache
