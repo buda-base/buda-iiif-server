@@ -1,4 +1,4 @@
-package io.bdrc.pdf;
+package io.bdrc.archives;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -35,15 +35,14 @@ import io.bdrc.pdf.presentation.models.ItemInfo.VolumeInfoSmall;
 import io.bdrc.pdf.presentation.models.VolumeInfo;
 
 @Controller
-@RequestMapping("/pdfdownload/")
-public class PdfController {
+public class ArchivesController {
     
-    public static PdfServiceRegistry registry = PdfServiceRegistry.getInstance();
+    public static ArchivesServiceRegistry registry = ArchivesServiceRegistry.getInstance();
     public static final String IIIF="IIIF";
-    
+    public static final String IIIF_ZIP="IIIF_ZIP";
 
-    @RequestMapping(value = "{id}", method = {RequestMethod.GET,RequestMethod.HEAD})
-    public ResponseEntity<String> getPdfLink(@PathVariable String id,HttpServletRequest request) throws Exception {
+    @RequestMapping(value = "/download/{type}/{id}", method = {RequestMethod.GET,RequestMethod.HEAD})
+    public ResponseEntity<String> getPdfLink(@PathVariable String id,@PathVariable String type,HttpServletRequest request) throws Exception {
         String format=request.getHeader("Accept");
         boolean json=format.contains("application/json");
         String output =null;
@@ -61,11 +60,11 @@ public class PdfController {
                 access=item.getAccess(); 
                 if(access.equals(AccessType.OPEN)) {
                     if(json) {
-                        map=getJsonVolumePdfLinks(item);
+                        map=getJsonVolumeLinks(item,type);
                         ObjectMapper mapper=new ObjectMapper();
                         html=mapper.writerWithDefaultPrettyPrinter().writeValueAsString(map);
                     }else {
-                        map.put("links", getVolumeDownLoadLinks(item,idf));
+                        map.put("links", getVolumeDownLoadLinks(item,idf,type));
                         html=getTemplate("volumes.tpl"); 
                         s=new StrSubstitutor(map);
                         html=s.replace(html);
@@ -81,20 +80,29 @@ public class PdfController {
                 access=vi.getAccess();
                 if(access.equals(AccessType.OPEN)) {
                     Iterator<String> idIterator = vi.getImageListIterator(bPage, ePage);
-                    output = idf.getVolumeId()+":"+bPage+"-"+ePage+".pdf";
-                    Object pdf_cached =ServerCache.getObjectFromCache(IIIF,output);
-                    if(pdf_cached==null) {
-                        // Build pdf since the pdf file doesn't exist yet
-                        PdfBuilder.buildPdf(idIterator,new IdentifierInfo(idf.getVolumeId()),output);                        
+                    output = idf.getVolumeId()+":"+bPage+"-"+ePage+"."+type;
+                    if(type.equals(ArchiveBuilder.PDF_TYPE)) {
+                        Object pdf_cached =ServerCache.getObjectFromCache(IIIF,output);
+                        if(pdf_cached==null) {
+                            // Build pdf since the pdf file doesn't exist yet
+                            ArchiveBuilder.buildPdf(idIterator,new IdentifierInfo(idf.getVolumeId()),output);                        
+                        }
+                    }
+                    if(type.equals(ArchiveBuilder.ZIP_TYPE)) {
+                        Object zip_cached =ServerCache.getObjectFromCache(IIIF,output);
+                        if(zip_cached==null) {
+                            // Build pdf since the pdf file doesn't exist yet
+                            ArchiveBuilder.buildZip(idIterator,new IdentifierInfo(idf.getVolumeId()),output);                        
+                        }
                     }
                     // Create template and serve html link
-                    map.put("links", "/pdfdownload/file/"+output);
+                    map.put("links", "/download/file/"+type+"/"+output);
                     if(json) {
                         ObjectMapper mapper=new ObjectMapper();                    
                         html=mapper.writerWithDefaultPrettyPrinter().writeValueAsString(map);
                     }else {
                         html=getTemplate("downloadPdf.tpl");
-                        map.put("pdf", output);
+                        map.put("file", output);
                         s=new StrSubstitutor(map);
                         html=s.replace(html);
                     }
@@ -115,27 +123,38 @@ public class PdfController {
           
     }
     
-    @RequestMapping(value = "file/{pdf}",
+    @RequestMapping(value = "/download/file/{type}/{name}",
             method = {RequestMethod.GET,RequestMethod.HEAD})
-    public ResponseEntity<ByteArrayResource> downloadPdf(@PathVariable String pdf) throws Exception {
-        
-        byte[] array=(byte[])ServerCache.getObjectFromCache(IIIF,pdf+".pdf");
+    public ResponseEntity<ByteArrayResource> downloadPdf(@PathVariable String name,@PathVariable String type) throws Exception {
+        byte[] array=null;
+        if(type.equals(ArchiveBuilder.PDF_TYPE)) {
+            array=(byte[])ServerCache.getObjectFromCache(IIIF,name+".pdf");
+        }
+        if(type.equals(ArchiveBuilder.ZIP_TYPE)) {
+            array=(byte[])ServerCache.getObjectFromCache(IIIF_ZIP,name+".zip");
+        }
         HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.parseMediaType("application/pdf"));
-        headers.setContentDispositionFormData("attachment", pdf+".pdf");
+        headers.setContentType(MediaType.parseMediaType("application/"+type));
+        headers.setContentDispositionFormData("attachment", name+"."+type);
         // Remove pdf reference in registry after download
-        registry.removePdfService(pdf+".pdf");
+        registry.removePdfService(name+"."+type);
         ResponseEntity<ByteArrayResource> response = new ResponseEntity<ByteArrayResource>(
                 new ByteArrayResource(array), headers, HttpStatus.OK);        
         return response;
     }
     
-    @RequestMapping(value = "job/{id}",
+    @RequestMapping(value = "/download/job/{type}/{id}",
             method = {RequestMethod.GET,RequestMethod.HEAD})
-    public ResponseEntity<String> jobState(@PathVariable String id) throws Exception {
+    public ResponseEntity<String> jobState(@PathVariable String id,@PathVariable String type) throws Exception {
         Identifier idf=new Identifier(id,Identifier.MANIFEST_ID);        
-        String url="pdfdownload/file/"+idf.getVolumeId()+":"+idf.getBPageNum()+"-"+idf.getEPageNum()+".pdf";
-        boolean done=registry.isDone(idf.getVolumeId()+":"+idf.getBPageNum()+"-"+idf.getEPageNum()+".pdf");
+        String url="download/file/"+type+"/"+idf.getVolumeId()+":"+idf.getBPageNum()+"-"+idf.getEPageNum()+"."+type;
+        boolean done=false;
+        if(type.equals(ArchiveBuilder.PDF_TYPE)) {
+            done= registry.isPdfDone(idf.getVolumeId()+":"+idf.getBPageNum()+"-"+idf.getEPageNum()+".pdf");
+        }
+        if(type.equals(ArchiveBuilder.ZIP_TYPE)) {
+            done= registry.isZipDone(idf.getVolumeId()+":"+idf.getBPageNum()+"-"+idf.getEPageNum()+".zip");
+        }
         HashMap<String,Object> json=new HashMap<>();
         json.put("done", done);
         json.put("link",url);
@@ -148,7 +167,7 @@ public class PdfController {
     }
 
     public static String getTemplate(String template) {
-        InputStream stream = PdfController.class.getClassLoader().getResourceAsStream("templates/"+template);
+        InputStream stream = ArchivesController.class.getClassLoader().getResourceAsStream("templates/"+template);
         BufferedReader buffer = new BufferedReader(new InputStreamReader(stream));
         StringBuffer sb=new StringBuffer();
         try {
@@ -163,23 +182,22 @@ public class PdfController {
         return sb.toString();
     }
     
-    public String getVolumeDownLoadLinks(ItemInfo item,Identifier idf) throws BDRCAPIException {
+    public String getVolumeDownLoadLinks(ItemInfo item,Identifier idf,String type) throws BDRCAPIException {
         String links="";
         List<VolumeInfoSmall> vlist=item.getVolumes();
         for(VolumeInfoSmall vis:vlist) {
             VolumeInfo vi = VolumeInfoService.getVolumeInfo(vis.getPrefixedId());
-            links=links+"<a href=\"/pdfdownload/v:"+vis.getPrefixedId()+"::1-"+vi.totalPages+"\">Vol."+vis.getVolumeNumber()+" ("+vi.totalPages+" pages) - "+vis.getPrefixedId()+"</a><br/>";
+            links=links+"<a href=\"/download/file/"+type+"/v:"+vis.getPrefixedId()+"::1-"+vi.totalPages+"\">Vol."+vis.getVolumeNumber()+" ("+vi.totalPages+" pages) - "+vis.getPrefixedId()+"</a><br/>";
         }
         return links;
     }
     
-    public HashMap<String,String> getJsonVolumePdfLinks(ItemInfo item) throws BDRCAPIException {
+    public HashMap<String,String> getJsonVolumeLinks(ItemInfo item,String type) throws BDRCAPIException {
         HashMap<String,String> map=new HashMap<>();        
         List<VolumeInfoSmall> vlist=item.getVolumes();
         for(VolumeInfoSmall vis:vlist) {
             VolumeInfo vi = VolumeInfoService.getVolumeInfo(vis.getPrefixedId());
-            map.put(vis.getPrefixedId(), "/pdfdownload/v:"+vis.getPrefixedId()+"::1-"+vi.totalPages);
-            
+            map.put(vis.getPrefixedId(), "/download/file/"+type+"/v:"+vis.getPrefixedId()+"::1-"+vi.totalPages);
         }
         return map;
     }

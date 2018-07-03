@@ -2,10 +2,10 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Download pdf</title>
+<title>Download archive</title>
 </head>
 <body>
     <h3>Download link :</h3>    
-    <a href="${links}">${pdf}</a>
+    <a href="${links}">${file}</a>
 </body>
 </html>

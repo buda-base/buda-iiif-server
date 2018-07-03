@@ -3,7 +3,6 @@ package de.digitalcollections.iiif.myhymir;
 import static io.bdrc.pdf.presentation.AppConstants.GENERIC_APP_ERROR_CODE;
 
 import org.apache.commons.jcs.JCS;
-import org.apache.commons.jcs.access.CacheAccess;
 import org.apache.commons.jcs.access.exception.CacheException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
