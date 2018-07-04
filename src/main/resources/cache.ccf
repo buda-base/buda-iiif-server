@@ -1,9 +1,18 @@
 ##############################################################
-##### Default Region Configuration (pdf)
-jcs.default=IIIF,IIIF_IMG,IIIF_ZIP
+##### Default Region Configuration (pdf and zip : disk usage limitation and time limitation)
+jcs.default=IIIF,IIIF_ZIP
 jcs.default.cacheattributes=org.apache.commons.jcs.engine.CompositeCacheAttributes
 jcs.default.cacheattributes.MaxObjects=0
+## 10 minutes for all zip and pdf files
+jcs.default.cacheattributes.MaxLife=600
 jcs.default.cacheattributes.MemoryCacheName=org.apache.commons.jcs.engine.memory.lru.LRUMemoryCache
+
+
+##### IMage cache Region Configuration (disk usage limitation without time limitation)
+jcs.region.images=IIIF_IMG
+jcs.region.images.cacheattributes=org.apache.commons.jcs.engine.CompositeCacheAttributes
+jcs.region.images.cacheattributes.MaxObjects=0
+jcs.region.images.cacheattributes.MemoryCacheName=org.apache.commons.jcs.engine.memory.lru.LRUMemoryCache
 
 ##### Test Region Configuration
 jcs.region.test=IIIFtest
@@ -11,21 +20,31 @@ jcs.region.test.cacheattributes=org.apache.commons.jcs.engine.CompositeCacheAttr
 jcs.region.test.cacheattributes.MaxObjects=0
 jcs.region.test.cacheattributes.MemoryCacheName=org.apache.commons.jcs.engine.memory.lru.LRUMemoryCache
 
-##### Test space Region Configuration
-jcs.region.testspace=IIIFtestspace
-jcs.region.testspace.cacheattributes=org.apache.commons.jcs.engine.CompositeCacheAttributes
-jcs.region.testspace.cacheattributes.MaxObjects=0
-jcs.region.testspace.cacheattributes.MemoryCacheName=org.apache.commons.jcs.engine.memory.lru.LRUMemoryCache
+##### MEMORY ONLY - CACHE REGION for pdf jobs
+jcs.region.pdfjobs=
+jcs.region.pdfjobs.cacheattributes.UseDisk=false
+jcs.region.pdfjobs.cacheattributes.MaxObjects=500
+jcs.region.pdfjobs.cacheattributes=org.apache.commons.jcs.engine.CompositeCacheAttributes
+jcs.region.pdfjobs.cacheattributes.MaxLife=600
+jcs.region.pdfjobs.cacheattributes.MemoryCacheName=org.apache.commons.jcs.engine.memory.lru.LRUMemoryCache
+jcs.region.pdfjobs.elementattributes=org.apache.commons.jcs.engine.ElementAttributes
+jcs.region.pdfjobs.elementattributes.IsEternal=false
+
+##### MEMORY ONLY - CACHE REGION for zip jobs
+jcs.region.zipjobs=
+jcs.region.zipjobs.cacheattributes.UseDisk=false
+jcs.region.zipjobs.cacheattributes.MaxObjects=500
+jcs.region.zipjobs.cacheattributes=org.apache.commons.jcs.engine.CompositeCacheAttributes
+jcs.region.zipjobs.cacheattributes.MaxLife=600
+jcs.region.zipjobs.cacheattributes.MemoryCacheName=org.apache.commons.jcs.engine.memory.lru.LRUMemoryCache
+jcs.region.zipjobs.elementattributes=org.apache.commons.jcs.engine.ElementAttributes
+jcs.region.zipjobs.elementattributes.IsEternal=false
 
 ##### MEMORY ONLY - CACHE REGION for info services
-jcs.region.info=VI
+jcs.region.info=
 jcs.region.info.cacheattributes=org.apache.commons.jcs.engine.CompositeCacheAttributes
-jcs.region.info.cacheattributes.MaxObjects=1000
+jcs.region.info.cacheattributes.MaxObjects=2000
 jcs.region.info.cacheattributes.MemoryCacheName=org.apache.commons.jcs.engine.memory.lru.LRUMemoryCache
-jcs.region.info.cacheattributes.UseMemoryShrinker=false
-jcs.region.info.cacheattributes.MaxMemoryIdleTime=3600
-jcs.region.info.cacheattributes.ShrinkerInterval=60
-jcs.region.info.cacheattributes.MaxSpoolPerRun=500
 jcs.region.info.elementattributes=org.apache.commons.jcs.engine.ElementAttributes
 jcs.region.info.elementattributes.IsEternal=false
 
@@ -34,6 +53,8 @@ jcs.auxiliary.IIIF=org.apache.commons.jcs.auxiliary.disk.indexed.IndexedDiskCach
 jcs.auxiliary.IIIF.attributes=org.apache.commons.jcs.auxiliary.disk.indexed.IndexedDiskCacheAttributes
 jcs.auxiliary.IIIF.attributes.DiskPath=pdf_cache
 jcs.auxiliary.IIIF.attributes.MaxPurgatorySize=500
+            ##  10 minutes max
+jcs.auxiliary.IIIF.attributes.MaxLife=600
             ##  10 Gig size limit
 jcs.auxiliary.IIIF.attributes.MaxKeySize=10000000
 jcs.auxiliary.IIIF.attributes.DiskLimitType=SIZE
@@ -52,12 +73,21 @@ jcs.auxiliary.IIIF_ZIP=org.apache.commons.jcs.auxiliary.disk.indexed.IndexedDisk
 jcs.auxiliary.IIIF_ZIP.attributes=org.apache.commons.jcs.auxiliary.disk.indexed.IndexedDiskCacheAttributes
 jcs.auxiliary.IIIF_ZIP.attributes.DiskPath=zip_cache
 jcs.auxiliary.IIIF_ZIP.attributes.MaxPurgatorySize=500
+            ##  10 minutes max
+jcs.auxiliary.IIIF_ZIP.attributes.MaxLife=600
             ##  5 Gig size limit
 jcs.auxiliary.IIIF_ZIP.attributes.MaxKeySize=5000000
 jcs.auxiliary.IIIF_ZIP.attributes.DiskLimitType=SIZE
 
-
 ################# TEST STUFF #############################
+
+##### Test space Region Configuration
+jcs.region.testspace=IIIFtestspace
+jcs.region.testspace.cacheattributes=org.apache.commons.jcs.engine.CompositeCacheAttributes
+jcs.region.testspace.cacheattributes.MaxObjects=0
+jcs.region.testspace.cacheattributes.MemoryCacheName=org.apache.commons.jcs.engine.memory.lru.LRUMemoryCache
+
+
 ##### MEMORY ONLY - CACHE TEST REGION for info services
 jcs.region.infotest=VI_TEST
 jcs.region.infotest.cacheattributes=org.apache.commons.jcs.engine.CompositeCacheAttributes

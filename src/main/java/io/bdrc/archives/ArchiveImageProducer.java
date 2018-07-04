@@ -49,6 +49,7 @@ public class ArchiveImageProducer implements Callable{
     public Image getPdfImage() throws BadElementException, MalformedURLException, IOException, BDRCAPIException {        
         byte[] imgbytes=(byte[])ServerCache.getObjectFromCache(IIIF_IMG,id);        
         if(imgbytes !=null) {
+            System.out.println("Got "+id +" from cache ...");
             return Image.getInstance(imgbytes);
         }
         GetObjectRequest request = new GetObjectRequest(
@@ -56,6 +57,7 @@ public class ArchiveImageProducer implements Callable{
                 identifier);
         imgbytes=IOUtils.toByteArray(s3.getObject(request).getObjectContent());
         img=Image.getInstance(imgbytes);
+        System.out.println("Got "+id +" from S3 ...added to cache");
         ServerCache.addToCache(IIIF_IMG,id, imgbytes);
         return img;              
     }
@@ -63,12 +65,14 @@ public class ArchiveImageProducer implements Callable{
     public byte[] getImageAsBytes() throws BadElementException, MalformedURLException, IOException, BDRCAPIException {        
         byte[] imgbytes=(byte[])ServerCache.getObjectFromCache(IIIF_IMG,id);        
         if(imgbytes !=null) {
+            System.out.println("Zip Got "+id +" from cache ...");
             return imgbytes;
         }
         GetObjectRequest request = new GetObjectRequest(
                 S3_BUCKET,
                 identifier);
         imgbytes=IOUtils.toByteArray(s3.getObject(request).getObjectContent());
+        System.out.println("Zip Got "+id +" from S3 ...added to cache");
         ServerCache.addToCache(IIIF_IMG,id, imgbytes);
         return imgbytes;              
     }

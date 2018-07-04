@@ -37,7 +37,6 @@ import io.bdrc.pdf.presentation.models.VolumeInfo;
 @Controller
 public class ArchivesController {
     
-    public static ArchivesServiceRegistry registry = ArchivesServiceRegistry.getInstance();
     public static final String IIIF="IIIF";
     public static final String IIIF_ZIP="IIIF_ZIP";
 
@@ -137,8 +136,6 @@ public class ArchivesController {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.parseMediaType("application/"+type));
         headers.setContentDispositionFormData("attachment", name+"."+type);
-        // Remove pdf reference in registry after download
-        registry.removePdfService(name+"."+type);
         ResponseEntity<ByteArrayResource> response = new ResponseEntity<ByteArrayResource>(
                 new ByteArrayResource(array), headers, HttpStatus.OK);        
         return response;
@@ -151,10 +148,10 @@ public class ArchivesController {
         String url="download/file/"+type+"/"+idf.getVolumeId()+":"+idf.getBPageNum()+"-"+idf.getEPageNum()+"."+type;
         boolean done=false;
         if(type.equals(ArchiveBuilder.PDF_TYPE)) {
-            done= registry.isPdfDone(idf.getVolumeId()+":"+idf.getBPageNum()+"-"+idf.getEPageNum()+".pdf");
+            done= ArchiveBuilder.isPdfDone(idf.getVolumeId()+":"+idf.getBPageNum()+"-"+idf.getEPageNum()+".pdf");
         }
         if(type.equals(ArchiveBuilder.ZIP_TYPE)) {
-            done= registry.isZipDone(idf.getVolumeId()+":"+idf.getBPageNum()+"-"+idf.getEPageNum()+".zip");
+            done= ArchiveBuilder.isZipDone(idf.getVolumeId()+":"+idf.getBPageNum()+"-"+idf.getEPageNum()+".zip");
         }
         HashMap<String,Object> json=new HashMap<>();
         json.put("done", done);
@@ -205,6 +202,4 @@ public class ArchivesController {
         }
         return map;
     }
-    
-    
 }

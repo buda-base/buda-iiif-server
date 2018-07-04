@@ -17,6 +17,7 @@ public class ServerCache {
        
     public static void addToCache(String cacheName,String name,Object res) throws BDRCAPIException{        
         try{
+            System.out.println("Added "+res+ " name :"+ name+" to "+cacheName);
             JCS.getInstance(cacheName).put(name, res );            
             res=null;
         }
@@ -26,7 +27,8 @@ public class ServerCache {
         }
     }
     
-    public static Object getObjectFromCache(String cacheName,String name) {        
+    public static Object getObjectFromCache(String cacheName,String name) {
+        System.out.println("Got "+JCS.getInstance(cacheName).get(name)+ " with name :"+ name+" from "+cacheName);
         return JCS.getInstance(cacheName).get(name);
     }
 }

@@ -14,6 +14,8 @@ import java.util.concurrent.Future;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import org.apache.commons.jcs.JCS;
+
 import com.amazonaws.services.s3.AmazonS3;
 import com.itextpdf.text.BadElementException;
 import com.itextpdf.text.Document;
@@ -29,7 +31,6 @@ import io.bdrc.pdf.presentation.exceptions.BDRCAPIException;
 
 public class ArchiveBuilder {
     
-    public static ArchivesServiceRegistry registry = ArchivesServiceRegistry.getInstance();
     public static final String IIIF="IIIF";
     public static final String IIIF_ZIP="IIIF_ZIP";
     public final static String PDF_TYPE = "pdf";
@@ -50,7 +51,7 @@ public class ArchiveBuilder {
             t_map.put(i,fut);
             i += 1;
         }
-        registry.addPdfService(output, false);
+        JCS.getInstance("pdfjobs").put(output, false);
         Document document = new Document();
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         PdfWriter writer=null;
@@ -89,7 +90,7 @@ public class ArchiveBuilder {
         document.close();
         ServerCache.addToCache(IIIF,output, stream.toByteArray());
         writer.close();
-        registry.setPdfCompleted(output); 
+        JCS.getInstance("pdfjobs").put(output,true); 
     }
     
     @SuppressWarnings({ "unchecked", "rawtypes" })
@@ -109,7 +110,7 @@ public class ArchiveBuilder {
             images.put(i,img);
             i += 1;
         }
-        registry.addZipService(output, false);
+        JCS.getInstance("zipjobs").put(output, false);
         ByteArrayOutputStream baos=new ByteArrayOutputStream();
         ZipOutputStream zipOut= new ZipOutputStream(baos);
         try {
@@ -137,6 +138,26 @@ public class ArchiveBuilder {
             throw new BDRCAPIException(500, GENERIC_APP_ERROR_CODE, e);
         }
         ServerCache.addToCache(IIIF_ZIP,output,baos.toByteArray());        
-        registry.setZipCompleted(output); 
+        JCS.getInstance("zipjobs").put(output,true); 
+    }
+    
+    public static boolean isPdfDone(String id) {
+        System.out.println("IS PDF DONE job "+id);
+        if(JCS.getInstance("pdfjobs").get(id)==null) {
+            System.out.println("IS PDF DONE null in cache for "+id);
+            return false;
+        }
+        System.out.println("IS PDF DONE returns from cache value for "+id+ ">>"+(boolean)JCS.getInstance("pdfjobs").get(id));
+        return (boolean)JCS.getInstance("pdfjobs").get(id);
+    }
+    
+    public static boolean isZipDone(String id) {
+        System.out.println("IS ZIP DONE job "+id);
+        if(JCS.getInstance("zipjobs").get(id)==null) {
+            System.out.println("IS ZIP DONE null in cache for "+id);
+            return false;
+        }
+        System.out.println("IS ZIP DONE returns from cache value for "+id+ ">>"+(boolean)JCS.getInstance("zipjobs").get(id));
+        return (boolean)JCS.getInstance("zipjobs").get(id);
     }
 }
