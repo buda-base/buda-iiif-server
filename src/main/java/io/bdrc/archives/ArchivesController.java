@@ -49,6 +49,7 @@ public class ArchivesController {
         Identifier idf=new Identifier(id,Identifier.MANIFEST_ID);        
         HttpHeaders headers = new HttpHeaders();        
         HashMap<String,String> map=new HashMap<>();
+        HashMap<String,HashMap<String,String>> jsonMap=new HashMap<>();
         StrSubstitutor s=null;
         String html="";
         AccessType access=null;
@@ -60,9 +61,9 @@ public class ArchivesController {
                 access=item.getAccess(); 
                 if(access.equals(AccessType.OPEN)) {
                     if(json) {
-                        map=getJsonVolumeLinks(item,type);
+                        jsonMap=getJsonVolumeLinks(item,type);
                         ObjectMapper mapper=new ObjectMapper();
-                        html=mapper.writerWithDefaultPrettyPrinter().writeValueAsString(map);
+                        html=mapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonMap);
                     }else {
                         map.put("links", getVolumeDownLoadLinks(item,idf,type));
                         html=getTemplate("volumes.tpl"); 
@@ -192,12 +193,15 @@ public class ArchivesController {
         return links;
     }
     
-    public HashMap<String,String> getJsonVolumeLinks(ItemInfo item,String type) throws BDRCAPIException {
-        HashMap<String,String> map=new HashMap<>();        
+    public HashMap<String,HashMap<String,String>> getJsonVolumeLinks(ItemInfo item,String type) throws BDRCAPIException {
+        HashMap<String,HashMap<String,String>> map=new HashMap<>();        
         List<VolumeInfoSmall> vlist=item.getVolumes();
         for(VolumeInfoSmall vis:vlist) {
             VolumeInfo vi = VolumeInfoService.getVolumeInfo(vis.getPrefixedId());
-            map.put(vis.getPrefixedId(), "/download/file/"+type+"/v:"+vis.getPrefixedId()+"::1-"+vi.totalPages);
+            HashMap<String,String> vol=new HashMap<>();
+            vol.put("link","/download/file/"+type+"/v:"+vis.getPrefixedId()+"::1-"+vi.totalPages);
+            vol.put("volume",vis.getVolumeNumber().toString());
+            map.put(vis.getPrefixedId(),vol );
         }
         return map;
     }
