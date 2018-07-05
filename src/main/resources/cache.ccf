@@ -4,7 +4,7 @@ jcs.default=IIIF,IIIF_ZIP
 jcs.default.cacheattributes=org.apache.commons.jcs.engine.CompositeCacheAttributes
 jcs.default.cacheattributes.MaxObjects=0
 ## 10 minutes for all zip and pdf files
-jcs.default.cacheattributes.MaxLife=600
+jcs.default.elementattributes.MaxLife=60
 jcs.default.cacheattributes.MemoryCacheName=org.apache.commons.jcs.engine.memory.lru.LRUMemoryCache
 
 
@@ -25,9 +25,9 @@ jcs.region.pdfjobs=
 jcs.region.pdfjobs.cacheattributes.UseDisk=false
 jcs.region.pdfjobs.cacheattributes.MaxObjects=500
 jcs.region.pdfjobs.cacheattributes=org.apache.commons.jcs.engine.CompositeCacheAttributes
-jcs.region.pdfjobs.cacheattributes.MaxLife=600
-jcs.region.pdfjobs.cacheattributes.MemoryCacheName=org.apache.commons.jcs.engine.memory.lru.LRUMemoryCache
 jcs.region.pdfjobs.elementattributes=org.apache.commons.jcs.engine.ElementAttributes
+jcs.region.pdfjobs.elementattributes.MaxLife=600
+jcs.region.pdfjobs.cacheattributes.MemoryCacheName=org.apache.commons.jcs.engine.memory.lru.LRUMemoryCache
 jcs.region.pdfjobs.elementattributes.IsEternal=false
 
 ##### MEMORY ONLY - CACHE REGION for zip jobs
@@ -35,9 +35,9 @@ jcs.region.zipjobs=
 jcs.region.zipjobs.cacheattributes.UseDisk=false
 jcs.region.zipjobs.cacheattributes.MaxObjects=500
 jcs.region.zipjobs.cacheattributes=org.apache.commons.jcs.engine.CompositeCacheAttributes
-jcs.region.zipjobs.cacheattributes.MaxLife=600
-jcs.region.zipjobs.cacheattributes.MemoryCacheName=org.apache.commons.jcs.engine.memory.lru.LRUMemoryCache
 jcs.region.zipjobs.elementattributes=org.apache.commons.jcs.engine.ElementAttributes
+jcs.region.zipjobs.elementattributes.MaxLife=60
+jcs.region.zipjobs.cacheattributes.MemoryCacheName=org.apache.commons.jcs.engine.memory.lru.LRUMemoryCache
 jcs.region.zipjobs.elementattributes.IsEternal=false
 
 ##### MEMORY ONLY - CACHE REGION for info services
@@ -53,8 +53,6 @@ jcs.auxiliary.IIIF=org.apache.commons.jcs.auxiliary.disk.indexed.IndexedDiskCach
 jcs.auxiliary.IIIF.attributes=org.apache.commons.jcs.auxiliary.disk.indexed.IndexedDiskCacheAttributes
 jcs.auxiliary.IIIF.attributes.DiskPath=pdf_cache
 jcs.auxiliary.IIIF.attributes.MaxPurgatorySize=500
-            ##  10 minutes max
-jcs.auxiliary.IIIF.attributes.MaxLife=600
             ##  10 Gig size limit
 jcs.auxiliary.IIIF.attributes.MaxKeySize=10000000
 jcs.auxiliary.IIIF.attributes.DiskLimitType=SIZE

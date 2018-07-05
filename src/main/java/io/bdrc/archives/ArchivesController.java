@@ -83,6 +83,7 @@ public class ArchivesController {
                     output = idf.getVolumeId()+":"+bPage+"-"+ePage+"."+type;
                     if(type.equals(ArchiveBuilder.PDF_TYPE)) {
                         Object pdf_cached =ServerCache.getObjectFromCache(IIIF,output);
+                        //System.out.println("PDF "+id +" from IIIF cache >>"+pdf_cached);
                         if(pdf_cached==null) {
                             // Build pdf since the pdf file doesn't exist yet
                             ArchiveBuilder.buildPdf(idIterator,new IdentifierInfo(idf.getVolumeId()),output);                        
@@ -90,6 +91,7 @@ public class ArchivesController {
                     }
                     if(type.equals(ArchiveBuilder.ZIP_TYPE)) {
                         Object zip_cached =ServerCache.getObjectFromCache(IIIF,output);
+                        //System.out.println("ZIP "+id +" from IIIF_ZIP cache >>"+zip_cached);
                         if(zip_cached==null) {
                             // Build pdf since the pdf file doesn't exist yet
                             ArchiveBuilder.buildZip(idIterator,new IdentifierInfo(idf.getVolumeId()),output);                        
@@ -185,7 +187,7 @@ public class ArchivesController {
         List<VolumeInfoSmall> vlist=item.getVolumes();
         for(VolumeInfoSmall vis:vlist) {
             VolumeInfo vi = VolumeInfoService.getVolumeInfo(vis.getPrefixedId());
-            links=links+"<a href=\"/download/file/"+type+"/v:"+vis.getPrefixedId()+"::1-"+vi.totalPages+"\">Vol."+vis.getVolumeNumber()+" ("+vi.totalPages+" pages) - "+vis.getPrefixedId()+"</a><br/>";
+            links=links+"<a href=\"/download/"+type+"/v:"+vis.getPrefixedId()+"::1-"+vi.totalPages+"\">Vol."+vis.getVolumeNumber()+" ("+vi.totalPages+" pages) - "+vis.getPrefixedId()+"</a><br/>";
         }
         return links;
     }
@@ -196,7 +198,7 @@ public class ArchivesController {
         for(VolumeInfoSmall vis:vlist) {
             VolumeInfo vi = VolumeInfoService.getVolumeInfo(vis.getPrefixedId());
             HashMap<String,String> vol=new HashMap<>();
-            vol.put("link","/download/file/"+type+"/v:"+vis.getPrefixedId()+"::1-"+vi.totalPages);
+            vol.put("link","/download/"+type+"/v:"+vis.getPrefixedId()+"::1-"+vi.totalPages);
             vol.put("volume",vis.getVolumeNumber().toString());
             map.put(vis.getPrefixedId(),vol );
         }

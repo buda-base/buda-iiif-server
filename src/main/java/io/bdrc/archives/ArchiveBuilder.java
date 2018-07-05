@@ -142,22 +142,22 @@ public class ArchiveBuilder {
     }
     
     public static boolean isPdfDone(String id) {
-        System.out.println("IS PDF DONE job "+id);
+        //System.out.println("IS PDF DONE job "+id);
         if(JCS.getInstance("pdfjobs").get(id)==null) {
-            System.out.println("IS PDF DONE null in cache for "+id);
+            //System.out.println("IS PDF DONE null in cache for "+id);
             return false;
         }
-        System.out.println("IS PDF DONE returns from cache value for "+id+ ">>"+(boolean)JCS.getInstance("pdfjobs").get(id));
+        //System.out.println("IS PDF DONE returns from cache value for "+id+ ">>"+(boolean)JCS.getInstance("pdfjobs").get(id));
         return (boolean)JCS.getInstance("pdfjobs").get(id);
     }
     
     public static boolean isZipDone(String id) {
-        System.out.println("IS ZIP DONE job "+id);
+        //System.out.println("IS ZIP DONE job "+id);
         if(JCS.getInstance("zipjobs").get(id)==null) {
-            System.out.println("IS ZIP DONE null in cache for "+id);
+            //System.out.println("IS ZIP DONE null in cache for "+id);
             return false;
         }
-        System.out.println("IS ZIP DONE returns from cache value for "+id+ ">>"+(boolean)JCS.getInstance("zipjobs").get(id));
+        //System.out.println("IS ZIP DONE returns from cache value for "+id+ ">>"+(boolean)JCS.getInstance("zipjobs").get(id));
         return (boolean)JCS.getInstance("zipjobs").get(id);
     }
 }
