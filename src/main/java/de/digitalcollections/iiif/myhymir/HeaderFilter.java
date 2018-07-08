@@ -38,13 +38,13 @@ public class HeaderFilter implements Filter {
     @Override
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
             throws IOException, ServletException {
-        HttpServletResponse response = (HttpServletResponse) res;
-        response.addHeader("Cache-Control", " public, max-age="+maxAge);  
-        response.addHeader("Access-Control-Allow-Origin", allowOrigin);
-        response.addHeader("Access-Control-Allow-Headers",allowHeaders);
-        response.addHeader("Access-Control-Allow-Credentials", allowCredentials);
-        response.addHeader("Access-Control-Allow-Methods",allowMethods);
-        response.addHeader("Access-Control-Expose-Headers",exposeHeaders);
+        HttpServletResponse response = (HttpServletResponse) res;        
+        response.setHeader("Cache-Control", " public, max-age="+maxAge);
+        response.setHeader("Access-Control-Allow-Origin", allowOrigin);
+        response.setHeader("Access-Control-Allow-Headers",allowHeaders);
+        response.setHeader("Access-Control-Allow-Credentials", allowCredentials);
+        response.setHeader("Access-Control-Allow-Methods",allowMethods);
+        response.setHeader("Access-Control-Expose-Headers",exposeHeaders);
         chain.doFilter(req, res);
     }
 
