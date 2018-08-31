@@ -1,19 +1,13 @@
 package de.digitalcollections.iiif.hymir.image.frontend;
 
-import de.digitalcollections.iiif.hymir.image.business.api.ImageService;
-import de.digitalcollections.iiif.hymir.model.exception.InvalidParametersException;
-import de.digitalcollections.iiif.hymir.model.exception.ResourceNotFoundException;
-import de.digitalcollections.iiif.hymir.model.exception.UnsupportedFormatException;
-import de.digitalcollections.iiif.model.image.ImageApiProfile;
-import de.digitalcollections.iiif.model.image.ImageApiSelector;
-import de.digitalcollections.iiif.model.image.ResolvingException;
-import de.digitalcollections.iiif.model.jackson.IiifObjectMapper;
 import java.awt.Dimension;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URLDecoder;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -24,6 +18,17 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.context.request.WebRequest;
+
+import de.digitalcollections.iiif.hymir.image.business.api.ImageService;
+import de.digitalcollections.iiif.hymir.model.exception.InvalidParametersException;
+import de.digitalcollections.iiif.hymir.model.exception.ResourceNotFoundException;
+import de.digitalcollections.iiif.hymir.model.exception.UnsupportedFormatException;
+import de.digitalcollections.iiif.model.image.ImageApiProfile;
+import de.digitalcollections.iiif.model.image.ImageApiSelector;
+import de.digitalcollections.iiif.model.image.ResolvingException;
+import de.digitalcollections.iiif.model.jackson.IiifObjectMapper;
+import io.bdrc.auth.Access;
+import io.bdrc.iiif.resolver.IdentifierInfo;
 
 @Controller
 @RequestMapping("/image/v2/")
@@ -69,6 +74,12 @@ public class IIIFImageApiController {
           HttpServletRequest request, HttpServletResponse response, WebRequest webRequest)
       throws UnsupportedFormatException, UnsupportedOperationException, IOException, InvalidParametersException,
              ResourceNotFoundException {
+    Access acc=(Access)request.getAttribute("access");
+    identifier = URLDecoder.decode(identifier, "UTF-8");
+    String accessType=getAccessType(identifier);
+    if(!acc.hasResourceAccess(accessType)) {
+        return new ResponseEntity<>("Insufficient rights".getBytes(), HttpStatus.FORBIDDEN);
+    }
     HttpHeaders headers = new HttpHeaders();
     String path;
     if (request.getPathInfo() != null) {
@@ -131,7 +142,12 @@ public class IIIFImageApiController {
           method = {RequestMethod.GET, RequestMethod.HEAD})
   public ResponseEntity<String> getInfo(@PathVariable String identifier, HttpServletRequest req,
           WebRequest webRequest) throws Exception {
+    Access acc=(Access)req.getAttribute("access");
     identifier = URLDecoder.decode(identifier, "UTF-8");
+    String accessType=getAccessType(identifier);
+    if(!acc.hasResourceAccess(accessType)) {
+        return new ResponseEntity<>("Insufficient rights", HttpStatus.FORBIDDEN);
+    }
     long modified = imageService.getImageModificationDate(identifier).toEpochMilli();
     webRequest.checkNotModified(modified);
     String path;
@@ -166,5 +182,13 @@ public class IIIFImageApiController {
   public String getInfoRedirect(@PathVariable String identifier, HttpServletResponse response) {
     //response.setHeader("Access-Control-Allow-Origin", "*");
     return "redirect:/image/" + VERSION + "/" + identifier + "/info.json";
+  }
+
+  public String getAccessType(String identifier) {
+      String[] parts=identifier.split("::");
+      IdentifierInfo info1=new IdentifierInfo(parts[0]);
+      String access=info1.getAccess().substring(info1.getAccess().lastIndexOf('/')+1);
+      System.out.println("ACCESS TYPE >>>> "+access);
+      return access;
   }
 }
