@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.digitalcollections.iiif.myhymir.ServerCache;
+import io.bdrc.auth.Access;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 import io.bdrc.pdf.presentation.ItemInfoService;
 import io.bdrc.pdf.presentation.VolumeInfoService;
@@ -36,39 +37,41 @@ import io.bdrc.pdf.presentation.models.VolumeInfo;
 
 @Controller
 public class ArchivesController {
-    
+
     public static final String IIIF="IIIF";
     public static final String IIIF_ZIP="IIIF_ZIP";
 
     @RequestMapping(value = "/download/{type}/{id}", method = {RequestMethod.GET,RequestMethod.HEAD})
     public ResponseEntity<String> getPdfLink(@PathVariable String id,@PathVariable String type,HttpServletRequest request) throws Exception {
+        Access acc=(Access)request.getAttribute("access");
         String format=request.getHeader("Accept");
         boolean json=format.contains("application/json");
         String output =null;
-        Identifier idf=new Identifier(id,Identifier.MANIFEST_ID);        
-        HttpHeaders headers = new HttpHeaders();        
+        Identifier idf=new Identifier(id,Identifier.MANIFEST_ID);
+        HttpHeaders headers = new HttpHeaders();
         HashMap<String,String> map=new HashMap<>();
         HashMap<String,HashMap<String,String>> jsonMap=new HashMap<>();
         StrSubstitutor s=null;
         String html="";
         AccessType access=null;
-        int subType=idf.getSubType();        
+        int subType=idf.getSubType();
         switch(subType) {
-            //Case work item   
-            case 4:                
+            //Case work item
+            case 4:
                 ItemInfo item=ItemInfoService.fetchLdsVolumeInfo(idf.getItemId());
-                access=item.getAccess(); 
-                if(access.equals(AccessType.OPEN)) {
-                    if(json) {
-                        jsonMap=getJsonVolumeLinks(item,type);
-                        ObjectMapper mapper=new ObjectMapper();
-                        html=mapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonMap);
-                    }else {
-                        map.put("links", getVolumeDownLoadLinks(item,idf,type));
-                        html=getTemplate("volumes.tpl"); 
-                        s=new StrSubstitutor(map);
-                        html=s.replace(html);
-                    }
+                access=item.getAccess();
+                if(!acc.hasResourceAccess(getShortName(access.getUri()))) {
+                    return new ResponseEntity<>("Insufficient rights", HttpStatus.FORBIDDEN);
+                }
+                if(json) {
+                    jsonMap=getJsonVolumeLinks(item,type);
+                    ObjectMapper mapper=new ObjectMapper();
+                    html=mapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonMap);
+                }else {
+                    map.put("links", getVolumeDownLoadLinks(item,idf,type));
+                    html=getTemplate("volumes.tpl");
+                    s=new StrSubstitutor(map);
+                    html=s.replace(html);
                 }
                 break;
             //Case volume imageRange
@@ -76,44 +79,41 @@ public class ArchivesController {
             case 6:
                 int bPage=idf.getBPageNum().intValue();
                 int ePage=idf.getEPageNum().intValue();
-                VolumeInfo vi = VolumeInfoService.getVolumeInfo(idf.getVolumeId()); 
+                VolumeInfo vi = VolumeInfoService.getVolumeInfo(idf.getVolumeId());
                 access=vi.getAccess();
-                if(access.equals(AccessType.OPEN)) {
-                    Iterator<String> idIterator = vi.getImageListIterator(bPage, ePage);
-                    output = idf.getVolumeId()+":"+bPage+"-"+ePage+"."+type;
-                    if(type.equals(ArchiveBuilder.PDF_TYPE)) {
-                        Object pdf_cached =ServerCache.getObjectFromCache(IIIF,output);
-                        //System.out.println("PDF "+id +" from IIIF cache >>"+pdf_cached);
-                        if(pdf_cached==null) {
-                            // Build pdf since the pdf file doesn't exist yet
-                            ArchiveBuilder.buildPdf(idIterator,new IdentifierInfo(idf.getVolumeId()),output);                        
-                        }
-                    }
-                    if(type.equals(ArchiveBuilder.ZIP_TYPE)) {
-                        Object zip_cached =ServerCache.getObjectFromCache(IIIF,output);
-                        //System.out.println("ZIP "+id +" from IIIF_ZIP cache >>"+zip_cached);
-                        if(zip_cached==null) {
-                            // Build pdf since the pdf file doesn't exist yet
-                            ArchiveBuilder.buildZip(idIterator,new IdentifierInfo(idf.getVolumeId()),output);                        
-                        }
-                    }
-                    // Create template and serve html link
-                    map.put("links", "/download/file/"+type+"/"+output);
-                    if(json) {
-                        ObjectMapper mapper=new ObjectMapper();                    
-                        html=mapper.writerWithDefaultPrettyPrinter().writeValueAsString(map);
-                    }else {
-                        html=getTemplate("downloadPdf.tpl");
-                        map.put("file", output);
-                        s=new StrSubstitutor(map);
-                        html=s.replace(html);
+                if(!acc.hasResourceAccess(getShortName(access.getUri()))) {
+                    return new ResponseEntity<>("Insufficient rights", HttpStatus.FORBIDDEN);
+                }
+                Iterator<String> idIterator = vi.getImageListIterator(bPage, ePage);
+                output = idf.getVolumeId()+":"+bPage+"-"+ePage+"."+type;
+                if(type.equals(ArchiveBuilder.PDF_TYPE)) {
+                    Object pdf_cached =ServerCache.getObjectFromCache(IIIF,output);
+                    //System.out.println("PDF "+id +" from IIIF cache >>"+pdf_cached);
+                    if(pdf_cached==null) {
+                        // Build pdf since the pdf file doesn't exist yet
+                        ArchiveBuilder.buildPdf(idIterator,new IdentifierInfo(idf.getVolumeId()),output);
                     }
                 }
+                if(type.equals(ArchiveBuilder.ZIP_TYPE)) {
+                    Object zip_cached =ServerCache.getObjectFromCache(IIIF,output);
+                    //System.out.println("ZIP "+id +" from IIIF_ZIP cache >>"+zip_cached);
+                    if(zip_cached==null) {
+                        // Build pdf since the pdf file doesn't exist yet
+                        ArchiveBuilder.buildZip(idIterator,new IdentifierInfo(idf.getVolumeId()),output);
+                    }
+                }
+                // Create template and serve html link
+                map.put("links", "/download/file/"+type+"/"+output);
+                if(json) {
+                    ObjectMapper mapper=new ObjectMapper();
+                    html=mapper.writerWithDefaultPrettyPrinter().writeValueAsString(map);
+                }else {
+                    html=getTemplate("downloadPdf.tpl");
+                    map.put("file", output);
+                    s=new StrSubstitutor(map);
+                    html=s.replace(html);
+                }
                 break;
-        }
-        if(!access.equals(AccessType.OPEN)) {            
-            ResponseEntity<String> response = new ResponseEntity<String>("Unauthorized Access", headers, HttpStatus.UNAUTHORIZED);
-            return response;
         }
         if(json) {
             headers.setContentType(MediaType.parseMediaType("application/json"));
@@ -122,9 +122,9 @@ public class ArchivesController {
         }
         ResponseEntity<String> response = new ResponseEntity<String>(html, headers, HttpStatus.OK);
         return response;
-          
+
     }
-    
+
     @RequestMapping(value = "/download/file/{type}/{name}",
             method = {RequestMethod.GET,RequestMethod.HEAD})
     public ResponseEntity<ByteArrayResource> downloadPdf(@PathVariable String name,@PathVariable String type) throws Exception {
@@ -139,14 +139,14 @@ public class ArchivesController {
         headers.setContentType(MediaType.parseMediaType("application/"+type));
         headers.setContentDispositionFormData("attachment", name+"."+type);
         ResponseEntity<ByteArrayResource> response = new ResponseEntity<ByteArrayResource>(
-                new ByteArrayResource(array), headers, HttpStatus.OK);        
+                new ByteArrayResource(array), headers, HttpStatus.OK);
         return response;
     }
-    
+
     @RequestMapping(value = "/download/job/{type}/{id}",
             method = {RequestMethod.GET,RequestMethod.HEAD})
     public ResponseEntity<String> jobState(@PathVariable String id,@PathVariable String type) throws Exception {
-        Identifier idf=new Identifier(id,Identifier.MANIFEST_ID);        
+        Identifier idf=new Identifier(id,Identifier.MANIFEST_ID);
         String url="download/file/"+type+"/"+idf.getVolumeId()+":"+idf.getBPageNum()+"-"+idf.getEPageNum()+"."+type;
         boolean done=false;
         if(type.equals(ArchiveBuilder.PDF_TYPE)) {
@@ -162,7 +162,7 @@ public class ArchivesController {
         String html=mapper.writerWithDefaultPrettyPrinter().writeValueAsString(json);
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.parseMediaType("application/json"));
-        ResponseEntity<String> response = new ResponseEntity<String>(html, headers, HttpStatus.OK);        
+        ResponseEntity<String> response = new ResponseEntity<String>(html, headers, HttpStatus.OK);
         return response;
     }
 
@@ -177,11 +177,11 @@ public class ArchivesController {
                 line=buffer.readLine();
             }
         } catch (IOException e) {
-            e.printStackTrace();         
+            e.printStackTrace();
         }
         return sb.toString();
     }
-    
+
     public String getVolumeDownLoadLinks(ItemInfo item,Identifier idf,String type) throws BDRCAPIException {
         String links="";
         List<VolumeInfoSmall> vlist=item.getVolumes();
@@ -191,9 +191,9 @@ public class ArchivesController {
         }
         return links;
     }
-    
+
     public HashMap<String,HashMap<String,String>> getJsonVolumeLinks(ItemInfo item,String type) throws BDRCAPIException {
-        HashMap<String,HashMap<String,String>> map=new HashMap<>();        
+        HashMap<String,HashMap<String,String>> map=new HashMap<>();
         List<VolumeInfoSmall> vlist=item.getVolumes();
         for(VolumeInfoSmall vis:vlist) {
             VolumeInfo vi = VolumeInfoService.getVolumeInfo(vis.getPrefixedId());
@@ -203,5 +203,9 @@ public class ArchivesController {
             map.put(vis.getPrefixedId(),vol );
         }
         return map;
+    }
+
+    public static String getShortName(String st) {
+        return st.substring(st.lastIndexOf("/")+1);
     }
 }

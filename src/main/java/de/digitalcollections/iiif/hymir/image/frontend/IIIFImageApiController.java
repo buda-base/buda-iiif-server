@@ -188,7 +188,6 @@ public class IIIFImageApiController {
       String[] parts=identifier.split("::");
       IdentifierInfo info1=new IdentifierInfo(parts[0]);
       String access=info1.getAccess().substring(info1.getAccess().lastIndexOf('/')+1);
-      System.out.println("ACCESS TYPE >>>> "+access);
       return access;
   }
 }

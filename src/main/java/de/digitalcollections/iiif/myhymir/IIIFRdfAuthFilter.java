@@ -16,29 +16,26 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import io.bdrc.auth.Access;
-import io.bdrc.auth.AuthProps;
 import io.bdrc.auth.TokenValidation;
 import io.bdrc.auth.UserProfile;
 import io.bdrc.auth.model.Endpoint;
-import io.bdrc.auth.rdf.RdfAuthModel;
 
 
 @Component
 @Order(1)
 public class IIIFRdfAuthFilter implements Filter{
-    
+
     public final static Logger log=LoggerFactory.getLogger(IIIFRdfAuthFilter.class.getName());
 
     @Override
     public void destroy() {
-        // TODO Auto-generated method stub
-        
+        //
     }
 
     @Override
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
             throws IOException, ServletException {
-        
+
         String token=getToken(((HttpServletRequest)req).getHeader("Authorization"));
         TokenValidation validation=null;
         UserProfile prof=null;
@@ -52,15 +49,13 @@ public class IIIFRdfAuthFilter implements Filter{
             req.setAttribute("access", new Access());
         }
         chain.doFilter(req, res);
-        // TODO Auto-generated method stub
     }
 
     @Override
     public void init(FilterConfig arg0) throws ServletException {
-        // TODO Auto-generated method stub
-        
+        //
     }
-    
+
     String getToken(String header) {
         try {
             if(header!=null) {
