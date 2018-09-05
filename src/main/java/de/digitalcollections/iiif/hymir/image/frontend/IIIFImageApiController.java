@@ -8,6 +8,7 @@ import java.net.URLDecoder;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.jena.atlas.logging.Log;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -145,6 +146,9 @@ public class IIIFImageApiController {
     Access acc=(Access)req.getAttribute("access");
     identifier = URLDecoder.decode(identifier, "UTF-8");
     String accessType=getAccessType(identifier);
+    if(accessType ==null) {
+        return new ResponseEntity<>("Insufficient rights", HttpStatus.FORBIDDEN);
+    }
     if(!acc.hasResourceAccess(accessType)) {
         return new ResponseEntity<>("Insufficient rights", HttpStatus.FORBIDDEN);
     }
@@ -184,10 +188,15 @@ public class IIIFImageApiController {
     return "redirect:/image/" + VERSION + "/" + identifier + "/info.json";
   }
 
-  public String getAccessType(String identifier) {
-      String[] parts=identifier.split("::");
-      IdentifierInfo info1=new IdentifierInfo(parts[0]);
-      String access=info1.getAccess().substring(info1.getAccess().lastIndexOf('/')+1);
-      return access;
+  public String getAccessType(String identifier) throws UnsupportedOperationException, IOException {
+      try {
+          String[] parts=identifier.split("::");
+          IdentifierInfo info1=new IdentifierInfo(parts[0]);
+          String access=info1.getAccess().substring(info1.getAccess().lastIndexOf('/')+1);
+          return access;
+      }catch(UnsupportedOperationException| IOException e) {
+          Log.error(this, e.getMessage());
+          throw e;
+      }
   }
 }
