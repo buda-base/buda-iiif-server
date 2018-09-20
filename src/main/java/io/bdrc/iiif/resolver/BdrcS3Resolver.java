@@ -16,12 +16,12 @@ public class BdrcS3Resolver implements S3Resolver {
 
     private static final Logger log = LoggerFactory.getLogger(BdrcS3Resolver.class);
     private static final Pattern oldImageGroupPattern = Pattern.compile("^I\\d{4}$");
-    
+
     @Override
     public String getS3Identifier(String identifier) throws ResourceIOException {
         // Resolving : "bdr:V29329_I1KG15042::I1KG150420003.jpg"
         // to s3 path: "Works/21/W29329/images/W29329-I1KG15042/I1KG150420003.jpg"
-        
+
         try {
             String id="Works/";
             String[] parts=identifier.split("::");
@@ -29,7 +29,7 @@ public class BdrcS3Resolver implements S3Resolver {
             String access=info.getAccess().substring(info.getAccess().lastIndexOf('/')+1);
             String format=parts[1].substring(parts[1].lastIndexOf('.'));
             if(access.equalsIgnoreCase("AccessOpen")) {
-                //log.info("S3 Resolver IdentifierInfo >>>>>>>> "+info+ " Access >>"+access+ " Format >> "+format);            
+                //log.info("S3 Resolver IdentifierInfo >>>>>>>> "+info+ " Access >>"+access+ " Format >> "+format);
                 String work=info.getWork().substring(info.getWork().lastIndexOf('/')+1);
                 String imgGroup=parts[0].substring(parts[0].lastIndexOf('_')+1);
                 MessageDigest md = MessageDigest.getInstance("MD5");
@@ -39,7 +39,7 @@ public class BdrcS3Resolver implements S3Resolver {
                 if (oldImageGroupPattern.matcher(imgGroup).matches()) {
                     imgGroup= imgGroup.substring(1);
                 }
-                id=id+hash+"/"+work+"/images/"+work+"-"+imgGroup+"/"+parts[1]; 
+                id=id+hash+"/"+work+"/images/"+work+"-"+imgGroup+"/"+parts[1];
             }else {
                 id="static/error"+format;
             }
@@ -47,14 +47,15 @@ public class BdrcS3Resolver implements S3Resolver {
         }
         catch(Exception ex) {
             String msg="BdrcS3Resolver was unable to produce identifier for key >> "+identifier;
+            log.debug(msg, ex);
             throw new ResourceIOException(msg, ex);
         }
     }
-    
+
     public String getIdentifier(String identifier,IdentifierInfo info) throws NoSuchAlgorithmException {
         String id="Works/";
         String[] parts=identifier.split("::");
-        //log.info("S3 Resolver IdentifierInfo >>>>>>>> "+info+ " Format >> "+format);            
+        //log.info("S3 Resolver IdentifierInfo >>>>>>>> "+info+ " Format >> "+format);
         String work=info.getWork().substring(info.getWork().lastIndexOf('/')+1);
         String imgGroup=parts[0].substring(parts[0].lastIndexOf('_')+1);
         MessageDigest md = MessageDigest.getInstance("MD5");
