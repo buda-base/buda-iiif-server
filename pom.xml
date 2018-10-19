@@ -34,17 +34,17 @@
     <dependency> 
         <groupId>de.digitalcollections.iiif</groupId> 
         <artifactId>iiif-apis</artifactId> 
-        <version>0.3.3</version> 
+        <version>0.3.2</version> 
     </dependency>
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-core</artifactId>
-      <version>1.2.3</version>
+      <version>1.1.11</version>
     </dependency>
     <dependency>
       <groupId>de.digitalcollections.core</groupId>
       <artifactId>dc-core-backend-file</artifactId>
-      <version>2.2.0</version>
+      <version>2.0.3</version>
     </dependency>
      <!-- Used by S3 ResourceRepository -->
     <dependency>
