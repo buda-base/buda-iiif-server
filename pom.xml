@@ -12,9 +12,10 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
-    <jena.version>3.7.0</jena.version>
+    <jena.version>3.9.0</jena.version>
     <version.maven-compiler-plugin>3.7.0</version.maven-compiler-plugin>
     <version.spring-boot>1.5.8.RELEASE</version.spring-boot>
+    <aws.version>1.11.431</aws.version>
   </properties>
   
   <dependencies>
@@ -33,28 +34,28 @@
     <dependency> 
         <groupId>de.digitalcollections.iiif</groupId> 
         <artifactId>iiif-apis</artifactId> 
-        <version>0.3.2</version> 
+        <version>0.3.3</version> 
     </dependency>
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-core</artifactId>
-      <version>1.1.11</version>
+      <version>1.2.3</version>
     </dependency>
     <dependency>
       <groupId>de.digitalcollections.core</groupId>
       <artifactId>dc-core-backend-file</artifactId>
-      <version>2.0.3</version>
+      <version>2.2.0</version>
     </dependency>
      <!-- Used by S3 ResourceRepository -->
     <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-java-sdk-core</artifactId>
-      <version>1.11.220</version>
+      <version>${aws.version}</version>
     </dependency>
     <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-java-sdk-s3</artifactId>
-      <version>1.11.220</version>
+      <version>${aws.version}</version>
     </dependency> 
     <!-- https://mvnrepository.com/artifact/com.itextpdf/itextpdf -->
     <dependency>
@@ -72,7 +73,7 @@
     <dependency>
         <groupId>org.apache.commons</groupId>
         <artifactId>commons-jcs-core</artifactId>
-        <version>2.2</version>
+        <version>2.2.1</version>
     </dependency>
     <!-- https://mvnrepository.com/artifact/io.bdrc/bdrc-auth-lib -->
     <dependency>
@@ -126,7 +127,6 @@
       </resource>
     </resources>
   </build>
-  
   <repositories>
     <repository>
       <id>ossrh-snapshots</id>
