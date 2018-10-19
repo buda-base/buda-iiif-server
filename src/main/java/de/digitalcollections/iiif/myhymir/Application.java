@@ -8,12 +8,13 @@ import org.springframework.boot.web.support.SpringBootServletInitializer;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 
+import io.bdrc.auth.AuthProps;
 import io.bdrc.auth.rdf.RdfAuthModel;
 
 
 @SpringBootApplication
 @Configuration
-@EnableAutoConfiguration 
+@EnableAutoConfiguration
 @ComponentScan(
         basePackages = {
           "io.bdrc.archives",
@@ -26,11 +27,14 @@ import io.bdrc.auth.rdf.RdfAuthModel;
 //                type = FilterType.ASSIGNABLE_TYPE, value = {ResourceRepositoryImpl.class}))
 public class Application extends SpringBootServletInitializer{
 
+    static final String configPath= System.getProperty("iiifserv.configpath");
+
     public static void main(String[] args) throws Exception {
         SpringApplication.run(Application.class, args);
+        AuthProps.init(configPath+"iiifserv.properties");
         RdfAuthModel.init();
     }
-    
+
     @Override
     protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
         return application.sources(Application.class);
