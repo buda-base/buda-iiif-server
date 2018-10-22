@@ -28,20 +28,15 @@
         <exclusion>  
           <groupId>de.digitalcollections.iiif</groupId> 
           <artifactId>iiif-apis</artifactId>
-        </exclusion>
-        <!-- exclusion>  
-          <groupId>org.springframework</groupId>
-          <artifactId>spring-context-support</artifactId>
-        </exclusion-->
+        </exclusion>        
       </exclusions>
     </dependency>
     <!-- https://mvnrepository.com/artifact/com.fasterxml/classmate -->
-<dependency>
-    <groupId>com.fasterxml</groupId>
-    <artifactId>classmate</artifactId>
-    <version>1.2.0</version>
-</dependency>
-    
+    <dependency>
+        <groupId>com.fasterxml</groupId>
+        <artifactId>classmate</artifactId>
+        <version>1.2.0</version>
+    </dependency>
     <dependency> 
         <groupId>de.digitalcollections.iiif</groupId> 
         <artifactId>iiif-apis</artifactId> 
