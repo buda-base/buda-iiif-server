@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Repository;
+import org.w3c.dom.Document;
 
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.services.s3.AmazonS3;
@@ -142,6 +143,18 @@ public class S3ResourceRepositoryImpl implements ResourceRepository<Resource> {
         AmazonS3ClientBuilder.standard().withClientConfiguration(config);
         return AmazonS3ClientBuilder.defaultClient();
     }
+
+@Override
+public void assertDocument(Resource arg0) throws ResourceIOException {
+    // TODO Auto-generated method stub
+
+}
+
+@Override
+public Document getDocument(Resource arg0) throws ResourceIOException {
+    // TODO Auto-generated method stub
+    return null;
+}
 
 /*@Override
 public void assertDocument(Resource arg0) throws ResourceIOException {

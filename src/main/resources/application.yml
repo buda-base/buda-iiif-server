@@ -38,6 +38,10 @@ spring:
   thymeleaf:
     cache: false
     mode: HTML
+  security:
+    user:
+      name: admin
+      password: secret1
     
 buda:
   S3resolver: 'io.bdrc.iiif.resolver.BdrcS3Resolver'
@@ -63,15 +67,17 @@ management:
   security:
     enabled: true
 
-security:
-  user:
-    name: admin
-    password: secret1
+
 
 spring:
   profiles: PROD
   thymeleaf:
     cache: true
+  security:
+    user:
+      name: admin
+      password: secret1
+  
 
 server:
   contextPath: /
