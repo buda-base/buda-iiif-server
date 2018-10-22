@@ -17,6 +17,14 @@
     <version.spring-boot>2.0.2.RELEASE</version.spring-boot>
     <aws.version>1.11.433</aws.version>
   </properties>
+
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <!-- version should be the same as version.spring-boot, and the same
+         as the version indicated in hymir's pom -->
+    <version>2.0.2.RELEASE</version>
+  </parent>
   
   <dependencies>
     <!-- https://mvnrepository.com/artifact/de.digitalcollections/iiif-server-hymir -->
@@ -24,23 +32,6 @@
         <groupId>de.digitalcollections</groupId>
         <artifactId>iiif-server-hymir</artifactId>
         <version>3.6.2</version>
-        <exclusions>
-        <exclusion>  
-          <groupId>de.digitalcollections.iiif</groupId> 
-          <artifactId>iiif-apis</artifactId>
-        </exclusion>        
-      </exclusions>
-    </dependency>
-    <!-- https://mvnrepository.com/artifact/com.fasterxml/classmate -->
-    <dependency>
-        <groupId>com.fasterxml</groupId>
-        <artifactId>classmate</artifactId>
-        <version>1.2.0</version>
-    </dependency>
-    <dependency> 
-        <groupId>de.digitalcollections.iiif</groupId> 
-        <artifactId>iiif-apis</artifactId> 
-        <version>0.3.3</version> 
     </dependency>
     <dependency>
       <groupId>ch.qos.logback</groupId>
@@ -62,7 +53,13 @@
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-java-sdk-s3</artifactId>
       <version>${aws.version}</version>
-    </dependency> 
+    </dependency>
+    <dependency>
+        <groupId>junit</groupId>
+        <artifactId>junit</artifactId>
+        <version>4.12</version>
+        <scope>test</scope>
+    </dependency>
     <!-- https://mvnrepository.com/artifact/com.itextpdf/itextpdf -->
     <dependency>
         <groupId>com.itextpdf</groupId>
@@ -87,12 +84,6 @@
         <artifactId>bdrc-auth-lib</artifactId>
         <version>0.3.0</version>
     </dependency>
-    <!-- https://mvnrepository.com/artifact/org.springframework/spring-context -->
-    <dependency>
-        <groupId>org.springframework</groupId>
-        <artifactId>spring-context</artifactId>
-        <version>5.0.2.RELEASE</version>
-    </dependency>    
   </dependencies>
   <build>
     <plugins>
