@@ -144,28 +144,16 @@ public class S3ResourceRepositoryImpl implements ResourceRepository<Resource> {
         return AmazonS3ClientBuilder.defaultClient();
     }
 
-@Override
-public void assertDocument(Resource arg0) throws ResourceIOException {
-    // TODO Auto-generated method stub
+    @Override
+    public void assertDocument(Resource arg0) throws ResourceIOException {
+        // TODO Auto-generated method stub
 
-}
+    }
 
-@Override
-public Document getDocument(Resource arg0) throws ResourceIOException {
-    // TODO Auto-generated method stub
-    return null;
-}
-
-/*@Override
-public void assertDocument(Resource arg0) throws ResourceIOException {
-    // TODO Auto-generated method stub
-
-}
-
-@Override
-public Document getDocument(Resource arg0) throws ResourceIOException {
-    // TODO Auto-generated method stub
-    return null;
-}*/
+    @Override
+    public Document getDocument(Resource arg0) throws ResourceIOException {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
 }
