@@ -72,6 +72,10 @@ spring:
   profiles: PROD
   thymeleaf:
     cache: true
+
+server:
+  contextPath: /
+  server-header: "@project.name@ v@project.version@"
     
 buda:
   S3resolver: 'io.bdrc.iiif.resolver.BdrcS3Resolver'

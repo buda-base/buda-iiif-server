@@ -14,7 +14,7 @@
     <maven.compiler.target>1.8</maven.compiler.target>
     <jena.version>3.9.0</jena.version>
     <version.maven-compiler-plugin>3.7.0</version.maven-compiler-plugin>
-    <version.spring-boot>1.5.8.RELEASE</version.spring-boot>
+    <version.spring-boot>2.0.2.RELEASE</version.spring-boot>
     <aws.version>1.11.431</aws.version>
   </properties>
   
@@ -23,7 +23,7 @@
     <dependency>
         <groupId>de.digitalcollections</groupId>
         <artifactId>iiif-server-hymir</artifactId>
-        <version>3.5.2</version>
+        <version>3.6.2</version>
         <exclusions>
         <exclusion>  
           <groupId>de.digitalcollections.iiif</groupId> 
@@ -34,7 +34,7 @@
     <dependency> 
         <groupId>de.digitalcollections.iiif</groupId> 
         <artifactId>iiif-apis</artifactId> 
-        <version>0.3.2</version> 
+        <version>0.3.3</version> 
     </dependency>
     <dependency>
       <groupId>ch.qos.logback</groupId>
