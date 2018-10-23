@@ -32,6 +32,7 @@ public class Application extends SpringBootServletInitializer{
     public static void main(String[] args) throws Exception {
         SpringApplication.run(Application.class, args);
         AuthProps.init(configPath+"iiifserv.properties");
+        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>> "+AuthProps.getProperty("issuer")+ " config >>"+configPath);
         RdfAuthModel.init();
     }
 
