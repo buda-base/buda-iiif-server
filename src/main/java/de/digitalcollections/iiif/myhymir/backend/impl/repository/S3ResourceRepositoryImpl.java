@@ -26,6 +26,7 @@ import de.digitalcollections.core.model.api.resource.Resource;
 import de.digitalcollections.core.model.api.resource.enums.ResourcePersistenceType;
 import de.digitalcollections.core.model.api.resource.exceptions.ResourceIOException;
 import de.digitalcollections.core.model.impl.resource.S3Resource;
+import de.digitalcollections.iiif.hymir.model.exception.ResourceNotFoundException;
 
 
 /**
@@ -45,7 +46,7 @@ public class S3ResourceRepositoryImpl implements ResourceRepository<Resource> {
     final static String S3_BUCKET = "archive.tbrc.org";
 
     @Override
-    public S3Resource create(String key, ResourcePersistenceType resourcePersistenceType, MimeType mimeType) throws ResourceIOException {
+    public S3Resource create(String key, ResourcePersistenceType resourcePersistenceType, MimeType mimeType) throws ResourceIOException, ResourceNotFoundException {
         S3Resource resource = new S3Resource();
         if (mimeType != null) {
           if (mimeType.getExtensions() != null && !mimeType.getExtensions().isEmpty()) {
@@ -70,7 +71,7 @@ public class S3ResourceRepositoryImpl implements ResourceRepository<Resource> {
     }
 
     @Override
-    public S3Resource find(String key, ResourcePersistenceType resourcePersistenceType, MimeType mimeType) throws ResourceIOException {
+    public S3Resource find(String key, ResourcePersistenceType resourcePersistenceType, MimeType mimeType) throws ResourceIOException, ResourceNotFoundException {
         S3Resource resource = create(key, resourcePersistenceType, mimeType);
         return resource;
     }
@@ -82,17 +83,17 @@ public class S3ResourceRepositoryImpl implements ResourceRepository<Resource> {
     }
 
     @Override
-    public InputStream getInputStream(URI uri) throws ResourceIOException {
+    public InputStream getInputStream(URI uri) throws ResourceIOException, ResourceNotFoundException {
       throw new UnsupportedOperationException("Not supported yet.");
       //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
-    public InputStream getInputStream(Resource r) throws ResourceIOException {
+    public InputStream getInputStream(Resource r) throws ResourceIOException, ResourceNotFoundException {
         return getInputStream((S3Resource) r);
     }
 
-    public InputStream getInputStream(S3Resource r) throws ResourceIOException{
+    public InputStream getInputStream(S3Resource r) throws ResourceIOException, ResourceNotFoundException{
         log.info("Getting input stream for resource >> "+r.toString());
         AmazonS3 s3=S3ResourceRepositoryImpl.getClientInstance();
         S3Object obj=null;
@@ -105,8 +106,8 @@ public class S3ResourceRepositoryImpl implements ResourceRepository<Resource> {
         }
         catch (AmazonS3Exception e) {
             String msg=r.getIdentifier();
-            //System.out.println("S3 client failed for identifier >> "+msg);
-            throw new ResourceIOException(msg+System.lineSeparator()+e.getMessage());
+            System.out.println(">>>>>>>> S3 client failed for identifier >> "+e.getStatusCode());
+            throw new ResourceNotFoundException();
         }
         InputStream stream=obj.getObjectContent();
         log.info("Obj from s3 >> "+stream);
@@ -114,7 +115,7 @@ public class S3ResourceRepositoryImpl implements ResourceRepository<Resource> {
     }
 
     @Override
-    public Reader getReader(Resource r) throws ResourceIOException {
+    public Reader getReader(Resource r) throws ResourceIOException, ResourceNotFoundException {
       throw new UnsupportedOperationException("Not supported yet.");
       //To change body of generated methods, choose Tools | Templates.
     }

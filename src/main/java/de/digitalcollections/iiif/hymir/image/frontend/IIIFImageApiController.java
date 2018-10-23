@@ -88,7 +88,6 @@ public class IIIFImageApiController {
     } else {
       path = request.getServletPath();
     }
-
     long modified = imageService.getImageModificationDate(identifier).toEpochMilli();
     webRequest.checkNotModified(modified);
     headers.setDate("Last-Modified", modified);

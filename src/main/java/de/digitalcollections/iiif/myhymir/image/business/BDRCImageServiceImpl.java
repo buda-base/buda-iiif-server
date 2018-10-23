@@ -46,7 +46,7 @@ import de.digitalcollections.turbojpeg.imageio.TurboJpegImageReader;
 @Service
 @Primary
 public class BDRCImageServiceImpl implements ImageService {
-    
+
     @Autowired(required = false)
     private ImageSecurityService imageSecurityService;
 
@@ -80,7 +80,7 @@ public class BDRCImageServiceImpl implements ImageService {
 
     /** Update ImageService based on the image **/
     private void enrichInfo(ImageReader reader, de.digitalcollections.iiif.model.image.ImageService info) throws IOException {
-      
+
       ImageApiProfile profile = new ImageApiProfile();
       profile.addFeature(
               ImageApiProfile.Feature.BASE_URI_REDIRECT,
@@ -164,7 +164,7 @@ public class BDRCImageServiceImpl implements ImageService {
       }
       Resource res;
       try {
-        res = resourceService.get(identifier, ResourcePersistenceType.RESOLVED, MimeType.MIME_IMAGE);      
+        res = resourceService.get(identifier, ResourcePersistenceType.RESOLVED, MimeType.MIME_IMAGE);
       } catch (ResourceIOException e) {
         throw new ResourceNotFoundException();
       }
@@ -176,6 +176,7 @@ public class BDRCImageServiceImpl implements ImageService {
       return reader;
     }
 
+    @Override
     public void readImageInfo(String identifier, de.digitalcollections.iiif.model.image.ImageService info)
             throws UnsupportedFormatException, UnsupportedOperationException, ResourceNotFoundException, IOException {
       enrichInfo(getReader(identifier), info);
@@ -230,7 +231,7 @@ public class BDRCImageServiceImpl implements ImageService {
       }
 
       // Determine the closest resolution to the target that can be decoded directly
-      double targetScaleFactor = (double) targetSize.width / targetRegion.getWidth();
+      double targetScaleFactor = targetSize.width / targetRegion.getWidth();
       double decodeScaleFactor = 1.0;
       int imageIndex = 0;
       for (int idx = 0; idx < reader.getNumImages(true); idx++) {
@@ -309,7 +310,8 @@ public class BDRCImageServiceImpl implements ImageService {
       return img;
     }
 
-    
+
+    @Override
     public void processImage(String identifier, ImageApiSelector selector, ImageApiProfile profile, OutputStream os)
             throws InvalidParametersException, UnsupportedOperationException, UnsupportedFormatException, ResourceNotFoundException, IOException {
       DecodedImage img = readImage(identifier, selector, profile);
@@ -324,7 +326,8 @@ public class BDRCImageServiceImpl implements ImageService {
       writer.dispose();
       ios.flush();
     }
-    
+
+    @Override
     public Instant getImageModificationDate(String identifier) throws ResourceNotFoundException {
       if (imageSecurityService != null && !imageSecurityService.isAccessAllowed(identifier)) {
         throw new ResourceNotFoundException();
