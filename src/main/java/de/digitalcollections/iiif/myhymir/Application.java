@@ -7,6 +7,7 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 
 import io.bdrc.auth.AuthProps;
 import io.bdrc.auth.rdf.RdfAuthModel;
@@ -15,6 +16,7 @@ import io.bdrc.auth.rdf.RdfAuthModel;
 @SpringBootApplication
 @Configuration
 @EnableAutoConfiguration
+@Primary
 @ComponentScan(
         basePackages = {
           "io.bdrc.archives",
@@ -31,9 +33,7 @@ public class Application extends SpringBootServletInitializer{
 
     public static void main(String[] args) throws Exception {
         SpringApplication.run(Application.class, args);
-        System.out.println(" config >>"+configPath);
         AuthProps.init(configPath+"iiifserv.properties");
-
         RdfAuthModel.init();
     }
 
