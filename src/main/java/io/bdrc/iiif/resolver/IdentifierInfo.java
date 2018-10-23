@@ -13,15 +13,17 @@ import org.json.simple.JSONObject;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import de.digitalcollections.iiif.hymir.model.exception.ResourceNotFoundException;
+
 public class IdentifierInfo {
 
-    public String work;
-    public String asset;
-    public String access;
-    public String volumeId;
+    public String work="";
+    public String asset="";
+    public String access="";
+    public String volumeId="";
 
     @SuppressWarnings("unchecked")
-    public IdentifierInfo(String volumeImageAsset) throws ClientProtocolException, IOException{
+    public IdentifierInfo(String volumeImageAsset) throws ClientProtocolException, IOException,ResourceNotFoundException{
         HttpClient httpClient = HttpClientBuilder.create().build();
         HttpPost request = new HttpPost("http://purl.bdrc.io/query/IdentifierInfo");
         JSONObject object = new JSONObject();
@@ -33,9 +35,23 @@ public class IdentifierInfo {
         HttpResponse response = httpClient.execute(request);
         ObjectMapper mapper=new ObjectMapper();
         JsonNode node=mapper.readTree(response.getEntity().getContent());
-        this.work = node.findValue("work").findValue("value").toString().replaceAll("\"", "");
-        this.asset = node.findValue("asset").findValue("value").toString().replaceAll("\"", "");
-        this.access = node.findValue("access").findValue("value").toString().replaceAll("\"", "");
+        if(node!=null) {
+            if(isValidJson(node)) {
+                this.work = node.findValue("work").findValue("value").toString().replaceAll("\"", "");
+                this.asset =node.findValue("asset").findValue("value").toString().replaceAll("\"", "");
+                this.access = node.findValue("access").findValue("value").toString().replaceAll("\"", "");
+            }
+            else {
+                throw new ResourceNotFoundException();
+            }
+        }
+        else {
+            throw new ResourceNotFoundException();
+        }
+    }
+
+    public boolean isValidJson(JsonNode node) {
+        return (node.findValue("work")!=null && node.findValue("asset")!= null && node.findValue("access")!=null);
     }
 
     public String getWork() {

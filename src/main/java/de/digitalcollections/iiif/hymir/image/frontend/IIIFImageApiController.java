@@ -188,7 +188,7 @@ public class IIIFImageApiController {
     return "redirect:/image/" + VERSION + "/" + identifier + "/info.json";
   }
 
-  public String getAccessType(String identifier) throws UnsupportedOperationException, IOException {
+  public String getAccessType(String identifier) throws UnsupportedOperationException, IOException, ResourceNotFoundException {
       try {
           String[] parts=identifier.split("::");
           IdentifierInfo info1=new IdentifierInfo(parts[0]);

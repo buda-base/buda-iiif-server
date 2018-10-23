@@ -67,8 +67,6 @@ management:
   security:
     enabled: true
 
-
-
 spring:
   profiles: PROD
   thymeleaf:
@@ -77,7 +75,6 @@ spring:
     user:
       name: admin
       password: secret1
-  
 
 server:
   contextPath: /
