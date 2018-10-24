@@ -124,7 +124,6 @@ public class BDRCImageServiceImpl implements ImageService {
           }
         }
       }
-
       // Check if tiling is supported
       if (reader.isImageTiled(0)) {
         int width = reader.getTileWidth(0);
@@ -155,6 +154,7 @@ public class BDRCImageServiceImpl implements ImageService {
       tile.setHeight(reader.getHeight(0));
       tile.addScaleFactor(1, 2, 4, 8);
       info.addTile(tile);
+
     }
 
     /** Try to obtain a {@link ImageReader} for a given identifier **/

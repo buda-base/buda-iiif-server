@@ -3,6 +3,7 @@ package de.digitalcollections.iiif.hymir.image.frontend;
 import java.awt.Dimension;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URLDecoder;
 
 import javax.servlet.http.HttpServletRequest;
@@ -29,6 +30,7 @@ import de.digitalcollections.iiif.model.image.ImageApiSelector;
 import de.digitalcollections.iiif.model.image.ResolvingException;
 import de.digitalcollections.iiif.model.jackson.IiifObjectMapper;
 import io.bdrc.auth.Access;
+import io.bdrc.iiif.auth.AuthServiceInfo;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 
 @Controller
@@ -162,8 +164,9 @@ public class IIIFImageApiController {
     String baseUrl = getUrlBase(req);
     de.digitalcollections.iiif.model.image.ImageService info = new de.digitalcollections.iiif.model.image.ImageService(
         baseUrl + path.replace("/info.json", ""));
+    AuthServiceInfo authServ=new AuthServiceInfo(new URI("http://iiif.io/api/auth/1/context.json"));
+    info.addService(authServ);
     imageService.readImageInfo(identifier, info);
-
     HttpHeaders headers = new HttpHeaders();
     headers.setDate("Last-Modified", modified);
     String contentType = req.getHeader("Accept");
