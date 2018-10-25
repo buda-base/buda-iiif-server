@@ -84,7 +84,11 @@ public class IIIFImageApiController {
     identifier = URLDecoder.decode(identifier, "UTF-8");
     String accessType=getAccessType(identifier);
     if(!acc.hasResourceAccess(accessType)) {
-        return new ResponseEntity<>("Insufficient rights".getBytes(), HttpStatus.UNAUTHORIZED);
+        if(serviceInfo.isAuthEnabled() && serviceInfo.hasValidProperties()) {
+            return new ResponseEntity<>("Insufficient rights".getBytes(), HttpStatus.UNAUTHORIZED);
+        }else {
+            return new ResponseEntity<>("Insufficient rights".getBytes(), HttpStatus.FORBIDDEN);
+        }
     }
     HttpHeaders headers = new HttpHeaders();
     String path;
@@ -181,7 +185,7 @@ public class IIIFImageApiController {
     // We set the header ourselves, since using @CrossOrigin doesn't expose "*", but always sets the requesting domain
     //headers.add("Access-Control-Allow-Origin", "*");
     if(unAuthorized) {
-        if(serviceInfo.hasValidProperties()) {
+        if(serviceInfo.hasValidProperties() && serviceInfo.isAuthEnabled()) {
             return new ResponseEntity<>(objectMapper.writeValueAsString(info), headers, HttpStatus.UNAUTHORIZED);
         }else {
             return new ResponseEntity<>(objectMapper.writeValueAsString(info), headers, HttpStatus.FORBIDDEN);
