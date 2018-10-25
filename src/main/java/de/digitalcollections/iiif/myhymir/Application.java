@@ -1,5 +1,9 @@
 package de.digitalcollections.iiif.myhymir;
 
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.util.Properties;
+
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -33,7 +37,10 @@ public class Application extends SpringBootServletInitializer{
     static final String configPath= System.getProperty("iiifserv.configpath");
 
     public static void main(String[] args) throws Exception {
-        AuthProps.init(configPath+"iiifserv.properties");
+        InputStream is=new FileInputStream(configPath+"iiifserv.properties");
+        Properties props=new Properties();
+        props.load(is);
+        AuthProps.init(props);
         SpringApplication.run(Application.class, args);
         RdfAuthModel.init();
     }
