@@ -3,7 +3,6 @@ package de.digitalcollections.iiif.hymir.image.frontend;
 import java.awt.Dimension;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.net.URI;
 import java.net.URLDecoder;
 
 import javax.servlet.http.HttpServletRequest;
@@ -36,10 +35,14 @@ import io.bdrc.iiif.resolver.IdentifierInfo;
 @Controller
 @RequestMapping("/image/v2/")
 public class IIIFImageApiController {
+
   public static final String VERSION = "v2";
 
   @Autowired
   private ImageService imageService;
+
+  @Autowired
+  private AuthServiceInfo serviceInfo;
 
   @Autowired
   private IiifObjectMapper objectMapper;
@@ -81,7 +84,7 @@ public class IIIFImageApiController {
     identifier = URLDecoder.decode(identifier, "UTF-8");
     String accessType=getAccessType(identifier);
     if(!acc.hasResourceAccess(accessType)) {
-        return new ResponseEntity<>("Insufficient rights".getBytes(), HttpStatus.FORBIDDEN);
+        return new ResponseEntity<>("Insufficient rights".getBytes(), HttpStatus.UNAUTHORIZED);
     }
     HttpHeaders headers = new HttpHeaders();
     String path;
@@ -147,12 +150,7 @@ public class IIIFImageApiController {
     Access acc=(Access)req.getAttribute("access");
     identifier = URLDecoder.decode(identifier, "UTF-8");
     String accessType=getAccessType(identifier);
-    /*if(accessType ==null) {
-        return new ResponseEntity<>("Insufficient rights", HttpStatus.FORBIDDEN);
-    }
-    if(!acc.hasResourceAccess(accessType)) {
-        return new ResponseEntity<>("Insufficient rights", HttpStatus.FORBIDDEN);
-    }*/
+    boolean unAuthorized=(accessType ==null || !acc.hasResourceAccess(accessType));
     long modified = imageService.getImageModificationDate(identifier).toEpochMilli();
     webRequest.checkNotModified(modified);
     String path;
@@ -164,8 +162,9 @@ public class IIIFImageApiController {
     String baseUrl = getUrlBase(req);
     de.digitalcollections.iiif.model.image.ImageService info = new de.digitalcollections.iiif.model.image.ImageService(
         baseUrl + path.replace("/info.json", ""));
-    AuthServiceInfo authServ=new AuthServiceInfo(new URI("http://iiif.io/api/auth/1/context.json"));
-    info.addService(authServ);
+    if(unAuthorized && serviceInfo.isAuthEnabled() && serviceInfo.hasValidProperties()) {
+        info.addService(serviceInfo);
+    }
     imageService.readImageInfo(identifier, info);
     HttpHeaders headers = new HttpHeaders();
     headers.setDate("Last-Modified", modified);
@@ -181,8 +180,12 @@ public class IIIFImageApiController {
     headers.add("Link", String.format("<%s>;rel=\"profile\"", info.getProfiles().get(0).getIdentifier().toString()));
     // We set the header ourselves, since using @CrossOrigin doesn't expose "*", but always sets the requesting domain
     //headers.add("Access-Control-Allow-Origin", "*");
-    if(accessType ==null || !acc.hasResourceAccess(accessType)) {
-        return new ResponseEntity<>(objectMapper.writeValueAsString(info), headers, HttpStatus.UNAUTHORIZED);
+    if(unAuthorized) {
+        if(serviceInfo.hasValidProperties()) {
+            return new ResponseEntity<>(objectMapper.writeValueAsString(info), headers, HttpStatus.UNAUTHORIZED);
+        }else {
+            return new ResponseEntity<>(objectMapper.writeValueAsString(info), headers, HttpStatus.FORBIDDEN);
+        }
     }else {
         return new ResponseEntity<>(objectMapper.writeValueAsString(info), headers, HttpStatus.OK);
     }

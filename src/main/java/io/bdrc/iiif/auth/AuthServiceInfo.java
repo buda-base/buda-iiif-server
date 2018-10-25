@@ -5,80 +5,135 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.stereotype.Component;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import de.digitalcollections.iiif.model.Profile;
+import de.digitalcollections.iiif.model.PropertyValue;
 import de.digitalcollections.iiif.model.Service;
+import io.bdrc.auth.AuthProps;
 
+@Component
 public class AuthServiceInfo extends Service{
 
     @JsonProperty("service")
     private List<AuthService> services;
 
     @JsonProperty("header")
-    private String header;
+    private PropertyValue header;
 
     @JsonProperty("description")
-    private String description;
+    private PropertyValue description;
 
     @JsonProperty("confirmLabel")
-    private String confirmLabel;
+    private PropertyValue confirmLabel;
 
     @JsonProperty("failureHeader")
-    private String failureHeader;
+    private PropertyValue failureHeader;
 
-    public AuthServiceInfo(URI context) throws URISyntaxException {
-        super(context);
-        setIdentifier(new URI("https://iiif.bdrc.io/auth/login"));
-        addProfile(new Profile(new URI("http://iiif.io/api/auth/1/login")));
-        setLabel("Login to BDRC");
-        setHeader("Please Log In");
-        setDescription("Login to BDRC image resources");
-        setConfirmLabel("Login");
-        setFailureHeader("Authentication Failed");
-        services=new ArrayList<>();
-        AuthService token=new AuthService("https://iiif.bdrc.io/auth/token",
-                "http://iiif.io/api/auth/1/token");
-        addService(token);
-        AuthService logout=new AuthService("https://iiif.bdrc.io/auth/logout",
-                "http://iiif.io/api/auth/1/logout");
-        addService(logout);
+    private String loginSvc=AuthProps.getProperty("authLoginSvc");
+    private String tokenSvc=AuthProps.getProperty("authTokenSvc");
+    private String logoutSvc=AuthProps.getProperty("authLogoutSvc");
+    private boolean authEnabled=Boolean.parseBoolean(AuthProps.getProperty("authEnabled"));
+    private boolean useExternal=Boolean.parseBoolean(AuthProps.getProperty("authExternal"));
+
+    public static String AUTH_LOGIN="http://iiif.io/api/auth/1/login";
+    public static String AUTH_EXT="http://iiif.io/api/auth/1/external";
+    public static String AUTH_CONTEXT="http://iiif.io/api/auth/1/context.json";
+
+
+    public AuthServiceInfo() throws URISyntaxException {
+        super(new URI(AUTH_CONTEXT));
+        if(hasValidProperties()) {
+            setIdentifier(new URI(loginSvc));
+            if(useExternal) {
+                addProfile(new Profile(new URI(AUTH_EXT)));
+            }
+            else{
+                addProfile(new Profile(new URI(AUTH_LOGIN)));
+            }
+            setLabel(new PropertyValue("Login to BDRC"));
+            setHeader(new PropertyValue("Please Log In"));
+            setDescription(new PropertyValue("Login to BDRC image resources"));
+            setConfirmLabel(new PropertyValue("Login"));
+            setFailureHeader(new PropertyValue("Authentication Failed"));
+            services=new ArrayList<>();
+            AuthService token=new AuthService(tokenSvc,
+                    "http://iiif.io/api/auth/1/token");
+            addService(token);
+            AuthService logout=new AuthService(logoutSvc,
+                    "http://iiif.io/api/auth/1/logout");
+            addService(logout);
+        }
+    }
+
+    public boolean hasValidProperties() {
+        return (loginSvc!=null && tokenSvc!=null && logoutSvc!=null);
     }
 
     public void addService(AuthService auth) {
         services.add(auth);
     }
 
-    public String getHeader() {
+    public PropertyValue getHeader() {
         return header;
     }
 
-    public void setHeader(String header) {
+    public void setHeader(PropertyValue header) {
         this.header = header;
     }
 
-    public String getDescription() {
+    public PropertyValue getDescription() {
         return description;
     }
 
-    public void setDescription(String description) {
+    public void setDescription(PropertyValue description) {
         this.description = description;
     }
 
-    public String getConfirmLabel() {
+    public PropertyValue getConfirmLabel() {
         return confirmLabel;
     }
 
-    public void setConfirmLabel(String confirmLabel) {
+    public void setConfirmLabel(PropertyValue confirmLabel) {
         this.confirmLabel = confirmLabel;
     }
 
-    public String getFailureHeader() {
+    public PropertyValue getFailureHeader() {
         return failureHeader;
     }
 
-    public void setFailureHeader(String failureHeader) {
+    public void setFailureHeader(PropertyValue failureHeader) {
         this.failureHeader = failureHeader;
+    }
+
+    public List<AuthService> getServices() {
+        return services;
+    }
+
+    public String getLoginSvc() {
+        return loginSvc;
+    }
+
+    public String getTokenSvc() {
+        return tokenSvc;
+    }
+
+    public String getLogoutSvc() {
+        return logoutSvc;
+    }
+
+    public boolean isAuthEnabled() {
+        return authEnabled;
+    }
+
+    @Override
+    public String toString() {
+        return "AuthServiceInfo [services=" + services + ", header=" + header + ", description=" + description
+                + ", confirmLabel=" + confirmLabel + ", failureHeader=" + failureHeader + ", loginSvc=" + loginSvc
+                + ", tokenSvc=" + tokenSvc + ", logoutSvc=" + logoutSvc + ", authEnabled=" + authEnabled
+                + ", useExternal=" + useExternal + "]";
     }
 
 }

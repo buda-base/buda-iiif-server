@@ -20,6 +20,7 @@ import io.bdrc.auth.rdf.RdfAuthModel;
 @ComponentScan(
         basePackages = {
           "io.bdrc.archives",
+          "io.bdrc.iiif.auth",
           "de.digitalcollections.iiif.hymir",
           "de.digitalcollections.iiif.myhymir",
           "de.digitalcollections.core.backend.impl.file.repository.resource.util"
@@ -32,8 +33,8 @@ public class Application extends SpringBootServletInitializer{
     static final String configPath= System.getProperty("iiifserv.configpath");
 
     public static void main(String[] args) throws Exception {
-        SpringApplication.run(Application.class, args);
         AuthProps.init(configPath+"iiifserv.properties");
+        SpringApplication.run(Application.class, args);
         RdfAuthModel.init();
     }
 
