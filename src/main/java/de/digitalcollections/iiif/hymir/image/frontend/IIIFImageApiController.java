@@ -147,12 +147,12 @@ public class IIIFImageApiController {
     Access acc=(Access)req.getAttribute("access");
     identifier = URLDecoder.decode(identifier, "UTF-8");
     String accessType=getAccessType(identifier);
-    if(accessType ==null) {
+    /*if(accessType ==null) {
         return new ResponseEntity<>("Insufficient rights", HttpStatus.FORBIDDEN);
     }
     if(!acc.hasResourceAccess(accessType)) {
         return new ResponseEntity<>("Insufficient rights", HttpStatus.FORBIDDEN);
-    }
+    }*/
     long modified = imageService.getImageModificationDate(identifier).toEpochMilli();
     webRequest.checkNotModified(modified);
     String path;
@@ -181,7 +181,11 @@ public class IIIFImageApiController {
     headers.add("Link", String.format("<%s>;rel=\"profile\"", info.getProfiles().get(0).getIdentifier().toString()));
     // We set the header ourselves, since using @CrossOrigin doesn't expose "*", but always sets the requesting domain
     //headers.add("Access-Control-Allow-Origin", "*");
-    return new ResponseEntity<>(objectMapper.writeValueAsString(info), headers, HttpStatus.OK);
+    if(accessType ==null || !acc.hasResourceAccess(accessType)) {
+        return new ResponseEntity<>(objectMapper.writeValueAsString(info), headers, HttpStatus.UNAUTHORIZED);
+    }else {
+        return new ResponseEntity<>(objectMapper.writeValueAsString(info), headers, HttpStatus.OK);
+    }
   }
 
   @RequestMapping(value = "{identifier}", method = {RequestMethod.GET, RequestMethod.HEAD})

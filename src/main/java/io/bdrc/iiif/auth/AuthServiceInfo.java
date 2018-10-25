@@ -81,7 +81,4 @@ public class AuthServiceInfo extends Service{
         this.failureHeader = failureHeader;
     }
 
-
-
-
 }
