@@ -84,7 +84,7 @@ public class IIIFImageApiController {
     identifier = URLDecoder.decode(identifier, "UTF-8");
     String accessType=getAccessType(identifier);
     if(!acc.hasResourceAccess(accessType)) {
-        if(serviceInfo.isAuthEnabled() && serviceInfo.hasValidProperties()) {
+        if(serviceInfo.authEnabled() && serviceInfo.hasValidProperties()) {
             return new ResponseEntity<>("Insufficient rights".getBytes(), HttpStatus.UNAUTHORIZED);
         }else {
             return new ResponseEntity<>("Insufficient rights".getBytes(), HttpStatus.FORBIDDEN);
@@ -166,7 +166,7 @@ public class IIIFImageApiController {
     String baseUrl = getUrlBase(req);
     de.digitalcollections.iiif.model.image.ImageService info = new de.digitalcollections.iiif.model.image.ImageService(
         baseUrl + path.replace("/info.json", ""));
-    if(unAuthorized && serviceInfo.isAuthEnabled() && serviceInfo.hasValidProperties()) {
+    if(unAuthorized && serviceInfo.authEnabled() && serviceInfo.hasValidProperties()) {
         info.addService(serviceInfo);
     }
     imageService.readImageInfo(identifier, info);
@@ -185,7 +185,7 @@ public class IIIFImageApiController {
     // We set the header ourselves, since using @CrossOrigin doesn't expose "*", but always sets the requesting domain
     //headers.add("Access-Control-Allow-Origin", "*");
     if(unAuthorized) {
-        if(serviceInfo.hasValidProperties() && serviceInfo.isAuthEnabled()) {
+        if(serviceInfo.hasValidProperties() && serviceInfo.authEnabled()) {
             return new ResponseEntity<>(objectMapper.writeValueAsString(info), headers, HttpStatus.UNAUTHORIZED);
         }else {
             return new ResponseEntity<>(objectMapper.writeValueAsString(info), headers, HttpStatus.FORBIDDEN);

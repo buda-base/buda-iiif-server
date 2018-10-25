@@ -35,8 +35,6 @@ public class AuthServiceInfo extends Service{
     private String loginSvc=AuthProps.getProperty("authLoginSvc");
     private String tokenSvc=AuthProps.getProperty("authTokenSvc");
     private String logoutSvc=AuthProps.getProperty("authLogoutSvc");
-    private boolean authEnabled=Boolean.parseBoolean(AuthProps.getProperty("authEnabled"));
-    private boolean useExternal=Boolean.parseBoolean(AuthProps.getProperty("authExternal"));
 
     public static String AUTH_LOGIN="http://iiif.io/api/auth/1/login";
     public static String AUTH_EXT="http://iiif.io/api/auth/1/external";
@@ -45,6 +43,7 @@ public class AuthServiceInfo extends Service{
 
     public AuthServiceInfo() throws URISyntaxException {
         super(new URI(AUTH_CONTEXT));
+        boolean useExternal=Boolean.parseBoolean(AuthProps.getProperty("authExternal"));
         if(hasValidProperties()) {
             setIdentifier(new URI(loginSvc));
             if(useExternal) {
@@ -84,24 +83,12 @@ public class AuthServiceInfo extends Service{
         this.header = header;
     }
 
-    public PropertyValue getDescription() {
-        return description;
-    }
-
     public void setDescription(PropertyValue description) {
         this.description = description;
     }
 
-    public PropertyValue getConfirmLabel() {
-        return confirmLabel;
-    }
-
     public void setConfirmLabel(PropertyValue confirmLabel) {
         this.confirmLabel = confirmLabel;
-    }
-
-    public PropertyValue getFailureHeader() {
-        return failureHeader;
     }
 
     public void setFailureHeader(PropertyValue failureHeader) {
@@ -112,28 +99,8 @@ public class AuthServiceInfo extends Service{
         return services;
     }
 
-    public String getLoginSvc() {
-        return loginSvc;
-    }
-
-    public String getTokenSvc() {
-        return tokenSvc;
-    }
-
-    public String getLogoutSvc() {
-        return logoutSvc;
-    }
-
-    public boolean isAuthEnabled() {
-        return authEnabled;
-    }
-
-    @Override
-    public String toString() {
-        return "AuthServiceInfo [services=" + services + ", header=" + header + ", description=" + description
-                + ", confirmLabel=" + confirmLabel + ", failureHeader=" + failureHeader + ", loginSvc=" + loginSvc
-                + ", tokenSvc=" + tokenSvc + ", logoutSvc=" + logoutSvc + ", authEnabled=" + authEnabled
-                + ", useExternal=" + useExternal + "]";
+    public boolean authEnabled() {
+        return Boolean.parseBoolean(AuthProps.getProperty("authEnabled"));
     }
 
 }
