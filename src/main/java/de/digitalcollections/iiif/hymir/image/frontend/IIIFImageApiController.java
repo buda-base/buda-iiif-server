@@ -3,13 +3,17 @@ package de.digitalcollections.iiif.hymir.image.frontend;
 import java.awt.Dimension;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.net.URLEncoder;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.jena.atlas.logging.Log;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -20,6 +24,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.context.request.WebRequest;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+
 import de.digitalcollections.iiif.hymir.image.business.api.ImageService;
 import de.digitalcollections.iiif.hymir.model.exception.InvalidParametersException;
 import de.digitalcollections.iiif.hymir.model.exception.ResourceNotFoundException;
@@ -29,6 +35,8 @@ import de.digitalcollections.iiif.model.image.ImageApiSelector;
 import de.digitalcollections.iiif.model.image.ResolvingException;
 import de.digitalcollections.iiif.model.jackson.IiifObjectMapper;
 import io.bdrc.auth.Access;
+import io.bdrc.auth.AuthProps;
+import io.bdrc.auth.TokenValidation;
 import io.bdrc.iiif.auth.AuthServiceInfo;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 
@@ -46,6 +54,9 @@ public class IIIFImageApiController {
 
   @Autowired
   private IiifObjectMapper objectMapper;
+
+  @Value("${cache-control.maxage}")
+  private String maxAge;
 
   /**
    * Get the base URL for all Image API URLs from the request.
@@ -70,6 +81,31 @@ public class IIIFImageApiController {
       base += request.getContextPath();
     }
     return base;
+  }
+
+  @RequestMapping(value = "/setcookie")
+  ResponseEntity<String> getCookie(HttpServletRequest req,HttpServletResponse response) throws JsonProcessingException, UnsupportedEncodingException{
+      HttpHeaders headers = new HttpHeaders();
+      headers.add("Content-Type", "application/json");
+      ResponseEntity<String> resp=null;
+      boolean valid=false;
+      String token=getToken(req.getHeader("Authorization"));
+      if(token==null) {
+          return new ResponseEntity<>("{\"success\":"+valid+"}", headers, HttpStatus.FORBIDDEN);
+      }
+      valid=new TokenValidation(token).isValid();
+      if(valid) {
+          Cookie c = new Cookie(AuthProps.getProperty("cookieKey"),URLEncoder.encode( "Bearer "+token, "UTF-8" ));
+          //c.setSecure(true);
+          c.setMaxAge(Integer.parseInt(maxAge));
+          c.setHttpOnly(true);
+          response.addCookie(c);
+          resp= new ResponseEntity<>("{\"success\":"+valid+"}", headers, HttpStatus.OK);
+      }else {
+          resp= new ResponseEntity<>("{\"success\":"+valid+"}", headers, HttpStatus.FORBIDDEN);
+      }
+      System.out.println(" Token found = "+req.getHeader("Authorization"));
+      return resp;
   }
 
   @RequestMapping(value = "{identifier}/{region}/{size}/{rotation}/{quality}.{format}")
@@ -211,5 +247,18 @@ public class IIIFImageApiController {
           Log.error(this, e.getMessage());
           throw e;
       }
+  }
+
+  String getToken(String header) {
+      try {
+          if(header!=null) {
+              return header.split(" ")[1];
+          }
+      }
+      catch(Exception ex) {
+          ex.printStackTrace();
+          return null;
+      }
+      return null;
   }
 }

@@ -8,6 +8,7 @@ import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 
 import org.slf4j.Logger;
@@ -16,6 +17,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import io.bdrc.auth.Access;
+import io.bdrc.auth.AuthProps;
 import io.bdrc.auth.TokenValidation;
 import io.bdrc.auth.UserProfile;
 import io.bdrc.auth.model.Endpoint;
@@ -37,6 +39,17 @@ public class IIIFRdfAuthFilter implements Filter{
             throws IOException, ServletException {
 
         String token=getToken(((HttpServletRequest)req).getHeader("Authorization"));
+        if(token==null) {
+            Cookie[] cookies=((HttpServletRequest)req).getCookies();
+            if(cookies!=null) {
+                for(Cookie cook:cookies) {
+                    if(cook.getName().equals(AuthProps.getProperty("cookieKey"))) {
+                        token = cook.getValue();
+                        break;
+                    }
+                }
+            }
+        }
         TokenValidation validation=null;
         UserProfile prof=null;
         if(token !=null) {

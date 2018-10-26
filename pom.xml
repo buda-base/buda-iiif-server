@@ -27,6 +27,11 @@
   </parent>
   
   <dependencies>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-test</artifactId>
+        <scope>test</scope>
+    </dependency>
     <!-- https://mvnrepository.com/artifact/de.digitalcollections/iiif-server-hymir -->
     <dependency>
         <groupId>de.digitalcollections</groupId>
