@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.util.Calendar;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -13,7 +14,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.jena.atlas.logging.Log;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -55,9 +55,6 @@ public class IIIFImageApiController {
   @Autowired
   private IiifObjectMapper objectMapper;
 
-  @Value("${cache-control.maxage}")
-  private String maxAge;
-
   /**
    * Get the base URL for all Image API URLs from the request.
    *
@@ -93,11 +90,12 @@ public class IIIFImageApiController {
       if(token==null) {
           return new ResponseEntity<>("{\"success\":"+valid+"}", headers, HttpStatus.FORBIDDEN);
       }
-      valid=new TokenValidation(token).isValid();
+      TokenValidation tkVal=new TokenValidation(token);
+      valid=tkVal.isValid();
       if(valid) {
-          Cookie c = new Cookie(AuthProps.getProperty("cookieKey"),URLEncoder.encode( "Bearer "+token, "UTF-8" ));
+          Cookie c = new Cookie(AuthProps.getProperty("cookieKey"),URLEncoder.encode(token, "UTF-8" ));
           //c.setSecure(true);
-          c.setMaxAge(Integer.parseInt(maxAge));
+          c.setMaxAge(computeExpires(tkVal));
           c.setHttpOnly(true);
           response.addCookie(c);
           resp= new ResponseEntity<>("{\"success\":"+valid+"}", headers, HttpStatus.OK);
@@ -247,6 +245,12 @@ public class IIIFImageApiController {
           Log.error(this, e.getMessage());
           throw e;
       }
+  }
+
+  public int computeExpires(TokenValidation tkVal) {
+      long expires=tkVal.getVerifiedJwt().getExpiresAt().toInstant().getEpochSecond();
+      long current=Calendar.getInstance().getTime().toInstant().getEpochSecond();
+      return (int)(expires-current);
   }
 
   String getToken(String header) {

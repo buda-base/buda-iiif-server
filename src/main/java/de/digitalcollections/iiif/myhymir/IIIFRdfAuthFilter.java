@@ -43,9 +43,15 @@ public class IIIFRdfAuthFilter implements Filter{
             Cookie[] cookies=((HttpServletRequest)req).getCookies();
             if(cookies!=null) {
                 for(Cookie cook:cookies) {
-                    if(cook.getName().equals(AuthProps.getProperty("cookieKey"))) {
-                        token = cook.getValue();
-                        break;
+                    if(cook.getName().equals("Set-Cookie")) {
+                        String ck=cook.getValue();
+                        String[] parts=ck.split(";");
+                        for(String part:parts) {
+                            if(cook.getName().equals(AuthProps.getProperty("cookieKey"))) {
+                                token=part.split("=")[0];
+                                break;
+                            }
+                        }
                     }
                 }
             }
@@ -53,7 +59,7 @@ public class IIIFRdfAuthFilter implements Filter{
         TokenValidation validation=null;
         UserProfile prof=null;
         if(token !=null) {
-            //User is logged on
+            //User is logged in
             //Getting his profile
             validation=new TokenValidation(token);
             prof=validation.getUser();
