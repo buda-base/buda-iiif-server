@@ -27,6 +27,7 @@ import de.digitalcollections.core.model.api.resource.enums.ResourcePersistenceTy
 import de.digitalcollections.core.model.api.resource.exceptions.ResourceIOException;
 import de.digitalcollections.core.model.impl.resource.S3Resource;
 import de.digitalcollections.iiif.hymir.model.exception.ResourceNotFoundException;
+import io.bdrc.auth.AuthProps;
 
 
 /**
@@ -141,8 +142,8 @@ public class S3ResourceRepositoryImpl implements ResourceRepository<Resource> {
         config.setMaxConnections(50);
         config.setMaxErrorRetry(100);
         config.setSocketTimeout(300000);
-        AmazonS3ClientBuilder.standard().withClientConfiguration(config);
-        return AmazonS3ClientBuilder.defaultClient();
+
+        return AmazonS3ClientBuilder.standard().withRegion(AuthProps.getProperty("awsRegion")).withClientConfiguration(config).build();
     }
 
     @Override
