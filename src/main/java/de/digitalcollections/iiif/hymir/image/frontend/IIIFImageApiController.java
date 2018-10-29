@@ -102,7 +102,6 @@ public class IIIFImageApiController {
       }else {
           resp= new ResponseEntity<>("{\"success\":"+valid+"}", headers, HttpStatus.FORBIDDEN);
       }
-      System.out.println(" Token found = "+req.getHeader("Authorization"));
       return resp;
   }
 

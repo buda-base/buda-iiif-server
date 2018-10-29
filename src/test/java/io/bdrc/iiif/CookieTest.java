@@ -89,14 +89,10 @@ public class CookieTest {
         HttpClient client=HttpClientBuilder.create().build();
         HttpGet get=new HttpGet("http://localhost:"+environment.getProperty("local.server.port")+"/image/v2/setcookie");
         get.addHeader("Authorization", "Bearer "+tok);
-        System.out.println("GET Header >>" +get.getFirstHeader("Authorization").getValue());
         HttpResponse resp=client.execute(get);
         assert(resp.getStatusLine().getStatusCode()==200);
         Header[] h=resp.getHeaders("Set-Cookie");
         assert(h!=null);
-        for(Header hd:h) {
-            System.out.println("Set cookie Headers >>" +hd);
-        }
         HttpEntity ent=resp.getEntity();
         ByteArrayOutputStream baos=new ByteArrayOutputStream();
         ent.writeTo(baos);
