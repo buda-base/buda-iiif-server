@@ -3,6 +3,7 @@ package de.digitalcollections.iiif.myhymir.backend.impl.repository;
 import java.io.InputStream;
 import java.io.Reader;
 import java.net.URI;
+import java.util.Properties;
 import java.util.UUID;
 
 import org.slf4j.Logger;
@@ -27,8 +28,6 @@ import de.digitalcollections.core.model.api.resource.enums.ResourcePersistenceTy
 import de.digitalcollections.core.model.api.resource.exceptions.ResourceIOException;
 import de.digitalcollections.core.model.impl.resource.S3Resource;
 import de.digitalcollections.iiif.hymir.model.exception.ResourceNotFoundException;
-import io.bdrc.auth.AuthProps;
-
 
 /**
  * A ResourceRepository implementation to use with Amazon S3 services
@@ -44,7 +43,21 @@ public class S3ResourceRepositoryImpl implements ResourceRepository<Resource> {
 
     @Autowired
     S3ResourcePersistenceTypeHandler spt;
-    final static String S3_BUCKET = "archive.tbrc.org";
+    
+    private static final ClientConfiguration config = new ClientConfiguration()
+            .withConnectionTimeout(300000)
+            .withMaxConnections(50)
+            .withMaxErrorRetry(100)
+            .withSocketTimeout(300000);
+    private static String S3_BUCKET;
+    private static AmazonS3ClientBuilder clientBuilder;
+    
+    public static void initWithProps(Properties p) {
+        S3_BUCKET = p.getProperty("s3bucket");
+        clientBuilder = AmazonS3ClientBuilder.standard()
+                .withRegion(p.getProperty("awsRegion"))
+                .withClientConfiguration(config);
+    }
 
     @Override
     public S3Resource create(String key, ResourcePersistenceType resourcePersistenceType, MimeType mimeType) throws ResourceIOException, ResourceNotFoundException {
@@ -66,27 +79,38 @@ public class S3ResourceRepositoryImpl implements ResourceRepository<Resource> {
     }
 
     @Override
-    public void delete(Resource r) throws ResourceIOException {
-      throw new UnsupportedOperationException("Not supported yet.");
-      //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
     public S3Resource find(String key, ResourcePersistenceType resourcePersistenceType, MimeType mimeType) throws ResourceIOException, ResourceNotFoundException {
         S3Resource resource = create(key, resourcePersistenceType, mimeType);
         return resource;
     }
 
-    @Override
-    public byte[] getBytes(Resource r) throws ResourceIOException {
-      throw new UnsupportedOperationException("Not supported yet.");
-      //To change body of generated methods, choose Tools | Templates.
-    }
 
-    @Override
-    public InputStream getInputStream(URI uri) throws ResourceIOException, ResourceNotFoundException {
-      throw new UnsupportedOperationException("Not supported yet.");
-      //To change body of generated methods, choose Tools | Templates.
+    /**
+      * @return a client to interact with S3 bucket
+      */
+     public static synchronized AmazonS3 getClientInstance() {
+         return clientBuilder.build();
+     }
+
+    public InputStream getInputStream(S3Resource r) throws ResourceIOException, ResourceNotFoundException{
+        log.info("Getting input stream for resource {}", r);
+        final AmazonS3 s3 = S3ResourceRepositoryImpl.getClientInstance();
+        S3Object obj = null;
+        try {
+            final GetObjectRequest request = new GetObjectRequest(
+                    S3_BUCKET,
+                    r.getIdentifier());
+            obj = s3.getObject(request);
+            log.trace("Obj from s3 >> {}", obj);
+        }
+        catch (AmazonS3Exception e) {
+            final String msg = r.getIdentifier();
+            log.error(">>>>>>>> S3 client failed for identifier {} >> {}", msg, e.getStatusCode());
+            throw new ResourceNotFoundException();
+        }
+        final InputStream stream = obj.getObjectContent();
+        log.trace("Obj stream from s3 >> {}", stream);
+        return stream;
     }
 
     @Override
@@ -94,68 +118,44 @@ public class S3ResourceRepositoryImpl implements ResourceRepository<Resource> {
         return getInputStream((S3Resource) r);
     }
 
-    public InputStream getInputStream(S3Resource r) throws ResourceIOException, ResourceNotFoundException{
-        log.info("Getting input stream for resource >> "+r.toString());
-        AmazonS3 s3=S3ResourceRepositoryImpl.getClientInstance();
-        S3Object obj=null;
-        try {
-            GetObjectRequest request = new GetObjectRequest(
-                    S3_BUCKET,
-                    r.getIdentifier());
-            obj=s3.getObject(request);
-            log.info("Obj from s3 >> "+obj);
-        }
-        catch (AmazonS3Exception e) {
-            String msg=r.getIdentifier();
-            System.out.println(">>>>>>>> S3 client failed for identifier >> "+e.getStatusCode());
-            throw new ResourceNotFoundException();
-        }
-        InputStream stream=obj.getObjectContent();
-        log.info("Obj from s3 >> "+stream);
-        return stream;
+    @Override
+    public byte[] getBytes(Resource r) throws ResourceIOException {
+      throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
+    public InputStream getInputStream(URI uri) throws ResourceIOException, ResourceNotFoundException {
+      throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public void delete(Resource r) throws ResourceIOException {
+      throw new UnsupportedOperationException("Not supported yet.");
+    }
+    
+    @Override
     public Reader getReader(Resource r) throws ResourceIOException, ResourceNotFoundException {
       throw new UnsupportedOperationException("Not supported yet.");
-      //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
     public void write(Resource rsrc, String string) throws ResourceIOException {
       throw new UnsupportedOperationException("Not supported yet.");
-      //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
     public void write(Resource rsrc, InputStream in) throws ResourceIOException {
       throw new UnsupportedOperationException("Not supported yet.");
-      //To change body of generated methods, choose Tools | Templates.
-    }
-
-   /**
-     * @return a client to interact with S3 bucket
-     */
-    public static synchronized AmazonS3 getClientInstance() {
-        ClientConfiguration config=new ClientConfiguration();
-        config.setConnectionTimeout(300000);
-        config.setMaxConnections(50);
-        config.setMaxErrorRetry(100);
-        config.setSocketTimeout(300000);
-
-        return AmazonS3ClientBuilder.standard().withRegion(AuthProps.getProperty("awsRegion")).withClientConfiguration(config).build();
     }
 
     @Override
     public void assertDocument(Resource arg0) throws ResourceIOException {
-        // TODO Auto-generated method stub
-
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
     public Document getDocument(Resource arg0) throws ResourceIOException {
-        // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
 }

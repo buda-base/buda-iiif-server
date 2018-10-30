@@ -13,6 +13,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 
+import de.digitalcollections.iiif.myhymir.backend.impl.repository.S3ResourceRepositoryImpl;
 import io.bdrc.auth.AuthProps;
 import io.bdrc.auth.rdf.RdfAuthModel;
 
@@ -41,6 +42,7 @@ public class Application extends SpringBootServletInitializer{
         Properties props=new Properties();
         props.load(is);
         AuthProps.init(props);
+        S3ResourceRepositoryImpl.initWithProps(props);
         SpringApplication.run(Application.class, args);
         RdfAuthModel.init();
     }
