@@ -18,8 +18,6 @@ import org.springframework.stereotype.Component;
 @Order(2)
 public class HeaderFilter implements Filter {
 
-    @Value("${cache-control.maxage}")
-    private String maxAge;
     @Value("${access-control.Allow-Origin}")
     private String allowOrigin;
     @Value("${access-control.Allow-Headers}")
@@ -40,8 +38,7 @@ public class HeaderFilter implements Filter {
     @Override
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
             throws IOException, ServletException {
-        HttpServletResponse response = (HttpServletResponse) res;
-        response.setHeader("Cache-Control", " public, max-age="+maxAge);
+        HttpServletResponse response = (HttpServletResponse)res;
         response.setHeader("Access-Control-Allow-Origin", allowOrigin);
         response.setHeader("Access-Control-Allow-Headers",allowHeaders);
         response.setHeader("Access-Control-Allow-Credentials", allowCredentials);

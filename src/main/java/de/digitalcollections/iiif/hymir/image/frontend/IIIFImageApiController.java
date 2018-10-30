@@ -7,6 +7,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.Calendar;
+import java.util.concurrent.TimeUnit;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -14,6 +15,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.jena.atlas.logging.Log;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -37,6 +40,7 @@ import de.digitalcollections.iiif.model.jackson.IiifObjectMapper;
 import io.bdrc.auth.Access;
 import io.bdrc.auth.AuthProps;
 import io.bdrc.auth.TokenValidation;
+import io.bdrc.auth.rdf.RdfConstants;
 import io.bdrc.iiif.auth.AuthServiceInfo;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 
@@ -54,6 +58,9 @@ public class IIIFImageApiController {
 
   @Autowired
   private IiifObjectMapper objectMapper;
+
+  @Value("${cache-control.maxage}")
+  private long maxAge;
 
   /**
    * Get the base URL for all Image API URLs from the request.
@@ -116,11 +123,14 @@ public class IIIFImageApiController {
     Access acc=(Access)request.getAttribute("access");
     identifier = URLDecoder.decode(identifier, "UTF-8");
     String accessType=getAccessType(identifier);
-    if(!acc.hasResourceAccess(accessType)) {
+    boolean accessible=acc.hasResourceAccess(accessType);
+    if(!accessible) {
+        HttpHeaders headers1=new HttpHeaders();
+        headers1.setCacheControl(CacheControl.noCache());
         if(serviceInfo.authEnabled() && serviceInfo.hasValidProperties()) {
-            return new ResponseEntity<>("Insufficient rights".getBytes(), HttpStatus.UNAUTHORIZED);
+            return new ResponseEntity<>("You must be authenticated before accessing this resource".getBytes(), headers1, HttpStatus.UNAUTHORIZED);
         }else {
-            return new ResponseEntity<>("Insufficient rights".getBytes(), HttpStatus.FORBIDDEN);
+            return new ResponseEntity<>("Insufficient rights".getBytes(), headers1, HttpStatus.FORBIDDEN);
         }
     }
     HttpHeaders headers = new HttpHeaders();
@@ -176,6 +186,16 @@ public class IIIFImageApiController {
 
       ByteArrayOutputStream os = new ByteArrayOutputStream();
       imageService.processImage(identifier, selector, profile, os);
+      //At this point the resource is accessible but we don't whether it is public or restricted
+      //and we don't know either if the user is authenticated or not
+      // temporary test on Image accessType until we improve bdrc-auth-lib to provide a test
+      //in order to get User info from Access object.
+      boolean open=accessType.equals(RdfConstants.OPEN);
+      if(open) {
+          headers.setCacheControl(CacheControl.maxAge(maxAge,TimeUnit.MILLISECONDS).cachePublic());
+      }else {
+          headers.setCacheControl(CacheControl.maxAge(maxAge,TimeUnit.MILLISECONDS).cachePrivate());
+      }
       return new ResponseEntity<>(os.toByteArray(), headers, HttpStatus.OK);
     }
   }
@@ -183,7 +203,7 @@ public class IIIFImageApiController {
   @RequestMapping(value = "{identifier}/info.json",
           method = {RequestMethod.GET, RequestMethod.HEAD})
   public ResponseEntity<String> getInfo(@PathVariable String identifier, HttpServletRequest req,
-          WebRequest webRequest) throws Exception {
+          HttpServletResponse res, WebRequest webRequest) throws Exception {
     Access acc=(Access)req.getAttribute("access");
     identifier = URLDecoder.decode(identifier, "UTF-8");
     String accessType=getAccessType(identifier);
@@ -219,12 +239,16 @@ public class IIIFImageApiController {
     //headers.add("Access-Control-Allow-Origin", "*");
     if(unAuthorized) {
         if(serviceInfo.hasValidProperties() && serviceInfo.authEnabled()) {
+            headers.setCacheControl(CacheControl.maxAge(maxAge,TimeUnit.MILLISECONDS).cachePublic());
             return new ResponseEntity<>(objectMapper.writeValueAsString(info), headers, HttpStatus.UNAUTHORIZED);
         }else {
+            headers.setCacheControl(CacheControl.noCache());
             return new ResponseEntity<>(objectMapper.writeValueAsString(info), headers, HttpStatus.FORBIDDEN);
         }
     }else {
-        return new ResponseEntity<>(objectMapper.writeValueAsString(info), headers, HttpStatus.OK);
+        HttpHeaders headers1=new HttpHeaders();
+        headers1.setCacheControl(CacheControl.maxAge(maxAge,TimeUnit.MILLISECONDS).cachePublic());
+        return new ResponseEntity<>(objectMapper.writeValueAsString(info), headers1, HttpStatus.OK);
     }
   }
 
