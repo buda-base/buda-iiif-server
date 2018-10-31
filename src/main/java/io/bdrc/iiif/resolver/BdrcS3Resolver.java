@@ -25,24 +25,18 @@ public class BdrcS3Resolver implements S3Resolver {
         try {
             String id="Works/";
             String[] parts=identifier.split("::");
-            IdentifierInfo info=new IdentifierInfo(parts[0]);
-            String access=info.getAccess().substring(info.getAccess().lastIndexOf('/')+1);
-            String format=parts[1].substring(parts[1].lastIndexOf('.'));
-            if(access.equalsIgnoreCase("AccessOpen")) {
-                //log.info("S3 Resolver IdentifierInfo >>>>>>>> "+info+ " Access >>"+access+ " Format >> "+format);
-                String work=info.getWork().substring(info.getWork().lastIndexOf('/')+1);
-                String imgGroup=parts[0].substring(parts[0].lastIndexOf('_')+1);
-                MessageDigest md = MessageDigest.getInstance("MD5");
-                md.reset();
-                md.update(work.getBytes(Charset.forName("UTF8")));
-                final String hash = new String(Hex.encodeHex(md.digest())).substring(0,2);
-                if (oldImageGroupPattern.matcher(imgGroup).matches()) {
-                    imgGroup= imgGroup.substring(1);
-                }
-                id=id+hash+"/"+work+"/images/"+work+"-"+imgGroup+"/"+parts[1];
-            }else {
-                id="static/error"+format;
+            IdentifierInfo info=new IdentifierInfo(identifier);
+            //log.info("S3 Resolver IdentifierInfo >>>>>>>> "+info+ " Access >>"+access+ " Format >> "+format);
+            String work=info.getWork().substring(info.getWork().lastIndexOf('/')+1);
+            String imgGroup=parts[0].substring(parts[0].lastIndexOf('_')+1);
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            md.reset();
+            md.update(work.getBytes(Charset.forName("UTF8")));
+            final String hash = new String(Hex.encodeHex(md.digest())).substring(0,2);
+            if (oldImageGroupPattern.matcher(imgGroup).matches()) {
+                imgGroup= imgGroup.substring(1);
             }
+            id=id+hash+"/"+work+"/images/"+work+"-"+imgGroup+"/"+parts[1];
             return id;
         }
         catch(Exception ex) {

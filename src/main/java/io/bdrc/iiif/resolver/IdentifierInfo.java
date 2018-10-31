@@ -1,6 +1,7 @@
 package io.bdrc.iiif.resolver;
 
 import java.io.IOException;
+import java.util.HashMap;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
@@ -14,32 +15,44 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.digitalcollections.iiif.hymir.model.exception.ResourceNotFoundException;
+import io.bdrc.auth.rdf.RdfConstants;
+import io.bdrc.pdf.presentation.models.ImageListIterator;
 
 public class IdentifierInfo {
 
+    public String identifier;
     public String work="";
     public String asset="";
     public String access="";
     public String volumeId="";
+    public String imageList="";
+    public String imageId="";
+    public int totalPages=0;
+    private HashMap<String,Class<Void>> fair_use;
 
     @SuppressWarnings("unchecked")
-    public IdentifierInfo(String volumeImageAsset) throws ClientProtocolException, IOException,ResourceNotFoundException{
+    public IdentifierInfo(String identifier) throws ClientProtocolException, IOException,ResourceNotFoundException{
+        this.identifier=identifier;
         HttpClient httpClient = HttpClientBuilder.create().build();
-        HttpPost request = new HttpPost("http://purl.bdrc.io/query/IdentifierInfo");
+        HttpPost request = new HttpPost("http://purl.bdrc.io/query/IIIFPres_volumeInfo");
         JSONObject object = new JSONObject();
-        this.volumeId=volumeImageAsset;
-        object.put("R_RES", volumeImageAsset);
+        this.volumeId=identifier.split("::")[0];
+        this.imageId=identifier.split("::")[1];
+        object.put("R_RES", volumeId);
         String message = object.toString();
         request.setEntity(new StringEntity(message, "UTF8"));
         request.setHeader("Content-type", "application/json");
         HttpResponse response = httpClient.execute(request);
         ObjectMapper mapper=new ObjectMapper();
         JsonNode node=mapper.readTree(response.getEntity().getContent());
+        node=node.findPath("results").findPath("bindings");
         if(node!=null) {
             if(isValidJson(node)) {
-                this.work = node.findValue("work").findValue("value").toString().replaceAll("\"", "");
-                this.asset =node.findValue("asset").findValue("value").toString().replaceAll("\"", "");
+                this.work = node.findValue("workId").findValue("value").toString().replaceAll("\"", "");
+                this.asset =node.findValue("itemId").findValue("value").toString().replaceAll("\"", "");
                 this.access = node.findValue("access").findValue("value").toString().replaceAll("\"", "");
+                this.imageList = node.findValue("imageList").findValue("value").toString().replaceAll("\"", "");
+                this.totalPages = Integer.parseInt(node.findValue("totalPages").findValue("value").toString().replaceAll("\"", ""));
             }
             else {
                 throw new ResourceNotFoundException();
@@ -48,10 +61,69 @@ public class IdentifierInfo {
         else {
             throw new ResourceNotFoundException();
         }
+        if(getAccessShortName().equals(RdfConstants.FAIR_USE)) {
+            initFairUse();
+        }
+    }
+
+    private void initFairUse() {
+        fair_use=new HashMap<>();
+        ImageListIterator it1=new ImageListIterator(imageList,1,20);
+        while(it1.hasNext()) {
+            fair_use.put(it1.next(),Void.TYPE);
+        }
+        ImageListIterator it2=new ImageListIterator(imageList,totalPages-20,totalPages);
+        while(it2.hasNext()) {
+            fair_use.put(it2.next(),Void.TYPE);
+        }
+    }
+
+    public boolean isFairUsePublicImage() {
+        if(fair_use==null) {
+            return false;
+        }
+        return fair_use.containsKey(imageId);
     }
 
     public boolean isValidJson(JsonNode node) {
-        return (node.findValue("work")!=null && node.findValue("asset")!= null && node.findValue("access")!=null);
+        //return (node.findValue("work")!=null && node.findValue("asset")!= null && node.findValue("access")!=null);
+        return (node.findValue("workId")!=null && node.findValue("itemId")!= null && node.findValue("access")!=null);
+    }
+
+    public String getImageId() {
+        return imageId;
+    }
+
+    public String getIdentifier() {
+        return identifier;
+    }
+
+    public void setIdentifier(String identifier) {
+        this.identifier = identifier;
+    }
+
+    public String getImageList() {
+        return imageList;
+    }
+
+    public void setImageList(String imageList) {
+        this.imageList = imageList;
+    }
+
+    public int getTotalPages() {
+        return totalPages;
+    }
+
+    public void setTotalPages(int totalPages) {
+        this.totalPages = totalPages;
+    }
+
+    public HashMap<String, Class<Void>> getFair_use() {
+        return fair_use;
+    }
+
+    public void setVolumeId(String volumeId) {
+        this.volumeId = volumeId;
     }
 
     public String getWork() {
@@ -74,6 +146,10 @@ public class IdentifierInfo {
         return access;
     }
 
+    public String getAccessShortName() {
+        return access.substring(access.lastIndexOf('/')+1);
+    }
+
     public void setAccess(String access) {
         this.access = access;
     }
@@ -84,7 +160,8 @@ public class IdentifierInfo {
 
     @Override
     public String toString() {
-        return "IdentifierInfo [work=" + work + ", asset=" + asset + ", access=" + access + ", volumeId=" + volumeId
-                + "]";
+        return "IdentifierInfo [identifier=" + identifier + ", work=" + work + ", asset=" + asset + ", access=" + access
+                + ", volumeId=" + volumeId + ", imageList=" + imageList + ", totalPages=" + totalPages + ", fair_use="
+                + fair_use + "]";
     }
 }

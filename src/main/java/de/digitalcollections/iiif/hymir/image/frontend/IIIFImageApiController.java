@@ -13,7 +13,6 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.jena.atlas.logging.Log;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.CacheControl;
@@ -120,10 +119,12 @@ public class IIIFImageApiController {
           HttpServletRequest request, HttpServletResponse response, WebRequest webRequest)
       throws UnsupportedFormatException, UnsupportedOperationException, IOException, InvalidParametersException,
              ResourceNotFoundException {
+
+    IdentifierInfo idinfo=new IdentifierInfo(identifier);
     Access acc=(Access)request.getAttribute("access");
     identifier = URLDecoder.decode(identifier, "UTF-8");
-    String accessType=getAccessType(identifier);
-    boolean accessible=acc.hasResourceAccess(accessType);
+    String accessType=idinfo.getAccessShortName();
+    boolean accessible=acc.hasResourceAccess(accessType) || idinfo.isFairUsePublicImage();
     if(!accessible) {
         HttpHeaders headers1=new HttpHeaders();
         headers1.setCacheControl(CacheControl.noCache());
@@ -188,8 +189,8 @@ public class IIIFImageApiController {
       imageService.processImage(identifier, selector, profile, os);
       //At this point the resource is accessible but we don't whether it is public or restricted
       //and we don't know either if the user is authenticated or not
-      // temporary test on Image accessType until we improve bdrc-auth-lib to provide a test
-      //in order to get User info from Access object.
+      // temporary test on Image accessType until we improve bdrc-auth-lib to provide a meaningful test
+
       boolean open=accessType.equals(RdfConstants.OPEN);
       if(open) {
           headers.setCacheControl(CacheControl.maxAge(maxAge,TimeUnit.MILLISECONDS).cachePublic());
@@ -204,10 +205,11 @@ public class IIIFImageApiController {
           method = {RequestMethod.GET, RequestMethod.HEAD})
   public ResponseEntity<String> getInfo(@PathVariable String identifier, HttpServletRequest req,
           HttpServletResponse res, WebRequest webRequest) throws Exception {
+    IdentifierInfo idinfo=new IdentifierInfo(identifier);
     Access acc=(Access)req.getAttribute("access");
     identifier = URLDecoder.decode(identifier, "UTF-8");
-    String accessType=getAccessType(identifier);
-    boolean unAuthorized=(accessType ==null || !acc.hasResourceAccess(accessType));
+    String accessType=idinfo.getAccessShortName();
+    boolean unAuthorized=(accessType ==null || !acc.hasResourceAccess(accessType)) && !idinfo.isFairUsePublicImage();
     long modified = imageService.getImageModificationDate(identifier).toEpochMilli();
     webRequest.checkNotModified(modified);
     String path;
@@ -256,18 +258,6 @@ public class IIIFImageApiController {
   public String getInfoRedirect(@PathVariable String identifier, HttpServletResponse response) {
     //response.setHeader("Access-Control-Allow-Origin", "*");
     return "redirect:/image/" + VERSION + "/" + identifier + "/info.json";
-  }
-
-  public String getAccessType(String identifier) throws UnsupportedOperationException, IOException, ResourceNotFoundException {
-      try {
-          String[] parts=identifier.split("::");
-          IdentifierInfo info1=new IdentifierInfo(parts[0]);
-          String access=info1.getAccess().substring(info1.getAccess().lastIndexOf('/')+1);
-          return access;
-      }catch(UnsupportedOperationException| IOException e) {
-          Log.error(this, e.getMessage());
-          throw e;
-      }
   }
 
   public int computeExpires(TokenValidation tkVal) {

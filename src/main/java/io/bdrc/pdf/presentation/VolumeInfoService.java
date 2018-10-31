@@ -1,7 +1,9 @@
 package io.bdrc.pdf.presentation;
 
 
-import static io.bdrc.pdf.presentation.AppConstants.*;
+import static io.bdrc.pdf.presentation.AppConstants.CANNOT_FIND_VOLUME_ERROR_CODE;
+import static io.bdrc.pdf.presentation.AppConstants.GENERIC_APP_ERROR_CODE;
+import static io.bdrc.pdf.presentation.AppConstants.GENERIC_LDS_ERROR;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,11 +28,11 @@ import io.bdrc.pdf.presentation.exceptions.BDRCAPIException;
 import io.bdrc.pdf.presentation.models.VolumeInfo;
 
 public class VolumeInfoService {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(VolumeInfoService.class);
-    
+
     private static CacheAccess<String, VolumeInfo> cache = null;
-    
+
     static {
         try {
             cache = JCS.getInstance("info");
@@ -38,10 +40,10 @@ public class VolumeInfoService {
             logger.error("cache initialization error, this shouldn't happen!", e);
         }
     }
-    
+
     private static VolumeInfo fetchLdsVolumeInfo(final String volumeId) throws BDRCAPIException {
         logger.debug("fetch volume info on LDS for {}", volumeId);
-        final HttpClient httpClient = HttpClientBuilder.create().build(); //Use this instead 
+        final HttpClient httpClient = HttpClientBuilder.create().build(); //Use this instead
         final VolumeInfo resVolumeInfo;
         try {
             final HttpPost request = new HttpPost("http://buda1.bdrc.io/query/IIIFPres_volumeInfo");
@@ -70,19 +72,18 @@ public class VolumeInfoService {
         logger.debug("found volume info: {}", resVolumeInfo.toString());
         return resVolumeInfo;
     }
-    
+
     public static VolumeInfo getVolumeInfo(final String volumeId) throws BDRCAPIException {
-        VolumeInfo resVolumeInfo = (VolumeInfo)cache.get(volumeId);
-        
-        if (resVolumeInfo != null) {            
+        VolumeInfo resVolumeInfo = cache.get(volumeId);
+
+        if (resVolumeInfo != null) {
             logger.debug("found volumeInfo in cache for "+volumeId);
             return resVolumeInfo;
         }
         resVolumeInfo = fetchLdsVolumeInfo(volumeId);
         if (resVolumeInfo == null)
             return null;
-        cache.put(volumeId, resVolumeInfo);        
+        cache.put(volumeId, resVolumeInfo);
         return resVolumeInfo;
     }
-    
 }
