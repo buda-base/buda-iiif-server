@@ -27,14 +27,14 @@ public class ServerCache {
             res=null;
         }
         catch (CacheException e ){
-            //log.error("Problem putting object -->"+name+" in the cache >> "+cacheName+" Exception: "+e.getMessage());
+            log.error("Problem putting object -->"+name+" in the cache >> "+cacheName+" Exception: "+e.getMessage());
             throw new BDRCAPIException(500, GENERIC_APP_ERROR_CODE, e);
         }
     }
 
     public static Object getObjectFromCache(String cacheName,String name) {
         CacheAccess<Object,Object> access=getCacheAccess(cacheName);
-        System.out.println("Got "+JCS.getInstance(cacheName).get(name)+ " with name :"+ name+" from "+cacheName);
+        //System.out.println("Got "+access.get(name)+ " with name :"+ name+" from "+cacheName);
         return access.get(name);
     }
 

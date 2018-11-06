@@ -60,7 +60,8 @@ jcs.auxiliary.IIIF.attributes.DiskLimitType=SIZE
 # Indexed Disk Cache for images
 jcs.auxiliary.IIIF_IMG=org.apache.commons.jcs.auxiliary.disk.indexed.IndexedDiskCacheFactory
 jcs.auxiliary.IIIF_IMG.attributes=org.apache.commons.jcs.auxiliary.disk.indexed.IndexedDiskCacheAttributes
-jcs.auxiliary.IIIF_IMG.attributes.DiskPath=img_cache
+#jcs.auxiliary.IIIF_IMG.attributes.DiskPath=img_cache
+jcs.auxiliary.IIIF_IMG.attributes.DiskPath=pdf_cache
 jcs.auxiliary.IIIF_IMG.attributes.MaxPurgatorySize=500
             ##  10 Gig size limit
 jcs.auxiliary.IIIF_IMG.attributes.MaxKeySize=10000000
@@ -69,7 +70,8 @@ jcs.auxiliary.IIIF_IMG.attributes.DiskLimitType=SIZE
 # Indexed Disk Cache for zip
 jcs.auxiliary.IIIF_ZIP=org.apache.commons.jcs.auxiliary.disk.indexed.IndexedDiskCacheFactory
 jcs.auxiliary.IIIF_ZIP.attributes=org.apache.commons.jcs.auxiliary.disk.indexed.IndexedDiskCacheAttributes
-jcs.auxiliary.IIIF_ZIP.attributes.DiskPath=zip_cache
+#jcs.auxiliary.IIIF_ZIP.attributes.DiskPath=zip_cache
+jcs.auxiliary.IIIF_ZIP.attributes.DiskPath=pdf_cache
 jcs.auxiliary.IIIF_ZIP.attributes.MaxPurgatorySize=500
             ##  10 minutes max
 jcs.auxiliary.IIIF_ZIP.attributes.MaxLife=600
