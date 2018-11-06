@@ -36,13 +36,11 @@ import de.digitalcollections.iiif.model.image.ImageApiProfile;
 import de.digitalcollections.iiif.model.image.ImageApiSelector;
 import de.digitalcollections.iiif.model.image.ResolvingException;
 import de.digitalcollections.iiif.model.jackson.IiifObjectMapper;
-import de.digitalcollections.iiif.myhymir.GeoLocation;
+import de.digitalcollections.iiif.myhymir.ResourceAccessValidation;
 import io.bdrc.auth.Access;
 import io.bdrc.auth.AuthProps;
 import io.bdrc.auth.TokenValidation;
-import io.bdrc.auth.rdf.RdfConstants;
 import io.bdrc.iiif.auth.AuthServiceInfo;
-import io.bdrc.iiif.resolver.IdentifierInfo;
 
 @Controller
 @RequestMapping("/image/v2/")
@@ -62,7 +60,7 @@ public class IIIFImageApiController {
   @Value("${cache-control.maxage}")
   private long maxAge;
 
-  private static final String CHINA="China";
+
   /**
    * Get the base URL for all Image API URLs from the request.
    *
@@ -121,18 +119,9 @@ public class IIIFImageApiController {
           HttpServletRequest request, HttpServletResponse response, WebRequest webRequest)
       throws UnsupportedFormatException, UnsupportedOperationException, IOException, InvalidParametersException,
              ResourceNotFoundException {
-    IdentifierInfo idinfo=new IdentifierInfo(identifier);
-    Access acc=(Access)request.getAttribute("access");
+    ResourceAccessValidation accValidation=new ResourceAccessValidation((Access)request.getAttribute("access"),identifier);
     identifier = URLDecoder.decode(identifier, "UTF-8");
-    String accessType=idinfo.getAccessShortName();
-    boolean accessible=true;
-    if(accessType.equals(RdfConstants.RESTRICTED_CHINA) &&
-            GeoLocation.getCountryName(request.getRemoteAddr()).equalsIgnoreCase(CHINA)) {
-        accessible=false;
-
-    }
-    accessible=accessible && acc.hasResourceAccess(accessType) || idinfo.isFairUsePublicImage();
-    if(!accessible) {
+    if(!accValidation.isAccessible(request)) {
         HttpHeaders headers1=new HttpHeaders();
         headers1.setCacheControl(CacheControl.noCache());
         if(serviceInfo.authEnabled() && serviceInfo.hasValidProperties()) {
@@ -194,12 +183,7 @@ public class IIIFImageApiController {
 
       ByteArrayOutputStream os = new ByteArrayOutputStream();
       imageService.processImage(identifier, selector, profile, os);
-      //At this point the resource is accessible but we don't whether it is public or restricted
-      //and we don't know either if the user is authenticated or not
-      // temporary test on Image accessType until we improve bdrc-auth-lib to provide a meaningful test
-
-      boolean open=accessType.equals(RdfConstants.OPEN);
-      if(open) {
+      if(accValidation.isOpenAccess()) {
           headers.setCacheControl(CacheControl.maxAge(maxAge,TimeUnit.MILLISECONDS).cachePublic());
       }else {
           headers.setCacheControl(CacheControl.maxAge(maxAge,TimeUnit.MILLISECONDS).cachePrivate());
@@ -212,17 +196,8 @@ public class IIIFImageApiController {
           method = {RequestMethod.GET, RequestMethod.HEAD})
   public ResponseEntity<String> getInfo(@PathVariable String identifier, HttpServletRequest req,
           HttpServletResponse res, WebRequest webRequest) throws Exception {
-    IdentifierInfo idinfo=new IdentifierInfo(identifier);
-    Access acc=(Access)req.getAttribute("access");
-    identifier = URLDecoder.decode(identifier, "UTF-8");
-    String accessType=idinfo.getAccessShortName();
-    boolean unAuthorized=false;
-    if(accessType.equals(RdfConstants.RESTRICTED_CHINA)){
-        if(GeoLocation.getCountryName(req.getRemoteAddr()).equalsIgnoreCase(CHINA)) {
-            unAuthorized=true;
-        }
-    }
-    unAuthorized=unAuthorized && (accessType ==null || !acc.hasResourceAccess(accessType)) && !idinfo.isFairUsePublicImage();
+    ResourceAccessValidation accValidation=new ResourceAccessValidation((Access)req.getAttribute("access"),identifier);
+    boolean unAuthorized=!accValidation.isAccessible(req);
     long modified = imageService.getImageModificationDate(identifier).toEpochMilli();
     webRequest.checkNotModified(modified);
     String path;
