@@ -36,6 +36,7 @@ import de.digitalcollections.iiif.model.image.ImageApiProfile;
 import de.digitalcollections.iiif.model.image.ImageApiSelector;
 import de.digitalcollections.iiif.model.image.ResolvingException;
 import de.digitalcollections.iiif.model.jackson.IiifObjectMapper;
+import de.digitalcollections.iiif.myhymir.GeoLocation;
 import io.bdrc.auth.Access;
 import io.bdrc.auth.AuthProps;
 import io.bdrc.auth.TokenValidation;
@@ -61,6 +62,7 @@ public class IIIFImageApiController {
   @Value("${cache-control.maxage}")
   private long maxAge;
 
+  private static final String CHINA="China";
   /**
    * Get the base URL for all Image API URLs from the request.
    *
@@ -119,12 +121,17 @@ public class IIIFImageApiController {
           HttpServletRequest request, HttpServletResponse response, WebRequest webRequest)
       throws UnsupportedFormatException, UnsupportedOperationException, IOException, InvalidParametersException,
              ResourceNotFoundException {
-
     IdentifierInfo idinfo=new IdentifierInfo(identifier);
     Access acc=(Access)request.getAttribute("access");
     identifier = URLDecoder.decode(identifier, "UTF-8");
     String accessType=idinfo.getAccessShortName();
-    boolean accessible=acc.hasResourceAccess(accessType) || idinfo.isFairUsePublicImage();
+    boolean accessible=true;
+    if(accessType.equals(RdfConstants.RESTRICTED_CHINA) &&
+            GeoLocation.getCountryName(request.getRemoteAddr()).equalsIgnoreCase(CHINA)) {
+        accessible=false;
+
+    }
+    accessible=accessible && acc.hasResourceAccess(accessType) || idinfo.isFairUsePublicImage();
     if(!accessible) {
         HttpHeaders headers1=new HttpHeaders();
         headers1.setCacheControl(CacheControl.noCache());
@@ -209,7 +216,13 @@ public class IIIFImageApiController {
     Access acc=(Access)req.getAttribute("access");
     identifier = URLDecoder.decode(identifier, "UTF-8");
     String accessType=idinfo.getAccessShortName();
-    boolean unAuthorized=(accessType ==null || !acc.hasResourceAccess(accessType)) && !idinfo.isFairUsePublicImage();
+    boolean unAuthorized=false;
+    if(accessType.equals(RdfConstants.RESTRICTED_CHINA)){
+        if(GeoLocation.getCountryName(req.getRemoteAddr()).equalsIgnoreCase(CHINA)) {
+            unAuthorized=true;
+        }
+    }
+    unAuthorized=unAuthorized && (accessType ==null || !acc.hasResourceAccess(accessType)) && !idinfo.isFairUsePublicImage();
     long modified = imageService.getImageModificationDate(identifier).toEpochMilli();
     webRequest.checkNotModified(modified);
     String path;

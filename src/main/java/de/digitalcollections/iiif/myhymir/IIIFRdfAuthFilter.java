@@ -39,11 +39,6 @@ public class IIIFRdfAuthFilter implements Filter{
             throws IOException, ServletException {
 
         String token=getToken(((HttpServletRequest)req).getHeader("Authorization"));
-        String ip=req.getRemoteAddr();
-        //chinese IP for test
-        //ip="36.166.204.221";
-        String hostname = req.getRemoteHost();
-        String country=GeoLocation.getCountryName(req.getRemoteHost());
         if(token==null) {
             Cookie[] cookies=((HttpServletRequest)req).getCookies();
             if(cookies!=null) {
@@ -68,7 +63,7 @@ public class IIIFRdfAuthFilter implements Filter{
             //Getting his profile
             validation=new TokenValidation(token);
             prof=validation.getUser();
-            req.setAttribute("access", new Access(prof,new Endpoint(),country));
+            req.setAttribute("access", new Access(prof,new Endpoint()));
         }else {
             req.setAttribute("access", new Access());
         }
