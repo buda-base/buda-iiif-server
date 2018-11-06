@@ -32,12 +32,15 @@ public class IdentifierInfo {
 
     @SuppressWarnings("unchecked")
     public IdentifierInfo(String identifier) throws ClientProtocolException, IOException,ResourceNotFoundException{
+        System.out.println("IDENTIFIER >> "+identifier);
         this.identifier=identifier;
         HttpClient httpClient = HttpClientBuilder.create().build();
         HttpPost request = new HttpPost("http://purl.bdrc.io/query/IIIFPres_volumeInfo");
         JSONObject object = new JSONObject();
         this.volumeId=identifier.split("::")[0];
-        this.imageId=identifier.split("::")[1];
+        if(identifier.split("::").length>1) {
+            this.imageId=identifier.split("::")[1];
+        }
         object.put("R_RES", volumeId);
         String message = object.toString();
         request.setEntity(new StringEntity(message, "UTF8"));

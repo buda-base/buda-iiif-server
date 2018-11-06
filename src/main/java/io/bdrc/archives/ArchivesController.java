@@ -10,7 +10,7 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.apache.commons.lang3.text.StrSubstitutor;
+import org.apache.commons.text.StringSubstitutor;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -51,7 +51,7 @@ public class ArchivesController {
         HttpHeaders headers = new HttpHeaders();
         HashMap<String,String> map=new HashMap<>();
         HashMap<String,HashMap<String,String>> jsonMap=new HashMap<>();
-        StrSubstitutor s=null;
+        StringSubstitutor s=null;
         String html="";
         AccessType access=null;
         int subType=idf.getSubType();
@@ -70,7 +70,7 @@ public class ArchivesController {
                 }else {
                     map.put("links", getVolumeDownLoadLinks(item,idf,type));
                     html=getTemplate("volumes.tpl");
-                    s=new StrSubstitutor(map);
+                    s=new StringSubstitutor(map);
                     html=s.replace(html);
                 }
                 break;
@@ -110,7 +110,7 @@ public class ArchivesController {
                 }else {
                     html=getTemplate("downloadPdf.tpl");
                     map.put("file", output);
-                    s=new StrSubstitutor(map);
+                    s=new StringSubstitutor(map);
                     html=s.replace(html);
                 }
                 break;
@@ -131,6 +131,7 @@ public class ArchivesController {
         byte[] array=null;
         if(type.equals(ArchiveBuilder.PDF_TYPE)) {
             array=(byte[])ServerCache.getObjectFromCache(IIIF,name+".pdf");
+            System.out.println("READ from cache "+IIIF+ " name="+name+ " "+ array);
         }
         if(type.equals(ArchiveBuilder.ZIP_TYPE)) {
             array=(byte[])ServerCache.getObjectFromCache(IIIF_ZIP,name+".zip");
