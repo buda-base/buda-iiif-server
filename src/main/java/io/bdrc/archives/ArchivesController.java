@@ -24,9 +24,9 @@ import org.springframework.web.bind.annotation.RequestMethod;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import de.digitalcollections.iiif.myhymir.ResourceAccessValidation;
 import de.digitalcollections.iiif.myhymir.ServerCache;
 import io.bdrc.auth.Access;
-import io.bdrc.auth.rdf.RdfConstants;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 import io.bdrc.pdf.presentation.ItemInfoService;
 import io.bdrc.pdf.presentation.VolumeInfoService;
@@ -84,14 +84,13 @@ public class ArchivesController {
                 int ePage=idf.getEPageNum().intValue();
                 VolumeInfo vi = VolumeInfoService.getVolumeInfo(idf.getVolumeId());
                 access=vi.getAccess();
-                boolean fairUse=getShortName(access.getUri()).equals(RdfConstants.FAIR_USE);
-                if(!acc.hasResourceAccess(getShortName(access.getUri()))) {
-                    if(!fairUse) {
-                        return new ResponseEntity<>("Insufficient rights", HttpStatus.FORBIDDEN);
-                    }
+                String accessType=getShortName(access.getUri());
+                ResourceAccessValidation accValidation=new ResourceAccessValidation((Access)request.getAttribute("access"),accessType);
+                if(!accValidation.isAccessible(request)) {
+                    return new ResponseEntity<>("Insufficient rights", HttpStatus.FORBIDDEN);
                 }
                 Iterator<String> idIterator = null;
-                if(fairUse) {
+                if(accValidation.isFairUse()) {
                    idIterator= getFairUseImgListIterator(bPage, ePage,vi);
                    output = idf.getVolumeId()+"FAIR_USE:"+bPage+"-"+ePage+"."+type;
                 }else {

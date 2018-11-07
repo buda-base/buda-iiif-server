@@ -63,6 +63,7 @@ public class IdentifierInfo {
         else {
             throw new ResourceNotFoundException();
         }
+
         if(getAccessShortName().equals(RdfConstants.FAIR_USE)) {
             initFairUse();
         }

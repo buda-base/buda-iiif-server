@@ -41,6 +41,7 @@ import io.bdrc.auth.Access;
 import io.bdrc.auth.AuthProps;
 import io.bdrc.auth.TokenValidation;
 import io.bdrc.iiif.auth.AuthServiceInfo;
+import io.bdrc.iiif.resolver.IdentifierInfo;
 
 @Controller
 @RequestMapping("/image/v2/")
@@ -119,7 +120,8 @@ public class IIIFImageApiController {
           HttpServletRequest request, HttpServletResponse response, WebRequest webRequest)
       throws UnsupportedFormatException, UnsupportedOperationException, IOException, InvalidParametersException,
              ResourceNotFoundException {
-    ResourceAccessValidation accValidation=new ResourceAccessValidation((Access)request.getAttribute("access"),identifier);
+    System.out.println("IDENTIFIER >>"+identifier);
+    ResourceAccessValidation accValidation=new ResourceAccessValidation((Access)request.getAttribute("access"),new IdentifierInfo(identifier));
     identifier = URLDecoder.decode(identifier, "UTF-8");
     if(!accValidation.isAccessible(request)) {
         HttpHeaders headers1=new HttpHeaders();
@@ -196,7 +198,8 @@ public class IIIFImageApiController {
           method = {RequestMethod.GET, RequestMethod.HEAD})
   public ResponseEntity<String> getInfo(@PathVariable String identifier, HttpServletRequest req,
           HttpServletResponse res, WebRequest webRequest) throws Exception {
-    ResourceAccessValidation accValidation=new ResourceAccessValidation((Access)req.getAttribute("access"),identifier);
+    System.out.println("IDENTIFIER >>"+identifier);
+    ResourceAccessValidation accValidation=new ResourceAccessValidation((Access)req.getAttribute("access"),new IdentifierInfo(identifier));
     boolean unAuthorized=!accValidation.isAccessible(req);
     long modified = imageService.getImageModificationDate(identifier).toEpochMilli();
     webRequest.checkNotModified(modified);

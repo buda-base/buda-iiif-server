@@ -16,14 +16,26 @@ public class ResourceAccessValidation {
     private static final String CHINA="China";
 
     Access access;
-    IdentifierInfo idinfo;
     String accessType;
+    boolean fairUse;
 
-    public ResourceAccessValidation(Access access, String identifier) throws ClientProtocolException, IOException, ResourceNotFoundException {
+    public ResourceAccessValidation(Access access, IdentifierInfo idInfo) throws ClientProtocolException, IOException, ResourceNotFoundException {
         super();
         this.access = access;
-        this.idinfo=new IdentifierInfo(identifier);
-        accessType=idinfo.getAccessShortName();
+        accessType=idInfo.getAccessShortName();
+        fairUse=RdfConstants.FAIR_USE.equals(accessType);
+
+    }
+
+    public ResourceAccessValidation(Access access, String accessType) throws ClientProtocolException, IOException, ResourceNotFoundException {
+        super();
+        this.access = access;
+        this.accessType=accessType;
+        fairUse=RdfConstants.FAIR_USE.equals(accessType);
+    }
+
+    public boolean isFairUse() {
+        return fairUse;
     }
 
     public boolean isAccessible(HttpServletRequest request) {
@@ -35,7 +47,7 @@ public class ResourceAccessValidation {
                 accessible=false;
             }
         }
-        return (accessible && access.hasResourceAccess(accessType) || idinfo.isFairUsePublicImage());
+        return (accessible && access.hasResourceAccess(accessType) || fairUse);
     }
 
     public boolean isOpenAccess() {
