@@ -8,11 +8,12 @@ import com.maxmind.geoip2.DatabaseReader;
 import com.maxmind.geoip2.exception.GeoIp2Exception;
 import com.maxmind.geoip2.model.CountryResponse;
 
+import io.bdrc.auth.AuthProps;
 import io.bdrc.pdf.presentation.exceptions.BDRCAPIException;
 
 public class GeoLocation {
 
-    private static final String DBLocation=System.getProperty("iiifserv.configpath")+"GeoLite2-Country.mmdb";
+    private static final String DBLocation=AuthProps.getProperty("geolite_countryDB");
     private static DatabaseReader dbReader;
     public static final String GEO_CACHE_KEY="GeoDB";
 

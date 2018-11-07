@@ -18,6 +18,9 @@ public class ServerCache {
     private static final CacheAccess<Object,Object> IIIF=JCS.getInstance("IIIF");
     private static final CacheAccess<Object,Object> IIIF_IMG=JCS.getInstance("IIIF_IMG");
     private static final CacheAccess<Object,Object> IIIF_ZIP=JCS.getInstance("IIIF_ZIP");
+    private static final CacheAccess<Object,Object> INFO=JCS.getInstance("info");
+    private static final CacheAccess<Object,Object> PDF_JOBS=JCS.getInstance("pdfjobs");
+    private static final CacheAccess<Object,Object> ZIP_JOBS=JCS.getInstance("zipjobs");
 
     public static void addToCache(String cacheName,String name,Object res) throws BDRCAPIException{
         try{
@@ -47,6 +50,12 @@ public class ServerCache {
                 access=IIIF_ZIP;
             case "IIIF_IMG":
                 access=IIIF_IMG;
+            case "info":
+                access=INFO;
+            case "pdfjobs":
+                access=PDF_JOBS;
+            case "zipjobs":
+                access=ZIP_JOBS;
         }
         return access;
     }
