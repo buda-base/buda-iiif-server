@@ -120,7 +120,6 @@ public class IIIFImageApiController {
           HttpServletRequest request, HttpServletResponse response, WebRequest webRequest)
       throws UnsupportedFormatException, UnsupportedOperationException, IOException, InvalidParametersException,
              ResourceNotFoundException {
-    System.out.println("IDENTIFIER >>"+identifier);
     ResourceAccessValidation accValidation=new ResourceAccessValidation((Access)request.getAttribute("access"),new IdentifierInfo(identifier));
     identifier = URLDecoder.decode(identifier, "UTF-8");
     if(!accValidation.isAccessible(request)) {
@@ -198,7 +197,6 @@ public class IIIFImageApiController {
           method = {RequestMethod.GET, RequestMethod.HEAD})
   public ResponseEntity<String> getInfo(@PathVariable String identifier, HttpServletRequest req,
           HttpServletResponse res, WebRequest webRequest) throws Exception {
-    System.out.println("IDENTIFIER >>"+identifier);
     ResourceAccessValidation accValidation=new ResourceAccessValidation((Access)req.getAttribute("access"),new IdentifierInfo(identifier));
     boolean unAuthorized=!accValidation.isAccessible(req);
     long modified = imageService.getImageModificationDate(identifier).toEpochMilli();

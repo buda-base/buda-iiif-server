@@ -92,10 +92,10 @@ public class ArchivesController {
                 Iterator<String> idIterator = null;
                 if(accValidation.isFairUse()) {
                    idIterator= getFairUseImgListIterator(bPage, ePage,vi);
-                   output = idf.getVolumeId()+"FAIR_USE:"+bPage+"-"+ePage+"."+type;
+                   output = idf.getVolumeId()+"FAIR_USE:"+bPage+"-"+ePage;//+"."+type;
                 }else {
                     idIterator = vi.getImageListIterator(bPage, ePage);
-                    output = idf.getVolumeId()+":"+bPage+"-"+ePage+"."+type;
+                    output = idf.getVolumeId()+":"+bPage+"-"+ePage;//+"."+type;
                 }
                 if(type.equals(ArchiveBuilder.PDF_TYPE)) {
                     Object pdf_cached =ServerCache.getObjectFromCache(IIIF,output);
@@ -106,7 +106,7 @@ public class ArchivesController {
                     }
                 }
                 if(type.equals(ArchiveBuilder.ZIP_TYPE)) {
-                    Object zip_cached =ServerCache.getObjectFromCache(IIIF,output);
+                    Object zip_cached =ServerCache.getObjectFromCache(IIIF_ZIP,output);
                     //System.out.println("ZIP "+id +" from IIIF_ZIP cache >>"+zip_cached);
                     if(zip_cached==null) {
                         // Build pdf since the pdf file doesn't exist yet
@@ -120,7 +120,7 @@ public class ArchivesController {
                     html=mapper.writerWithDefaultPrettyPrinter().writeValueAsString(map);
                 }else {
                     html=getTemplate("downloadPdf.tpl");
-                    map.put("file", output);
+                    map.put("file", output+"."+type);
                     s=new StringSubstitutor(map);
                     html=s.replace(html);
                 }
@@ -199,7 +199,7 @@ public class ArchivesController {
         List<VolumeInfoSmall> vlist=item.getVolumes();
         for(VolumeInfoSmall vis:vlist) {
             VolumeInfo vi = VolumeInfoService.getVolumeInfo(vis.getPrefixedId());
-            links=links+"<a href=\"/download/"+type+"/v:"+vis.getPrefixedId()+"::1-"+vi.totalPages+"\">Vol."+vis.getVolumeNumber()+" ("+vi.totalPages+" pages) - "+vis.getPrefixedId()+"</a><br/>";
+            links=links+"<a type=\"application/"+type+"\" href=\"/download/"+type+"/v:"+vis.getPrefixedId()+"::1-"+vi.totalPages+"\">Vol."+vis.getVolumeNumber()+" ("+vi.totalPages+" pages) - "+vis.getPrefixedId()+"."+type+"</a><br/>";
         }
         return links;
     }
