@@ -74,7 +74,7 @@ public class IdentifierInfo {
         while(it1.hasNext()) {
             fair_use.put(it1.next(),Void.TYPE);
         }
-        ImageListIterator it2=new ImageListIterator(imageList,totalPages-20,totalPages);
+        ImageListIterator it2=new ImageListIterator(imageList,totalPages-19,totalPages);
         while(it2.hasNext()) {
             fair_use.put(it2.next(),Void.TYPE);
         }

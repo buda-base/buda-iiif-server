@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -25,12 +26,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.digitalcollections.iiif.myhymir.ServerCache;
 import io.bdrc.auth.Access;
+import io.bdrc.auth.rdf.RdfConstants;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 import io.bdrc.pdf.presentation.ItemInfoService;
 import io.bdrc.pdf.presentation.VolumeInfoService;
 import io.bdrc.pdf.presentation.exceptions.BDRCAPIException;
 import io.bdrc.pdf.presentation.models.AccessType;
 import io.bdrc.pdf.presentation.models.Identifier;
+import io.bdrc.pdf.presentation.models.ImageListIterator;
 import io.bdrc.pdf.presentation.models.ItemInfo;
 import io.bdrc.pdf.presentation.models.ItemInfo.VolumeInfoSmall;
 import io.bdrc.pdf.presentation.models.VolumeInfo;
@@ -81,11 +84,20 @@ public class ArchivesController {
                 int ePage=idf.getEPageNum().intValue();
                 VolumeInfo vi = VolumeInfoService.getVolumeInfo(idf.getVolumeId());
                 access=vi.getAccess();
+                boolean fairUse=getShortName(access.getUri()).equals(RdfConstants.FAIR_USE);
                 if(!acc.hasResourceAccess(getShortName(access.getUri()))) {
-                    return new ResponseEntity<>("Insufficient rights", HttpStatus.FORBIDDEN);
+                    if(!fairUse) {
+                        return new ResponseEntity<>("Insufficient rights", HttpStatus.FORBIDDEN);
+                    }
                 }
-                Iterator<String> idIterator = vi.getImageListIterator(bPage, ePage);
-                output = idf.getVolumeId()+":"+bPage+"-"+ePage+"."+type;
+                Iterator<String> idIterator = null;
+                if(fairUse) {
+                   idIterator= getFairUseImgListIterator(bPage, ePage,vi);
+                   output = idf.getVolumeId()+"FAIR_USE:"+bPage+"-"+ePage+"."+type;
+                }else {
+                    idIterator = vi.getImageListIterator(bPage, ePage);
+                    output = idf.getVolumeId()+":"+bPage+"-"+ePage+"."+type;
+                }
                 if(type.equals(ArchiveBuilder.PDF_TYPE)) {
                     Object pdf_cached =ServerCache.getObjectFromCache(IIIF,output);
                     //System.out.println("PDF "+id +" from IIIF cache >>"+pdf_cached);
@@ -208,5 +220,21 @@ public class ArchivesController {
 
     public static String getShortName(String st) {
         return st.substring(st.lastIndexOf("/")+1);
+    }
+
+    private Iterator<String> getFairUseImgListIterator(int bPage, int ePage,VolumeInfo vi){
+        ArrayList<String> img=new ArrayList<>();
+        int x=0;
+        ImageListIterator it1=new ImageListIterator(vi.getImageList(),bPage,20);
+        while(it1.hasNext()) {
+            img.add(x,it1.next());
+            x++;
+        }
+        ImageListIterator it2=new ImageListIterator(vi.getImageList(),Integer.parseInt(vi.getTotalPages())-19,ePage);
+        while(it2.hasNext()) {
+            img.add(x,it2.next());
+            x++;
+        }
+        return img.iterator();
     }
 }
