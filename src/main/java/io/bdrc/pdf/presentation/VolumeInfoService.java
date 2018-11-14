@@ -8,7 +8,6 @@ import static io.bdrc.pdf.presentation.AppConstants.GENERIC_LDS_ERROR;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.apache.commons.jcs.JCS;
 import org.apache.commons.jcs.access.CacheAccess;
 import org.apache.commons.jcs.access.exception.CacheException;
 import org.apache.http.HttpResponse;
@@ -24,6 +23,7 @@ import org.apache.jena.riot.resultset.ResultSetLang;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.digitalcollections.iiif.myhymir.ServerCache;
 import io.bdrc.pdf.presentation.exceptions.BDRCAPIException;
 import io.bdrc.pdf.presentation.models.VolumeInfo;
 
@@ -31,11 +31,11 @@ public class VolumeInfoService {
 
     private static final Logger logger = LoggerFactory.getLogger(VolumeInfoService.class);
 
-    private static CacheAccess<String, VolumeInfo> cache = null;
+    private static CacheAccess<Object, Object> cache = null;
 
     static {
         try {
-            cache = JCS.getInstance("info");
+            cache = ServerCache.getCacheAccess("info");
         } catch (CacheException e) {
             logger.error("cache initialization error, this shouldn't happen!", e);
         }
@@ -74,7 +74,7 @@ public class VolumeInfoService {
     }
 
     public static VolumeInfo getVolumeInfo(final String volumeId) throws BDRCAPIException {
-        VolumeInfo resVolumeInfo = cache.get(volumeId);
+        VolumeInfo resVolumeInfo = (VolumeInfo)cache.get(volumeId);
 
         if (resVolumeInfo != null) {
             logger.debug("found volumeInfo in cache for "+volumeId);

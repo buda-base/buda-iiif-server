@@ -30,8 +30,6 @@ import org.springframework.core.env.Environment;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import com.auth0.client.auth.AuthAPI;
-import com.auth0.json.auth.TokenHolder;
-import com.auth0.net.AuthRequest;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -51,44 +49,39 @@ public class CookieTest {
 
     @BeforeClass
     public static void init() throws IOException {
-        InputStream is=new FileInputStream("/etc/buda/iiifserv/iiifserv.properties");
+        InputStream is=new FileInputStream("/etc/buda/iiifserv/iiifservTest.properties");
         Properties props=new Properties();
         props.load(is);
         AuthProps.init(props);
-        auth = new AuthAPI("bdrc-io.auth0.com", AuthProps.getProperty("lds-pdiClientID"), AuthProps.getProperty("lds-pdiClientSecret"));
+        auth = new AuthAPI(AuthProps.getProperty("authAPI"), AuthProps.getProperty("lds-pdiClientID"), AuthProps.getProperty("lds-pdiClientSecret"));
         HttpClient client=HttpClientBuilder.create().build();
-        HttpPost post=new HttpPost("https://bdrc-io.auth0.com/oauth/token");
+        HttpPost post=new HttpPost(AuthProps.getProperty("issuer")+"oauth/token");
         HashMap<String,String> json = new HashMap<>();
         json.put("grant_type","client_credentials");
         json.put("client_id",AuthProps.getProperty("lds-pdiClientID"));
         json.put("client_secret",AuthProps.getProperty("lds-pdiClientSecret"));
-        json.put("audience","https://bdrc-io.auth0.com/api/v2/");
+        json.put("audience","urn:auth0-authz-api");
         ObjectMapper mapper=new ObjectMapper();
         String post_data=mapper.writer().writeValueAsString(json);
         StringEntity se = new StringEntity(post_data);
         se.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
         post.setEntity(se);
         HttpResponse response = client.execute(post);
-        //System.out.println("Post_DATA >> "+post_data);
         ByteArrayOutputStream baos=new ByteArrayOutputStream();
         response.getEntity().writeTo(baos);
         String json_resp=baos.toString();
         baos.close();
         JsonNode node=mapper.readTree(json_resp);
         token=node.findValue("access_token").asText();
-        RdfAuthModel.init();
+        RdfAuthModel.initForTest(false);
     }
 
     @Test
-    public void ValidTokenTest() throws ClientProtocolException, IOException, IllegalArgumentException, CertificateException, InvalidKeySpecException, NoSuchAlgorithmException {
+    public void ValidTokenForCookieRequestTest() throws ClientProtocolException, IOException, IllegalArgumentException, CertificateException, InvalidKeySpecException, NoSuchAlgorithmException {
         ObjectMapper mapper=new ObjectMapper();
-        AuthRequest req=auth.login("tchame@rimay.net", AuthProps.getProperty("tchame@rimay.net"));
-        req.setScope("openid offline_access user_metadata app_metadata");
-        TokenHolder holder=req.execute();
-        String tok=holder.getIdToken();
         HttpClient client=HttpClientBuilder.create().build();
         HttpGet get=new HttpGet("http://localhost:"+environment.getProperty("local.server.port")+"/image/v2/setcookie");
-        get.addHeader("Authorization", "Bearer "+tok);
+        get.addHeader("Authorization", "Bearer "+token);
         HttpResponse resp=client.execute(get);
         assert(resp.getStatusLine().getStatusCode()==200);
         Header[] h=resp.getHeaders("Set-Cookie");
@@ -99,7 +92,6 @@ public class CookieTest {
         String json_resp=baos.toString();
         JsonNode node=mapper.readTree(json_resp);
         baos.close();
-        System.out.println("Success Value >>" +node.findValue("success").asBoolean());
         assert(node.findValue("success").asBoolean());
     }
 }

@@ -14,7 +14,8 @@ import java.util.concurrent.Future;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import org.apache.commons.jcs.JCS;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.itextpdf.text.BadElementException;
@@ -36,6 +37,8 @@ public class ArchiveBuilder {
     public final static String PDF_TYPE = "pdf";
     public final static String ZIP_TYPE = "zip";
 
+    public final static Logger log=LoggerFactory.getLogger(ArchiveBuilder.class.getName());
+
     @SuppressWarnings({ "rawtypes", "unchecked" })
     public static void buildPdf(Iterator<String> idList,IdentifierInfo inf,String output)
                             throws BDRCAPIException {
@@ -51,7 +54,7 @@ public class ArchiveBuilder {
             t_map.put(i,fut);
             i += 1;
         }
-        JCS.getInstance("pdfjobs").put(output, false);
+        ServerCache.addToCache("pdfjobs",output,false);
         Document document = new Document();
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         PdfWriter writer=null;
@@ -89,9 +92,8 @@ public class ArchiveBuilder {
         }
         document.close();
         ServerCache.addToCache(IIIF,output, stream.toByteArray());
-        System.out.println("ADDED to cache"+IIIF+ " "+ output);
         writer.close();
-        JCS.getInstance("pdfjobs").put(output,true);
+        ServerCache.addToCache("pdfjobs",output,true);
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
@@ -111,7 +113,7 @@ public class ArchiveBuilder {
             images.put(i,img);
             i += 1;
         }
-        JCS.getInstance("zipjobs").put(output, false);
+        ServerCache.addToCache("zipjobs",output, false);
         ByteArrayOutputStream baos=new ByteArrayOutputStream();
         ZipOutputStream zipOut= new ZipOutputStream(baos);
         try {
@@ -139,26 +141,26 @@ public class ArchiveBuilder {
             throw new BDRCAPIException(500, GENERIC_APP_ERROR_CODE, e);
         }
         ServerCache.addToCache(IIIF_ZIP,output,baos.toByteArray());
-        JCS.getInstance("zipjobs").put(output,true);
+        ServerCache.addToCache("zipjobs", output, true);
     }
 
     public static boolean isPdfDone(String id) {
-        //System.out.println("IS PDF DONE job "+id);
-        if(JCS.getInstance("pdfjobs").get(id)==null) {
-            //System.out.println("IS PDF DONE null in cache for "+id);
+        log.debug("IS PDF DONE job "+id);
+        if(ServerCache.getObjectFromCache("pdfjobs",id)==null) {
+            log.debug("IS PDF DONE null in cache for "+id);
             return false;
         }
-        //System.out.println("IS PDF DONE returns from cache value for "+id+ ">>"+(boolean)JCS.getInstance("pdfjobs").get(id));
-        return (boolean)JCS.getInstance("pdfjobs").get(id);
+        log.debug("IS PDF DONE returns from cache value for "+id+ ">>"+(boolean)ServerCache.getObjectFromCache("pdfjobs",id));
+        return (boolean)ServerCache.getObjectFromCache("pdfjobs",id);
     }
 
     public static boolean isZipDone(String id) {
-        //System.out.println("IS ZIP DONE job "+id);
-        if(JCS.getInstance("zipjobs").get(id)==null) {
-            //System.out.println("IS ZIP DONE null in cache for "+id);
+        log.debug("IS ZIP DONE job "+id);
+        if(ServerCache.getObjectFromCache("zipjobs",id)==null) {
+            log.debug("IS ZIP DONE null in cache for "+id);
             return false;
         }
-        //System.out.println("IS ZIP DONE returns from cache value for "+id+ ">>"+(boolean)JCS.getInstance("zipjobs").get(id));
-        return (boolean)JCS.getInstance("zipjobs").get(id);
+        log.debug("IS ZIP DONE returns from cache value for "+id+ ">>"+(boolean)ServerCache.getObjectFromCache("zipjobs",id));
+        return (boolean)ServerCache.getObjectFromCache("zipjobs",id);
     }
 }

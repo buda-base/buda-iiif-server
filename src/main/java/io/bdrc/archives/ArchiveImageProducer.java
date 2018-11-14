@@ -11,6 +11,8 @@ import java.net.MalformedURLException;
 import java.util.concurrent.Callable;
 
 import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.GetObjectRequest;
@@ -24,16 +26,17 @@ import io.bdrc.pdf.presentation.exceptions.BDRCAPIException;
 
 @SuppressWarnings("rawtypes")
 public class ArchiveImageProducer implements Callable{
-    
-    final static String S3_BUCKET = "archive.tbrc.org";    
+
+    final static String S3_BUCKET = "archive.tbrc.org";
     public static final String IIIF_IMG="IIIF_IMG";
-    
+    public final static Logger log=LoggerFactory.getLogger(ArchiveImageProducer.class.getName());
+
     AmazonS3 s3;
     String identifier;
     String id;
     Image img;
     String archiveType;
-    
+
     public ArchiveImageProducer(AmazonS3 s3, String id, String archiveType) throws BDRCAPIException {
         this.s3=s3;
         this.id=id;
@@ -46,10 +49,10 @@ public class ArchiveImageProducer implements Callable{
         }
     }
 
-    public Image getPdfImage() throws BadElementException, MalformedURLException, IOException, BDRCAPIException {        
-        byte[] imgbytes=(byte[])ServerCache.getObjectFromCache(IIIF_IMG,id);        
+    public Image getPdfImage() throws BadElementException, MalformedURLException, IOException, BDRCAPIException {
+        byte[] imgbytes=(byte[])ServerCache.getObjectFromCache(IIIF_IMG,id);
         if(imgbytes !=null) {
-            //System.out.println("Got "+id +" from cache ...");
+            log.debug("Got "+id +" from cache ...");
             return Image.getInstance(imgbytes);
         }
         GetObjectRequest request = new GetObjectRequest(
@@ -57,42 +60,42 @@ public class ArchiveImageProducer implements Callable{
                 identifier);
         imgbytes=IOUtils.toByteArray(s3.getObject(request).getObjectContent());
         img=Image.getInstance(imgbytes);
-        //System.out.println("Got "+id +" from S3 ...added to cache");
+        log.debug("Got "+id +" from S3 ...added to cache");
         ServerCache.addToCache(IIIF_IMG,id, imgbytes);
-        return img;              
+        return img;
     }
-    
-    public byte[] getImageAsBytes() throws BadElementException, MalformedURLException, IOException, BDRCAPIException {        
-        byte[] imgbytes=(byte[])ServerCache.getObjectFromCache(IIIF_IMG,id);        
+
+    public byte[] getImageAsBytes() throws BadElementException, MalformedURLException, IOException, BDRCAPIException {
+        byte[] imgbytes=(byte[])ServerCache.getObjectFromCache(IIIF_IMG,id);
         if(imgbytes !=null) {
-            //System.out.println("Zip Got "+id +" from cache ...");
+            log.debug("Zip Got "+id +" from cache ...");
             return imgbytes;
         }
         GetObjectRequest request = new GetObjectRequest(
                 S3_BUCKET,
                 identifier);
         imgbytes=IOUtils.toByteArray(s3.getObject(request).getObjectContent());
-        //System.out.println("Zip Got "+id +" from S3 ...added to cache");
+        log.debug("Zip Got "+id +" from S3 ...added to cache");
         ServerCache.addToCache(IIIF_IMG,id, imgbytes);
-        return imgbytes;              
+        return imgbytes;
     }
-    
+
     public Image getImg() {
         return img;
     }
-    
+
     public String getIdentifier() {
         return identifier;
     }
 
     public static Image getMissingImage(String text) throws BadElementException, IOException {
-        BufferedImage bufferedImage = new BufferedImage(800, 200,BufferedImage.TYPE_INT_RGB);         
+        BufferedImage bufferedImage = new BufferedImage(800, 200,BufferedImage.TYPE_INT_RGB);
         Graphics graphics = bufferedImage.getGraphics();
         graphics.setColor(Color.LIGHT_GRAY);
         graphics.fillRect(0, 0, 800, 200);
         graphics.setColor(Color.BLACK);
         graphics.setFont(new Font("Arial Black", Font.BOLD, 20));
-        graphics.drawString(text, 300, 100);       
+        graphics.drawString(text, 300, 100);
         return Image.getInstance(bufferedImage,null);
     }
 

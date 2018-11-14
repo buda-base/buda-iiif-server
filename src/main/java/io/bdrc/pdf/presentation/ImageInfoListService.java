@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
-import org.apache.commons.jcs.JCS;
 import org.apache.commons.jcs.access.CacheAccess;
 import org.apache.commons.jcs.access.exception.CacheException;
 import org.slf4j.Logger;
@@ -26,6 +25,7 @@ import com.amazonaws.services.s3.model.S3Object;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import de.digitalcollections.iiif.myhymir.ServerCache;
 import io.bdrc.pdf.presentation.exceptions.BDRCAPIException;
 import io.bdrc.pdf.presentation.models.ImageInfo;
 
@@ -35,11 +35,11 @@ public class ImageInfoListService {
     final static String bucketName = "archive.tbrc.org";
     private static AmazonS3 s3Client = null;
     static MessageDigest md;
-    private static CacheAccess<String, List<ImageInfo>> cache = null;
+    private static CacheAccess<Object, Object> cache = null;
     static private final ObjectMapper om;
     private static final Logger logger = LoggerFactory.getLogger(ImageInfoListService.class);
     private static final Charset utf8 = Charset.forName("UTF-8");
-    
+
     static {
         om = new ObjectMapper();
         try {
@@ -48,12 +48,12 @@ public class ImageInfoListService {
             logger.error("this shouldn't happen!", e);
         }
         try {
-            cache = JCS.getInstance("default");
+            cache = ServerCache.getCacheAccess("default");
         } catch (CacheException e) {
             logger.error("cache initialization error, this shouldn't happen!", e);
         }
     }
-    
+
     private static String getFirstMd5Nums(final String workLocalId) {
         final byte[] bytesOfMessage;
         bytesOfMessage = workLocalId.getBytes(utf8);
@@ -61,18 +61,18 @@ public class ImageInfoListService {
         final BigInteger bigInt = new BigInteger(1,hashBytes);
         return String.format("%032x", bigInt).substring(0, 2);
     }
-    
+
     private static AmazonS3 getClient() {
         if (s3Client == null)
             s3Client = AmazonS3ClientBuilder.defaultClient();
         return s3Client;
     }
-    
+
     private static String getKey(final String workLocalId, final String imageGroupId) {
         final String md5firsttwo = getFirstMd5Nums(workLocalId);
         return "Works/"+md5firsttwo+"/"+workLocalId+"/images/"+workLocalId+"-"+imageGroupId+"/dimensions.json";
     }
-    
+
     private static List<ImageInfo> getFromS3(final String workLocalId, final String imageGroupId) throws BDRCAPIException  {
         final AmazonS3 s3Client = getClient();
         final String key = getKey(workLocalId, imageGroupId);
@@ -102,11 +102,12 @@ public class ImageInfoListService {
         return dataImageGroupId;
     }
 
+    @SuppressWarnings("unchecked")
     public static List<ImageInfo> getImageInfoList(final String workLocalId, String imageGroupId) throws BDRCAPIException {
         logger.debug("getting imageInfoList for {}, {}", workLocalId, imageGroupId);
         imageGroupId = getS3ImageGroupId(imageGroupId);
         final String cacheKey = workLocalId+'/'+imageGroupId;
-        List<ImageInfo> imageInfoList = cache.get(cacheKey);
+        List<ImageInfo> imageInfoList = (List<ImageInfo>)cache.get(cacheKey);
         if (imageInfoList != null) {
             logger.debug("found in cache");
             return imageInfoList;

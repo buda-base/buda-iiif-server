@@ -32,14 +32,4 @@ public class GeoLocation {
             return null;
         }
     }
-
-    /*public static void main(String[] args) {
-        System.out.println("Country >>"+GeoLocation.getCountryName("216.58.215.46"));
-        System.out.println("Country >>"+GeoLocation.getCountryName("90.36.165.164"));
-        System.out.println("Country >>"+GeoLocation.getCountryName("106.10.248.151"));
-        //chinese IP
-        System.out.println("Country >>"+GeoLocation.getCountryName("36.166.204.221"));
-        System.out.println("Country >>"+GeoLocation.getCountryName("ggg1"));
-    }*/
-
 }

@@ -12,6 +12,8 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.text.StringSubstitutor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -43,6 +45,8 @@ public class ArchivesController {
 
     public static final String IIIF="IIIF";
     public static final String IIIF_ZIP="IIIF_ZIP";
+
+    public final static Logger log=LoggerFactory.getLogger(ArchivesController.class.getName());
 
     @RequestMapping(value = "/download/{type}/{id}", method = {RequestMethod.GET,RequestMethod.HEAD})
     public ResponseEntity<String> getPdfLink(@PathVariable String id,@PathVariable String type,HttpServletRequest request) throws Exception {
@@ -99,7 +103,7 @@ public class ArchivesController {
                 }
                 if(type.equals(ArchiveBuilder.PDF_TYPE)) {
                     Object pdf_cached =ServerCache.getObjectFromCache(IIIF,output);
-                    //System.out.println("PDF "+id +" from IIIF cache >>"+pdf_cached);
+                    log.debug("PDF "+id +" from IIIF cache >>"+pdf_cached);
                     if(pdf_cached==null) {
                         // Build pdf since the pdf file doesn't exist yet
                         ArchiveBuilder.buildPdf(idIterator,new IdentifierInfo(idf.getVolumeId()),output);
@@ -107,7 +111,7 @@ public class ArchivesController {
                 }
                 if(type.equals(ArchiveBuilder.ZIP_TYPE)) {
                     Object zip_cached =ServerCache.getObjectFromCache(IIIF_ZIP,output);
-                    //System.out.println("ZIP "+id +" from IIIF_ZIP cache >>"+zip_cached);
+                    log.debug("ZIP "+id +" from IIIF_ZIP cache >>"+zip_cached);
                     if(zip_cached==null) {
                         // Build pdf since the pdf file doesn't exist yet
                         ArchiveBuilder.buildZip(idIterator,new IdentifierInfo(idf.getVolumeId()),output);
@@ -142,7 +146,7 @@ public class ArchivesController {
         byte[] array=null;
         if(type.equals(ArchiveBuilder.PDF_TYPE)) {
             array=(byte[])ServerCache.getObjectFromCache(IIIF,name/*+".pdf"*/);
-            System.out.println("READ from cache "+IIIF+ " name="+name+ " "+ array);
+            log.debug("READ from cache "+IIIF+ " name="+name+ " "+ array);
         }
         if(type.equals(ArchiveBuilder.ZIP_TYPE)) {
             array=(byte[])ServerCache.getObjectFromCache(IIIF_ZIP,name/*+".zip"*/);

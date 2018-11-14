@@ -1,11 +1,11 @@
 package io.bdrc.pdf.presentation;
 
-import static io.bdrc.pdf.presentation.AppConstants.*;
+import static io.bdrc.pdf.presentation.AppConstants.GENERIC_APP_ERROR_CODE;
+import static io.bdrc.pdf.presentation.AppConstants.GENERIC_LDS_ERROR;
 
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.apache.commons.jcs.JCS;
 import org.apache.commons.jcs.access.CacheAccess;
 import org.apache.commons.jcs.access.exception.CacheException;
 import org.apache.http.HttpHeaders;
@@ -20,25 +20,26 @@ import org.apache.jena.rdf.model.ModelFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.digitalcollections.iiif.myhymir.ServerCache;
 import io.bdrc.pdf.presentation.exceptions.BDRCAPIException;
 import io.bdrc.pdf.presentation.models.ItemInfo;
 
 public class ItemInfoService {
     private static final Logger logger = LoggerFactory.getLogger(ItemInfoService.class);
-    
-    private static CacheAccess<String, ItemInfo> cache = null;
-    
+
+    private static CacheAccess<Object,Object> cache = null;
+
     static {
         try {
-            cache = JCS.getInstance("info");
+            cache = ServerCache.getCacheAccess("info");
         } catch (CacheException e) {
             logger.error("cache initialization error, this shouldn't happen!", e);
         }
     }
-    
+
     public static ItemInfo fetchLdsVolumeInfo(final String itemId) throws BDRCAPIException {
         logger.debug("fetch itemInfo on LDS for {}", itemId);
-        final HttpClient httpClient = HttpClientBuilder.create().build(); //Use this instead 
+        final HttpClient httpClient = HttpClientBuilder.create().build(); //Use this instead
         final ItemInfo resItemInfo;
         final String queryUrl = "http://buda1.bdrc.io/graph/IIIFPres_itemGraph";
         logger.debug("query {} with argument R_RES={}", queryUrl, itemId);
@@ -64,7 +65,7 @@ public class ItemInfoService {
         logger.debug("found itemInfo: {}", resItemInfo.toString());
         return resItemInfo;
     }
-    
+
     public static ItemInfo getItemInfo(final String itemId) throws BDRCAPIException {
         ItemInfo resItemInfo = (ItemInfo)cache.get(itemId);
         if (resItemInfo != null) {
