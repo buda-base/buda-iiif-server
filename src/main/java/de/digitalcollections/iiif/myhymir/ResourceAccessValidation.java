@@ -24,7 +24,9 @@ public class ResourceAccessValidation {
         this.access = access;
         accessType=idInfo.getAccessShortName();
         fairUse=RdfConstants.FAIR_USE.equals(accessType);
-
+        if(fairUse) {
+            fairUse= idInfo.isFairUsePublicImage();
+        }
     }
 
     public ResourceAccessValidation(Access access, String accessType) throws ClientProtocolException, IOException, ResourceNotFoundException {
@@ -32,6 +34,7 @@ public class ResourceAccessValidation {
         this.access = access;
         this.accessType=accessType;
         fairUse=RdfConstants.FAIR_USE.equals(accessType);
+
     }
 
     public boolean isFairUse() {

@@ -146,4 +146,44 @@ public class AuthTest {
         resp=client.execute(get);
         assert(resp.getStatusLine().getStatusCode()==200);
     }
+
+    @Test
+    public void fairUseResource() throws ClientProtocolException, IOException, IllegalArgumentException, CertificateException, InvalidKeySpecException, NoSuchAlgorithmException {
+        //with public Token and authorized picture
+        HttpClient client=HttpClientBuilder.create().build();
+        HttpGet get=new HttpGet("http://localhost:"+environment.getProperty("local.server.port")+"/image/v2/bdr:V1PD96945_I1PD96947::I1PD969470001.tif/full/full/0/default.jpg");
+        get.addHeader("Authorization", "Bearer "+publicToken);
+        HttpResponse resp=client.execute(get);
+        assert(resp.getStatusLine().getStatusCode()==200);
+        //with public Token and restricted picture
+        client=HttpClientBuilder.create().build();
+        get=new HttpGet("http://localhost:"+environment.getProperty("local.server.port")+"/image/v2/bdr:V1PD96945_I1PD96947::I1PD969470131.tif/full/full/0/default.jpg");
+        get.addHeader("Authorization", "Bearer "+publicToken);
+        resp=client.execute(get);
+        assert(resp.getStatusLine().getStatusCode()==401);
+        //with admin Token and restricted picture
+        client=HttpClientBuilder.create().build();
+        get=new HttpGet("http://localhost:"+environment.getProperty("local.server.port")+"/image/v2/bdr:V1PD96945_I1PD96947::I1PD969470131.tif/full/full/0/default.jpg");
+        get.addHeader("Authorization", "Bearer "+adminToken);
+        resp=client.execute(get);
+        assert(resp.getStatusLine().getStatusCode()==200);
+    }
+
+    @Test
+    public void serviceInfoTest() throws ClientProtocolException, IOException, IllegalArgumentException, CertificateException, InvalidKeySpecException, NoSuchAlgorithmException {
+        //with public Token and restricted picture
+        ObjectMapper mapper=new ObjectMapper();
+        HttpClient client=HttpClientBuilder.create().build();
+        HttpGet get=new HttpGet("http://localhost:"+environment.getProperty("local.server.port")+"/image/v2/bdr:V28810_I4644::46440001.tif/info.json");
+        get.addHeader("Authorization", "Bearer "+publicToken);
+        HttpResponse resp=client.execute(get);
+        assert(resp.getStatusLine().getStatusCode()==401);
+        HttpEntity ent=resp.getEntity();
+        ByteArrayOutputStream baos=new ByteArrayOutputStream();
+        ent.writeTo(baos);
+        String json_resp=baos.toString();
+        JsonNode node=mapper.readTree(json_resp);
+        baos.close();
+        assert(node.at("/service/profile").asText().equals("http://iiif.io/api/auth/1/login"));
+    }
 }
