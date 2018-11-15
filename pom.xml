@@ -12,7 +12,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
-    <jena.version>3.9.0</jena.version>
+    <jena.version>3.9.0</jena.version>    
     <version.maven-compiler-plugin>3.7.0</version.maven-compiler-plugin>
     <version.spring-boot>2.0.2.RELEASE</version.spring-boot>
     <aws.version>1.11.433</aws.version>
@@ -25,7 +25,17 @@
          as the version indicated in hymir's pom -->
     <version>2.0.2.RELEASE</version>
   </parent>
-  
+  <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.glassfish.jersey</groupId>
+                <artifactId>jersey-bom</artifactId>
+                <version>${jersey.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+  </dependencyManagement>
   <dependencies>
     <dependency>
         <groupId>org.springframework.boot</groupId>
@@ -82,14 +92,14 @@
     <dependency>
         <groupId>io.bdrc</groupId>
         <artifactId>bdrc-auth-lib</artifactId>
-        <version>0.5.0</version>
+        <version>0.7.0</version>
     </dependency>
     <!-- https://mvnrepository.com/artifact/com.maxmind.geoip2/geoip2 -->
     <dependency>
         <groupId>com.maxmind.geoip2</groupId>
         <artifactId>geoip2</artifactId>
         <version>2.12.0</version>
-    </dependency>
+    </dependency>    
   </dependencies>
   <build>
     <plugins>

@@ -30,19 +30,26 @@ import org.springframework.core.env.Environment;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import com.auth0.client.auth.AuthAPI;
+import com.auth0.exception.Auth0Exception;
+import com.auth0.json.auth.TokenHolder;
+import com.auth0.net.AuthRequest;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.digitalcollections.iiif.myhymir.Application;
+import de.digitalcollections.iiif.myhymir.backend.impl.repository.S3ResourceRepositoryImpl;
 import io.bdrc.auth.AuthProps;
 import io.bdrc.auth.rdf.RdfAuthModel;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Application.class,webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-public class CookieTest {
+//@SpringBootTest(classes = Application.class,webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes = Application.class,webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+public class AuthTest {
 
     static AuthAPI auth;
     static String token;
+    static String publicToken;
+    static String adminToken;
 
     @Autowired
     Environment environment;
@@ -53,6 +60,7 @@ public class CookieTest {
         Properties props=new Properties();
         props.load(is);
         AuthProps.init(props);
+        S3ResourceRepositoryImpl.initWithProps(props);
         auth = new AuthAPI(AuthProps.getProperty("authAPI"), AuthProps.getProperty("lds-pdiClientID"), AuthProps.getProperty("lds-pdiClientSecret"));
         HttpClient client=HttpClientBuilder.create().build();
         HttpPost post=new HttpPost(AuthProps.getProperty("issuer")+"oauth/token");
@@ -60,7 +68,8 @@ public class CookieTest {
         json.put("grant_type","client_credentials");
         json.put("client_id",AuthProps.getProperty("lds-pdiClientID"));
         json.put("client_secret",AuthProps.getProperty("lds-pdiClientSecret"));
-        json.put("audience","urn:auth0-authz-api");
+        //json.put("audience","urn:auth0-authz-api");
+        json.put("audience","https://dev-bdrc.auth0.com/api/v2/");
         ObjectMapper mapper=new ObjectMapper();
         String post_data=mapper.writer().writeValueAsString(json);
         StringEntity se = new StringEntity(post_data);
@@ -74,6 +83,18 @@ public class CookieTest {
         JsonNode node=mapper.readTree(json_resp);
         token=node.findValue("access_token").asText();
         RdfAuthModel.initForTest(false);
+        setTokens();
+    }
+
+    private static void setTokens() throws Auth0Exception {
+        AuthRequest req=auth.login("admin@bdrc-test.com", AuthProps.getProperty("admin@bdrc-test.com"));
+        req.setScope("openid offline_access");
+        TokenHolder holder=req.execute();
+        adminToken=holder.getIdToken();
+        req=auth.login("public@bdrc-test.com", AuthProps.getProperty("public@bdrc-test.com"));
+        req.setScope("openid offline_access");
+        holder=req.execute();
+        publicToken=holder.getIdToken();
     }
 
     @Test
@@ -93,5 +114,36 @@ public class CookieTest {
         JsonNode node=mapper.readTree(json_resp);
         baos.close();
         assert(node.findValue("success").asBoolean());
+    }
+
+    @Test
+    public void publicResource() throws ClientProtocolException, IOException, IllegalArgumentException, CertificateException, InvalidKeySpecException, NoSuchAlgorithmException {
+        HttpClient client=HttpClientBuilder.create().build();
+        HttpGet get=new HttpGet("http://localhost:"+environment.getProperty("local.server.port")+"/image/v2/bdr:V29329_I1KG15042::I1KG150420325.jpg/full/full/0/default.jpg");
+        get.addHeader("Authorization", "Bearer "+publicToken);
+        HttpResponse resp=client.execute(get);
+        assert(resp.getStatusLine().getStatusCode()==200);
+    }
+
+    @Test
+    public void ChinaRestrictedResource() throws ClientProtocolException, IOException, IllegalArgumentException, CertificateException, InvalidKeySpecException, NoSuchAlgorithmException {
+        //with public Token and authorized picture
+        HttpClient client=HttpClientBuilder.create().build();
+        HttpGet get=new HttpGet("http://localhost:"+environment.getProperty("local.server.port")+"/image/v2/bdr:V1PD96945_I1PD96947::I1PD969470657.tif/full/full/0/default.jpg");
+        get.addHeader("Authorization", "Bearer "+publicToken);
+        HttpResponse resp=client.execute(get);
+        assert(resp.getStatusLine().getStatusCode()==200);
+        //with public Token and restricted picture
+        client=HttpClientBuilder.create().build();
+        get=new HttpGet("http://localhost:"+environment.getProperty("local.server.port")+"/image/v2/bdr:V28810_I4644::46440001.tif/full/full/0/default.jpg");
+        get.addHeader("Authorization", "Bearer "+publicToken);
+        resp=client.execute(get);
+        assert(resp.getStatusLine().getStatusCode()==401);
+        //with admin Token and restricted picture
+        client=HttpClientBuilder.create().build();
+        get=new HttpGet("http://localhost:"+environment.getProperty("local.server.port")+"/image/v2/bdr:V28810_I4644::46440001.tif/full/full/0/default.jpg");
+        get.addHeader("Authorization", "Bearer "+adminToken);
+        resp=client.execute(get);
+        assert(resp.getStatusLine().getStatusCode()==200);
     }
 }

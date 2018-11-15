@@ -43,7 +43,7 @@ public class S3ResourceRepositoryImpl implements ResourceRepository<Resource> {
 
     @Autowired
     S3ResourcePersistenceTypeHandler spt;
-    
+
     private static final ClientConfiguration config = new ClientConfiguration()
             .withConnectionTimeout(300000)
             .withMaxConnections(50)
@@ -51,7 +51,7 @@ public class S3ResourceRepositoryImpl implements ResourceRepository<Resource> {
             .withSocketTimeout(300000);
     private static String S3_BUCKET;
     private static AmazonS3ClientBuilder clientBuilder;
-    
+
     public static void initWithProps(Properties p) {
         S3_BUCKET = p.getProperty("s3bucket");
         clientBuilder = AmazonS3ClientBuilder.standard()
@@ -132,7 +132,7 @@ public class S3ResourceRepositoryImpl implements ResourceRepository<Resource> {
     public void delete(Resource r) throws ResourceIOException {
       throw new UnsupportedOperationException("Not supported yet.");
     }
-    
+
     @Override
     public Reader getReader(Resource r) throws ResourceIOException, ResourceNotFoundException {
       throw new UnsupportedOperationException("Not supported yet.");
