@@ -30,9 +30,6 @@ import org.springframework.core.env.Environment;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import com.auth0.client.auth.AuthAPI;
-import com.auth0.exception.Auth0Exception;
-import com.auth0.json.auth.TokenHolder;
-import com.auth0.net.AuthRequest;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -82,19 +79,39 @@ public class AuthTest {
         baos.close();
         JsonNode node=mapper.readTree(json_resp);
         token=node.findValue("access_token").asText();
-        RdfAuthModel.initForTest(false);
+        RdfAuthModel.initForTest(false,true);
         setTokens();
     }
 
-    private static void setTokens() throws Auth0Exception {
-        AuthRequest req=auth.login("admin@bdrc-test.com", AuthProps.getProperty("admin@bdrc-test.com"));
-        req.setScope("openid offline_access");
-        TokenHolder holder=req.execute();
-        adminToken=holder.getIdToken();
-        req=auth.login("public@bdrc-test.com", AuthProps.getProperty("public@bdrc-test.com"));
-        req.setScope("openid offline_access");
-        holder=req.execute();
-        publicToken=holder.getIdToken();
+    private static void setTokens() throws IOException {
+        adminToken=getToken("admin@bdrc-test.com");
+        publicToken=getToken("public@bdrc-test.com");
+    }
+
+    private static String getToken(String username) throws IOException {
+        String tok="";
+        HttpClient client=HttpClientBuilder.create().build();
+        HttpPost post=new HttpPost(AuthProps.getProperty("issuer")+"oauth/token");
+        HashMap<String,String> json = new HashMap<>();
+        json.put("grant_type","password");
+        json.put("username",username);
+        json.put("password",AuthProps.getProperty(username));
+        json.put("client_id",AuthProps.getProperty("lds-pdiClientID"));
+        json.put("client_secret",AuthProps.getProperty("lds-pdiClientSecret"));
+        json.put("audience",AuthProps.getProperty("audience"));
+        ObjectMapper mapper=new ObjectMapper();
+        String post_data=mapper.writer().writeValueAsString(json);
+        StringEntity se = new StringEntity(post_data);
+        se.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
+        post.setEntity(se);
+        HttpResponse response = client.execute(post);
+        ByteArrayOutputStream baos=new ByteArrayOutputStream();
+        response.getEntity().writeTo(baos);
+        String json_resp=baos.toString();
+        baos.close();
+        JsonNode node=mapper.readTree(json_resp);
+        tok=node.findValue("access_token").asText();
+        return tok;
     }
 
     @Test

@@ -1,6 +1,10 @@
 package io.bdrc.pdf.presentation;
 
-import static io.bdrc.pdf.presentation.AppConstants.*;
+import static io.bdrc.pdf.presentation.AppConstants.BDR;
+import static io.bdrc.pdf.presentation.AppConstants.BDR_len;
+import static io.bdrc.pdf.presentation.AppConstants.GENERIC_APP_ERROR_CODE;
+import static io.bdrc.pdf.presentation.AppConstants.IIIFPresPrefix;
+import static io.bdrc.pdf.presentation.AppConstants.NO_ACCESS_ERROR_CODE;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -30,7 +34,7 @@ import io.bdrc.pdf.presentation.models.VolumeInfo;
 public class ManifestService {
 
     private static final Logger logger = LoggerFactory.getLogger(ManifestService.class);
-    
+
     public static final Map<String, Locale> locales = new HashMap<>();
     public static final PropertyValue attribution = new PropertyValue();
     static {
@@ -38,21 +42,21 @@ public class ManifestService {
         attribution.addValue(getLocaleFor("bo"), "ནང་བསྟན་དཔེ་ཚོགས་ལྟེ་གནས།");
         attribution.addValue(getLocaleFor("zh"), "佛教数字资源中心(BDRC)");
     }
-    
+
     public static Locale getLocaleFor(String lt) {
         return locales.computeIfAbsent(lt, x -> Locale.forLanguageTag(lt));
     }
-    
+
     public static String getLabelForImage(final int imageIndex) {
         if (imageIndex < 2)
             return "tbrc-"+(imageIndex+1);
         return "p. "+(imageIndex-1);
     }
-    
+
     public static String getImageServiceUrl(final String filename, final Identifier id) {
         return "http://iiif.bdrc.io/image/v2/"+id.getVolumeId()+"::"+filename;
     }
-    
+
     public static Sequence getSequenceFrom(final Identifier id, final List<ImageInfo> imageInfoList) throws BDRCAPIException {
         final Sequence mainSeq = new Sequence(IIIFPresPrefix+id.getId()+"/sequence/main");
         final int imageTotal = imageInfoList.size();
@@ -69,7 +73,6 @@ public class ManifestService {
             }
             endIndex = ePageNum-1;
         }
-        //System.out.println("beginIndex : "+beginIndex+", endIndex: "+endIndex);
         for (int i = beginIndex ; i <= endIndex ; i++) {
             final ImageInfo imageInfo = imageInfoList.get(i);
             final String label = getLabelForImage(i);
@@ -95,7 +98,7 @@ public class ManifestService {
         }
         return mainSeq;
     }
-    
+
     public static Manifest getManifestForIdentifier(final Identifier id, final VolumeInfo vi) throws BDRCAPIException {
         if (id.getType() != Identifier.MANIFEST_ID || id.getSubType() != Identifier.MANIFEST_ID_VOLUMEID) {
             throw new BDRCAPIException(404, GENERIC_APP_ERROR_CODE, "you cannot access this type of manifest yet");
