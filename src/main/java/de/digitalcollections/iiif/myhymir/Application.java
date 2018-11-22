@@ -38,9 +38,16 @@ public class Application extends SpringBootServletInitializer{
     static final String configPath= System.getProperty("iiifserv.configpath");
 
     public static void main(String[] args) throws Exception {
-        InputStream is=new FileInputStream(configPath+"iiifserv.properties");
+        InputStream input=Application.class.getClassLoader().getResourceAsStream("iiifserv.properties");
         Properties props=new Properties();
-        props.load(is);
+        props.load(input);
+        try {
+            InputStream is = new FileInputStream(configPath+"iiifserv-private.properties");
+            props.load(is);
+
+        }catch(Exception ex) {
+            //do nothing, continue props initialization
+        }
         AuthProps.init(props);
         S3ResourceRepositoryImpl.initWithProps(props);
         SpringApplication.run(Application.class, args);

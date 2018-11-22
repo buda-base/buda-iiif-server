@@ -41,7 +41,7 @@ import io.bdrc.auth.rdf.RdfAuthModel;
 @RunWith(SpringRunner.class)
 //@SpringBootTest(classes = Application.class,webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @SpringBootTest(classes = Application.class,webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-public class AuthTest {
+public class AuthCheck {
 
     static AuthAPI auth;
     static String token;
