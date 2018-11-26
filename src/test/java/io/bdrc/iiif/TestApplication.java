@@ -1,6 +1,6 @@
-package de.digitalcollections.iiif.myhymir;
+package io.bdrc.iiif;
 
-import java.io.FileInputStream;
+
 import java.io.InputStream;
 import java.util.Properties;
 
@@ -11,10 +11,11 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Primary;
 
+import de.digitalcollections.iiif.myhymir.IIIFRdfAuthFilter;
 import de.digitalcollections.iiif.myhymir.backend.impl.repository.S3ResourceRepositoryImpl;
-import io.bdrc.auth.AuthProps;
 import io.bdrc.auth.rdf.RdfAuthModel;
 
 
@@ -27,36 +28,37 @@ import io.bdrc.auth.rdf.RdfAuthModel;
           "io.bdrc.archives",
           "io.bdrc.iiif",
           "de.digitalcollections.iiif.hymir",
-          "de.digitalcollections.iiif.myhymir",
+          "de.digitalcollections.iiif.myhymir.backend",
+          "de.digitalcollections.iiif.myhymir.image",
           "de.digitalcollections.core.backend.impl.file.repository.resource.util"
-        })
-//,
-//        excludeFilters = @ComponentScan.Filter(
-//                type = FilterType.ASSIGNABLE_TYPE, value = {ResourceRepositoryImpl.class}))
-public class Application extends SpringBootServletInitializer{
+        }
+,
+        excludeFilters = @ComponentScan.Filter(
+               type = FilterType.ASSIGNABLE_TYPE, value = {IIIFRdfAuthFilter.class}))
+public class TestApplication extends SpringBootServletInitializer{
 
     static final String configPath= System.getProperty("iiifserv.configpath");
 
     public static void main(String[] args) throws Exception {
-        InputStream input=Application.class.getClassLoader().getResourceAsStream("iiifserv.properties");
+        InputStream input=TestApplication.class.getClassLoader().getResourceAsStream("iiifserv.properties");
         Properties props=new Properties();
         props.load(input);
-        try {
+        /*try {
             InputStream is = new FileInputStream(configPath+"iiifserv-private.properties");
             props.load(is);
 
         }catch(Exception ex) {
             //do nothing, continue props initialization
         }
-        AuthProps.init(props);
+        AuthProps.init(props);*/
         S3ResourceRepositoryImpl.initWithProps(props);
-        SpringApplication.run(Application.class, args);
+        SpringApplication.run(TestApplication.class, args);
         RdfAuthModel.init();
     }
 
     @Override
     protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
-        return application.sources(Application.class);
+        return application.sources(TestApplication.class);
     }
 
 }

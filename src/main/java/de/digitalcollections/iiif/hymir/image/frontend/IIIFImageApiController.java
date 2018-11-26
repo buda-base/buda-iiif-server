@@ -208,11 +208,13 @@ public class IIIFImageApiController {
       path = req.getServletPath();
     }
     String baseUrl = getUrlBase(req);
+
     de.digitalcollections.iiif.model.image.ImageService info = new de.digitalcollections.iiif.model.image.ImageService(
         baseUrl + path.replace("/info.json", ""));
     if(unAuthorized && serviceInfo.authEnabled() && serviceInfo.hasValidProperties()) {
         info.addService(serviceInfo);
     }
+    System.out.println("TESTING INFO>>> "+info);
     imageService.readImageInfo(identifier, info);
     HttpHeaders headers = new HttpHeaders();
     headers.setDate("Last-Modified", modified);

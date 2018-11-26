@@ -329,10 +329,12 @@ public class BDRCImageServiceImpl implements ImageService {
 
     @Override
     public Instant getImageModificationDate(String identifier) throws ResourceNotFoundException {
+
       if (imageSecurityService != null && !imageSecurityService.isAccessAllowed(identifier)) {
         throw new ResourceNotFoundException();
       }
       try {
+
         Resource res = resourceService.get(identifier, ResourcePersistenceType.RESOLVED, MimeType.MIME_IMAGE);
         return Instant.ofEpochMilli(res.getLastModified());
       } catch (ResourceIOException e) {
