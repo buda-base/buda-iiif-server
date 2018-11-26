@@ -35,14 +35,14 @@ import io.bdrc.auth.rdf.RdfAuthModel;
 //                type = FilterType.ASSIGNABLE_TYPE, value = {ResourceRepositoryImpl.class}))
 public class Application extends SpringBootServletInitializer{
 
-    static final String configPath= System.getProperty("iiifserv.configpath");
+    //static final String configPath= System.getProperty("iiifserv.configpath");
 
     public static void main(String[] args) throws Exception {
         InputStream input=Application.class.getClassLoader().getResourceAsStream("iiifserv.properties");
         Properties props=new Properties();
         props.load(input);
         try {
-            InputStream is = new FileInputStream(configPath+"iiifserv-private.properties");
+            InputStream is = new FileInputStream("/etc/buda/share/shared-private.properties");
             props.load(is);
 
         }catch(Exception ex) {
