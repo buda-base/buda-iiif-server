@@ -29,7 +29,7 @@ import io.bdrc.auth.rdf.RdfAuthModel;
           "io.bdrc.iiif",
           "de.digitalcollections.iiif.hymir",
           "de.digitalcollections.iiif.myhymir.backend",
-          "de.digitalcollections.iiif.myhymir.image",
+          //"de.digitalcollections.iiif.myhymir.image",
           "de.digitalcollections.core.backend.impl.file.repository.resource.util"
         }
 ,

@@ -1,3 +1,4 @@
+
 package de.digitalcollections.iiif.myhymir;
 
 import java.io.IOException;
