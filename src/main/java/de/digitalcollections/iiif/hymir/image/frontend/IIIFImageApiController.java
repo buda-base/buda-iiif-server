@@ -95,6 +95,14 @@ public class IIIFImageApiController {
       boolean valid=false;
       String token=getToken(req.getHeader("Authorization"));
       if(token==null) {
+          Cookie[] cks=req.getCookies();
+          for(Cookie ck:cks) {
+              if(ck.getName().equals(AuthProps.getProperty("cookieKey"))){
+                  //invalidates cookie if present and token is null
+                  ck.setMaxAge(0);
+                  response.addCookie(ck);
+              }
+          }
           return new ResponseEntity<>("{\"success\":"+valid+"}", headers, HttpStatus.FORBIDDEN);
       }
       TokenValidation tkVal=new TokenValidation(token);
@@ -214,7 +222,6 @@ public class IIIFImageApiController {
     if(unAuthorized && serviceInfo.authEnabled() && serviceInfo.hasValidProperties()) {
         info.addService(serviceInfo);
     }
-    System.out.println("TESTING INFO>>> "+info);
     imageService.readImageInfo(identifier, info);
     HttpHeaders headers = new HttpHeaders();
     headers.setDate("Last-Modified", modified);
