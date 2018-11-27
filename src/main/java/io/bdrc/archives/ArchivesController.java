@@ -145,15 +145,15 @@ public class ArchivesController {
     public ResponseEntity<ByteArrayResource> downloadPdf(@PathVariable String name,@PathVariable String type) throws Exception {
         byte[] array=null;
         if(type.equals(ArchiveBuilder.PDF_TYPE)) {
-            array=(byte[])ServerCache.getObjectFromCache(IIIF,name/*+".pdf"*/);
+            array=(byte[])ServerCache.getObjectFromCache(IIIF,name.substring(4));
             log.debug("READ from cache "+IIIF+ " name="+name+ " "+ array);
         }
         if(type.equals(ArchiveBuilder.ZIP_TYPE)) {
-            array=(byte[])ServerCache.getObjectFromCache(IIIF_ZIP,name/*+".zip"*/);
+            array=(byte[])ServerCache.getObjectFromCache(IIIF_ZIP,name.substring(3));
         }
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.parseMediaType("application/"+type));
-        headers.setContentDispositionFormData("attachment", name+"."+type);
+        headers.setContentDispositionFormData("attachment", name.substring(4)+"."+type);
         ResponseEntity<ByteArrayResource> response = new ResponseEntity<ByteArrayResource>(
                 new ByteArrayResource(array), headers, HttpStatus.OK);
         return response;

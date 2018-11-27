@@ -91,7 +91,7 @@ public class ArchiveBuilder {
             }
         }
         document.close();
-        ServerCache.addToCache(IIIF,output, stream.toByteArray());
+        ServerCache.addToCache(IIIF,output.substring(4), stream.toByteArray());
         writer.close();
         ServerCache.addToCache("pdfjobs",output,true);
     }
@@ -140,7 +140,7 @@ public class ArchiveBuilder {
         catch (IOException | ExecutionException | InterruptedException e) {
             throw new BDRCAPIException(500, GENERIC_APP_ERROR_CODE, e);
         }
-        ServerCache.addToCache(IIIF_ZIP,output,baos.toByteArray());
+        ServerCache.addToCache(IIIF_ZIP,output.substring(3),baos.toByteArray());
         ServerCache.addToCache("zipjobs", output, true);
     }
 
