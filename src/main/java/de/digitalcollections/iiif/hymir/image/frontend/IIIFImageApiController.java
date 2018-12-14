@@ -44,10 +44,11 @@ import io.bdrc.iiif.auth.AuthServiceInfo;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 
 @Controller
-@RequestMapping("/image/v2/")
+//@RequestMapping("/image/v2/")
+@RequestMapping("/")
 public class IIIFImageApiController {
 
-  public static final String VERSION = "v2";
+  //public static final String VERSION = "v2";
 
   @Autowired
   private ImageService imageService;
@@ -255,7 +256,8 @@ public class IIIFImageApiController {
   @RequestMapping(value = "{identifier}", method = {RequestMethod.GET, RequestMethod.HEAD})
   public String getInfoRedirect(@PathVariable String identifier, HttpServletResponse response) {
     //response.setHeader("Access-Control-Allow-Origin", "*");
-    return "redirect:/image/" + VERSION + "/" + identifier + "/info.json";
+    //return "redirect:/image/" + VERSION + "/" + identifier + "/info.json";
+    return "redirect:/" + identifier + "/info.json";
   }
 
   public int computeExpires(TokenValidation tkVal) {
