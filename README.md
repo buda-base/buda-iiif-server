@@ -26,9 +26,9 @@ then using your favorite port and profile (here 8080 and "local"), run:
 java -Dserver.port=8080 -Dspring.profiles.active=local -jar target/buda-hymir-1.0.0-SNAPSHOT-exec.jar
 ```
 
-### BDRC iiif compliant ("{identifier}/{region}/{size}/{rotation}/{quality}.{format}") url example with root /image/v2/:
+### BDRC iiif compliant ("{identifier}/{region}/{size}/{rotation}/{quality}.{format}") url example :
 
-http://localhost:8080/image/v2/bdr:V22084_I0886::08860035.tif/full/full/0/default.jpg
+http://localhost:8080/bdr:V22084_I0886::08860035.tif/full/full/0/default.jpg
 
 ### Note
 
