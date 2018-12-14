@@ -35,7 +35,6 @@ public class ResourceAccessValidation {
         this.access = access;
         this.accessType=accessType;
         fairUse=RdfConstants.FAIR_USE.equals(accessType);
-
     }
 
     public boolean isFairUse() {
@@ -43,6 +42,7 @@ public class ResourceAccessValidation {
     }
 
     public boolean isAccessible(HttpServletRequest request) {
+        if(access==null) {access=new Access();}
         boolean accessible=true;
         if(accessType.equals(RdfConstants.RESTRICTED_CHINA)) {
             if (CHINA.equalsIgnoreCase(GeoLocation.getCountryName(request.getRemoteAddr()))) {

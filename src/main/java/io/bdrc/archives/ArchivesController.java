@@ -51,6 +51,7 @@ public class ArchivesController {
     @RequestMapping(value = "/download/{type}/{id}", method = {RequestMethod.GET,RequestMethod.HEAD})
     public ResponseEntity<String> getPdfLink(@PathVariable String id,@PathVariable String type,HttpServletRequest request) throws Exception {
         Access acc=(Access)request.getAttribute("access");
+        if(acc==null) {acc=new Access();}
         String format=request.getHeader("Accept");
         boolean json=format.contains("application/json");
         String output =null;
