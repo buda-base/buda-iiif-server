@@ -227,7 +227,8 @@ public class IIIFImageApiController {
     HttpHeaders headers = new HttpHeaders();
     headers.setDate("Last-Modified", modified);
     String contentType = req.getHeader("Accept");
-    if (contentType != null && contentType.equals("application/ld+json")) {
+    System.out.println("CONTENT-TYPE >>"+contentType);
+    if ("application/ld+json".equals(contentType)) {
       headers.set("Content-Type", contentType);
     } else {
       headers.set("Content-Type", "application/json");
@@ -247,9 +248,8 @@ public class IIIFImageApiController {
             return new ResponseEntity<>(objectMapper.writeValueAsString(info), headers, HttpStatus.FORBIDDEN);
         }
     }else {
-        HttpHeaders headers1=new HttpHeaders();
-        headers1.setCacheControl(CacheControl.maxAge(maxAge,TimeUnit.MILLISECONDS).cachePublic());
-        return new ResponseEntity<>(objectMapper.writeValueAsString(info), headers1, HttpStatus.OK);
+        headers.setCacheControl(CacheControl.maxAge(maxAge,TimeUnit.MILLISECONDS).cachePublic());
+        return new ResponseEntity<>(objectMapper.writeValueAsString(info), headers, HttpStatus.OK);
     }
   }
 
