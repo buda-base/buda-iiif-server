@@ -31,7 +31,7 @@
   <logger name="de.digitalcollections.iiif.hymir.presentation.business" level="error" />
   <logger name="de.digitalcollections.core" level="error" />-->
 
-  <root level="info">
+  <root level="warn">
     <appender-ref ref="default" />
   </root>
 
