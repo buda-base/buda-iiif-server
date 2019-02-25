@@ -13,6 +13,7 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.jena.atlas.logging.Log;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.CacheControl;
@@ -42,6 +43,7 @@ import io.bdrc.auth.AuthProps;
 import io.bdrc.auth.TokenValidation;
 import io.bdrc.iiif.auth.AuthServiceInfo;
 import io.bdrc.iiif.resolver.IdentifierInfo;
+import io.bdrc.pdf.presentation.exceptions.BDRCAPIException;
 
 @Controller
 //@RequestMapping("/image/v2/")
@@ -122,14 +124,15 @@ public class IIIFImageApiController {
   }
 
   @RequestMapping(value = "{identifier}/{region}/{size}/{rotation}/{quality}.{format}")
-  public ResponseEntity<byte[]> getImageRepresentation(
+  public ResponseEntity<byte[]> getImageRepresentation(		  
           @PathVariable String identifier, @PathVariable String region,
           @PathVariable String size, @PathVariable String rotation,
           @PathVariable String quality, @PathVariable String format,
           HttpServletRequest request, HttpServletResponse response, WebRequest webRequest)
       throws UnsupportedFormatException, UnsupportedOperationException, IOException, InvalidParametersException,
-             ResourceNotFoundException {
-    ResourceAccessValidation accValidation=new ResourceAccessValidation((Access)request.getAttribute("access"),new IdentifierInfo(identifier));
+             ResourceNotFoundException, BDRCAPIException {
+	  Log.warn("Entering endpoint getImageRepresentation", identifier);
+    ResourceAccessValidation accValidation=new ResourceAccessValidation((Access)request.getAttribute("access"),IdentifierInfo.getIndentifierInfo(identifier));
     identifier = URLDecoder.decode(identifier, "UTF-8");
     if(!accValidation.isAccessible(request)) {
         HttpHeaders headers1=new HttpHeaders();
@@ -147,6 +150,7 @@ public class IIIFImageApiController {
     } else {
       path = request.getServletPath();
     }
+    Log.warn("getting image modification date", identifier);
     long modified = imageService.getImageModificationDate(identifier).toEpochMilli();
     webRequest.checkNotModified(modified);
     headers.setDate("Last-Modified", modified);
@@ -165,9 +169,11 @@ public class IIIFImageApiController {
     } catch (ResolvingException e) {
       throw new InvalidParametersException(e);
     }
+    Log.warn("reading from image service", identifier);    
     de.digitalcollections.iiif.model.image.ImageService info = new de.digitalcollections.iiif.model.image.ImageService(
         "http://foo.org/" + identifier);
     imageService.readImageInfo(identifier, info);
+    Log.warn("end reading from image service", identifier);
     ImageApiProfile profile = ImageApiProfile.merge(info.getProfiles());
     String canonicalForm;
     try {
@@ -190,7 +196,7 @@ public class IIIFImageApiController {
       String filename = path.replaceFirst("/image/", "").replace('/', '_').replace(',', '_');
       headers.set("Content-Disposition", "inline; filename=" + filename);
       headers.add("Link", String.format("<%s>;rel=\"profile\"", info.getProfiles().get(0).getIdentifier().toString()));
-
+      Log.warn("preaparing output stream", identifier+" at "+System.currentTimeMillis());      
       ByteArrayOutputStream os = new ByteArrayOutputStream();
       imageService.processImage(identifier, selector, profile, os);
       if(accValidation.isOpenAccess()) {
@@ -198,6 +204,7 @@ public class IIIFImageApiController {
       }else {
           headers.setCacheControl(CacheControl.maxAge(maxAge,TimeUnit.MILLISECONDS).cachePrivate());
       }
+      Log.warn("returning getImageRepresentation", identifier);      
       return new ResponseEntity<>(os.toByteArray(), headers, HttpStatus.OK);
     }
   }
@@ -206,24 +213,26 @@ public class IIIFImageApiController {
           method = {RequestMethod.GET, RequestMethod.HEAD})
   public ResponseEntity<String> getInfo(@PathVariable String identifier, HttpServletRequest req,
           HttpServletResponse res, WebRequest webRequest) throws Exception {
-    ResourceAccessValidation accValidation=new ResourceAccessValidation((Access)req.getAttribute("access"),new IdentifierInfo(identifier));
+	Log.warn("Entering endpoint getInfo", identifier);
+	ResourceAccessValidation accValidation=new ResourceAccessValidation((Access)req.getAttribute("access"),IdentifierInfo.getIndentifierInfo(identifier));
     boolean unAuthorized=!accValidation.isAccessible(req);
     long modified = imageService.getImageModificationDate(identifier).toEpochMilli();
     webRequest.checkNotModified(modified);
     String path;
     if (req.getPathInfo() != null) {
-      path = req.getPathInfo();
+      path = req.getPathInfo(); 
     } else {
       path = req.getServletPath();
     }
-    String baseUrl = getUrlBase(req);
+    String baseUrl = getUrlBase(req);    
 
     de.digitalcollections.iiif.model.image.ImageService info = new de.digitalcollections.iiif.model.image.ImageService(
         baseUrl + path.replace("/info.json", ""));
     if(unAuthorized && serviceInfo.authEnabled() && serviceInfo.hasValidProperties()) {
         info.addService(serviceInfo);
     }
-    imageService.readImageInfo(identifier, info);
+    Log.warn("getInfo read ImageInfo", identifier);
+	    imageService.readImageInfo(identifier, info);
     HttpHeaders headers = new HttpHeaders();
     headers.setDate("Last-Modified", modified);
     String contentType = req.getHeader("Accept");
@@ -239,6 +248,7 @@ public class IIIFImageApiController {
     headers.add("Link", String.format("<%s>;rel=\"profile\"", info.getProfiles().get(0).getIdentifier().toString()));
     // We set the header ourselves, since using @CrossOrigin doesn't expose "*", but always sets the requesting domain
     //headers.add("Access-Control-Allow-Origin", "*");
+    Log.warn("getInfo ready to return", identifier);
     if(unAuthorized) {
         if(serviceInfo.hasValidProperties() && serviceInfo.authEnabled()) {
             headers.setCacheControl(CacheControl.maxAge(maxAge,TimeUnit.MILLISECONDS).cachePublic());

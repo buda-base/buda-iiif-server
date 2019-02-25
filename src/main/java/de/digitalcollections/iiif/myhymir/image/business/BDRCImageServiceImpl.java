@@ -17,6 +17,7 @@ import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
 
+import org.apache.jena.atlas.logging.Log;
 import org.imgscalr.Scalr;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -159,7 +160,8 @@ public class BDRCImageServiceImpl implements ImageService {
 
     /** Try to obtain a {@link ImageReader} for a given identifier **/
     private ImageReader getReader(String identifier) throws ResourceNotFoundException, UnsupportedFormatException, IOException {
-      if (imageSecurityService != null && !imageSecurityService.isAccessAllowed(identifier)) {
+    	Log.warn("Image service reading", identifier);        
+    	if (imageSecurityService != null && !imageSecurityService.isAccessAllowed(identifier)) {
         throw new ResourceNotFoundException();
       }
       Resource res;
@@ -173,6 +175,7 @@ public class BDRCImageServiceImpl implements ImageService {
               .findFirst()
               .orElseThrow(UnsupportedFormatException::new);
       reader.setInput(iis);
+      Log.warn("Image service return reader", identifier); 
       return reader;
     }
 

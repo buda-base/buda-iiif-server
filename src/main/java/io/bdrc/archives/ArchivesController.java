@@ -107,7 +107,7 @@ public class ArchivesController {
                     log.debug("PDF "+id +" from IIIF cache >>"+pdf_cached);
                     if(pdf_cached==null) {
                         // Build pdf since the pdf file doesn't exist yet
-                        ArchiveBuilder.buildPdf(idIterator,new IdentifierInfo(idf.getVolumeId()),output);
+                        ArchiveBuilder.buildPdf(idIterator,IdentifierInfo.getIndentifierInfo(idf.getVolumeId()),output);
                     }
                 }
                 if(type.equals(ArchiveBuilder.ZIP_TYPE)) {
@@ -115,7 +115,7 @@ public class ArchivesController {
                     log.debug("ZIP "+id +" from IIIF_ZIP cache >>"+zip_cached);
                     if(zip_cached==null) {
                         // Build pdf since the pdf file doesn't exist yet
-                        ArchiveBuilder.buildZip(idIterator,new IdentifierInfo(idf.getVolumeId()),output);
+                        ArchiveBuilder.buildZip(idIterator,IdentifierInfo.getIndentifierInfo(idf.getVolumeId()),output);
                     }
                 }
                 // Create template and serve html link

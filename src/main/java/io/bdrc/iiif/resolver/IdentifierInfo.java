@@ -9,13 +9,16 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.jena.atlas.logging.Log;
 import org.json.simple.JSONObject;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.digitalcollections.iiif.hymir.model.exception.ResourceNotFoundException;
+import de.digitalcollections.iiif.myhymir.ServerCache;
 import io.bdrc.auth.rdf.RdfConstants;
+import io.bdrc.pdf.presentation.exceptions.BDRCAPIException;
 import io.bdrc.pdf.presentation.models.ImageListIterator;
 
 public class IdentifierInfo {
@@ -33,6 +36,7 @@ public class IdentifierInfo {
     @SuppressWarnings("unchecked")
     public IdentifierInfo(String identifier) throws ClientProtocolException, IOException,ResourceNotFoundException{
         this.identifier=identifier;
+        Log.warn("creating ldspdi connexion", identifier+" at "+System.currentTimeMillis()); 
         HttpClient httpClient = HttpClientBuilder.create().build();
         HttpPost request = new HttpPost("http://purl.bdrc.io/query/IIIFPres_volumeInfo");
         JSONObject object = new JSONObject();
@@ -45,6 +49,7 @@ public class IdentifierInfo {
         request.setEntity(new StringEntity(message, "UTF8"));
         request.setHeader("Content-type", "application/json");
         HttpResponse response = httpClient.execute(request);
+        Log.warn("getting ldspdi response", identifier+" at "+System.currentTimeMillis());
         ObjectMapper mapper=new ObjectMapper();
         JsonNode node=mapper.readTree(response.getEntity().getContent());
         node=node.findPath("results").findPath("bindings");
@@ -67,6 +72,17 @@ public class IdentifierInfo {
         if(getAccessShortName().equals(RdfConstants.FAIR_USE)) {
             initFairUse();
         }
+    }
+    
+    public static IdentifierInfo getIndentifierInfo(String identifier) throws ClientProtocolException, IOException, ResourceNotFoundException, BDRCAPIException {
+    	IdentifierInfo info=(IdentifierInfo) ServerCache.getObjectFromCache("identifier", identifier);
+    	if(info!=null) {
+    		return info;
+    	}else {
+    		info=new IdentifierInfo(identifier);
+    		ServerCache.addToCache("identifier",identifier,info);    		
+    		return info;
+    	}
     }
 
     private void initFairUse() {

@@ -6,6 +6,7 @@ import java.net.URI;
 import java.util.Properties;
 import java.util.UUID;
 
+import org.apache.jena.atlas.logging.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -94,6 +95,7 @@ public class S3ResourceRepositoryImpl implements ResourceRepository<Resource> {
 
     public InputStream getInputStream(S3Resource r) throws ResourceIOException, ResourceNotFoundException{
         log.info("Getting input stream for resource {}", r);
+        Log.warn("getting S3 client ", r.getIdentifier()+" at "+System.currentTimeMillis());
         final AmazonS3 s3 = S3ResourceRepositoryImpl.getClientInstance();
         S3Object obj = null;
         try {
@@ -101,6 +103,7 @@ public class S3ResourceRepositoryImpl implements ResourceRepository<Resource> {
                     S3_BUCKET,
                     r.getIdentifier());
             obj = s3.getObject(request);
+            Log.warn("S3 object received", r.getIdentifier()+" at "+System.currentTimeMillis());
             log.trace("Obj from s3 >> {}", obj);
         }
         catch (AmazonS3Exception e) {
@@ -109,6 +112,7 @@ public class S3ResourceRepositoryImpl implements ResourceRepository<Resource> {
             throw new ResourceNotFoundException();
         }
         final InputStream stream = obj.getObjectContent();
+        Log.warn("S3 stream returned ", r.getIdentifier()+" at "+System.currentTimeMillis());
         log.trace("Obj stream from s3 >> {}", stream);
         return stream;
     }

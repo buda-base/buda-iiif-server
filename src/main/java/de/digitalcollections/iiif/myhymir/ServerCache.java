@@ -22,6 +22,7 @@ public class ServerCache {
     private static final CacheAccess<Object,Object> PDF_JOBS=JCS.getInstance("pdfjobs");
     private static final CacheAccess<Object,Object> ZIP_JOBS=JCS.getInstance("zipjobs");
     private static final CacheAccess<Object,Object> DEFAULT=JCS.getInstance("default");
+    private static final CacheAccess<Object,Object> IDENTIFIER=JCS.getInstance("identifier");
 
 
     public static void addToCache(String cacheName,String name,Object res) throws BDRCAPIException{
@@ -60,6 +61,8 @@ public class ServerCache {
                 access=PDF_JOBS;
             case "zipjobs":
                 access=ZIP_JOBS;
+            case "identifier":
+                access=IDENTIFIER;
         }
         return access;
     }

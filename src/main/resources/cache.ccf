@@ -48,6 +48,16 @@ jcs.region.info.cacheattributes.MemoryCacheName=org.apache.commons.jcs.engine.me
 jcs.region.info.elementattributes=org.apache.commons.jcs.engine.ElementAttributes
 jcs.region.info.elementattributes.IsEternal=false
 
+##### MEMORY ONLY - CACHE REGION for identifierInfo objects
+jcs.region.identifier=
+jcs.region.identifier.cacheattributes.UseDisk=false
+jcs.region.identifier.cacheattributes=org.apache.commons.jcs.engine.CompositeCacheAttributes
+jcs.region.identifier.cacheattributes.MaxObjects=2000
+jcs.region.identifier.cacheattributes.MemoryCacheName=org.apache.commons.jcs.engine.memory.lru.LRUMemoryCache
+jcs.region.identifier.elementattributes=org.apache.commons.jcs.engine.ElementAttributes
+jcs.region.identifier.elementattributes.MaxLife=60
+jcs.region.identifier.elementattributes.IsEternal=false
+
 # Indexed Disk Cache for pdf
 jcs.auxiliary.IIIF=org.apache.commons.jcs.auxiliary.disk.indexed.IndexedDiskCacheFactory
 jcs.auxiliary.IIIF.attributes=org.apache.commons.jcs.auxiliary.disk.indexed.IndexedDiskCacheAttributes
@@ -73,8 +83,6 @@ jcs.auxiliary.IIIF_ZIP.attributes=org.apache.commons.jcs.auxiliary.disk.indexed.
 #jcs.auxiliary.IIIF_ZIP.attributes.DiskPath=zip_cache
 jcs.auxiliary.IIIF_ZIP.attributes.DiskPath=pdf_cache
 jcs.auxiliary.IIIF_ZIP.attributes.MaxPurgatorySize=500
-            ##  10 minutes max
-jcs.auxiliary.IIIF_ZIP.attributes.MaxLife=600
             ##  5 Gig size limit
 jcs.auxiliary.IIIF_ZIP.attributes.MaxKeySize=5000000
 jcs.auxiliary.IIIF_ZIP.attributes.DiskLimitType=SIZE
@@ -89,15 +97,13 @@ jcs.region.testspace.cacheattributes.MemoryCacheName=org.apache.commons.jcs.engi
 
 
 ##### MEMORY ONLY - CACHE TEST REGION for info services
-jcs.region.infotest=VI_TEST
+jcs.region.infotest=
+jcs.region.infotest.cacheattributes.UseDisk=false
 jcs.region.infotest.cacheattributes=org.apache.commons.jcs.engine.CompositeCacheAttributes
 jcs.region.infotest.cacheattributes.MaxObjects=1000
 jcs.region.infotest.cacheattributes.MemoryCacheName=org.apache.commons.jcs.engine.memory.lru.LRUMemoryCache
-jcs.region.infotest.cacheattributes.UseMemoryShrinker=false
-jcs.region.infotest.cacheattributes.MaxMemoryIdleTime=3600
-jcs.region.infotest.cacheattributes.ShrinkerInterval=60
-jcs.region.infotest.cacheattributes.MaxSpoolPerRun=500
 jcs.region.infotest.elementattributes=org.apache.commons.jcs.engine.ElementAttributes
+jcs.region.infotest.elementattributes.MaxLife=600
 jcs.region.infotest.elementattributes.IsEternal=false
 
 ##### AUXILIARY IIIFtest disk CACHES for test region

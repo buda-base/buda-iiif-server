@@ -25,7 +25,7 @@ public class BdrcS3Resolver implements S3Resolver {
         try {
             String id="Works/";
             String[] parts=identifier.split("::");
-            IdentifierInfo info=new IdentifierInfo(identifier);
+            IdentifierInfo info=IdentifierInfo.getIndentifierInfo(identifier);
             //log.info("S3 Resolver IdentifierInfo >>>>>>>> "+info+ " Access >>"+access+ " Format >> "+format);
             String work=info.getWork().substring(info.getWork().lastIndexOf('/')+1);
             String imgGroup=parts[0].substring(parts[0].lastIndexOf('_')+1);

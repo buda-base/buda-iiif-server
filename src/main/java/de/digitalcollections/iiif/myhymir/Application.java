@@ -4,6 +4,7 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.Properties;
 
+import org.apache.jena.atlas.logging.Log;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -54,6 +55,7 @@ public class Application extends SpringBootServletInitializer{
         S3ResourceRepositoryImpl.initWithProps(props);
         SpringApplication.run(Application.class, args);
         RdfAuthModel.init();
+        Log.warn("Application main", "Test WARN Log");
     }
 
     @Override
