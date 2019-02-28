@@ -13,7 +13,6 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.jena.atlas.logging.Log;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.CacheControl;
@@ -37,6 +36,7 @@ import de.digitalcollections.iiif.model.image.ImageApiProfile;
 import de.digitalcollections.iiif.model.image.ImageApiSelector;
 import de.digitalcollections.iiif.model.image.ResolvingException;
 import de.digitalcollections.iiif.model.jackson.IiifObjectMapper;
+import de.digitalcollections.iiif.myhymir.Application;
 import de.digitalcollections.iiif.myhymir.ResourceAccessValidation;
 import io.bdrc.auth.Access;
 import io.bdrc.auth.AuthProps;
@@ -50,242 +50,255 @@ import io.bdrc.pdf.presentation.exceptions.BDRCAPIException;
 @RequestMapping("/")
 public class IIIFImageApiController {
 
-  //public static final String VERSION = "v2";
+	// public static final String VERSION = "v2";
 
-  @Autowired
-  private ImageService imageService;
+	@Autowired
+	private ImageService imageService;
 
-  @Autowired
-  private AuthServiceInfo serviceInfo;
+	@Autowired
+	private AuthServiceInfo serviceInfo;
 
-  @Autowired
-  private IiifObjectMapper objectMapper;
+	@Autowired
+	private IiifObjectMapper objectMapper;
 
-  @Value("${cache-control.maxage}")
-  private long maxAge;
+	@Value("${cache-control.maxage}")
+	private long maxAge;
 
+	/**
+	 * Get the base URL for all Image API URLs from the request.
+	 *
+	 * This will handle cases such as reverse-proxying and SSL-termination on the
+	 * frontend server
+	 */
+	private String getUrlBase(HttpServletRequest request) {
+		String scheme = request.getHeader("X-Forwarded-Proto");
+		if (scheme == null) {
+			scheme = request.getScheme();
+		}
 
-  /**
-   * Get the base URL for all Image API URLs from the request.
-   *
-   * This will handle cases such as reverse-proxying and SSL-termination on the frontend server
-   */
-  private String getUrlBase(HttpServletRequest request) {
-    String scheme = request.getHeader("X-Forwarded-Proto");
-    if (scheme == null) {
-      scheme = request.getScheme();
-    }
+		String host = request.getHeader("X-Forwarded-Host");
+		if (host == null) {
+			host = request.getHeader("Host");
+		}
+		if (host == null) {
+			host = request.getRemoteHost();
+		}
+		String base = String.format("%s://%s", scheme, host);
+		if (!request.getContextPath().isEmpty()) {
+			base += request.getContextPath();
+		}
+		return base;
+	}
 
-    String host = request.getHeader("X-Forwarded-Host");
-    if (host == null) {
-      host = request.getHeader("Host");
-    }
-    if (host == null) {
-      host = request.getRemoteHost();
-    }
-    String base = String.format("%s://%s", scheme, host);
-    if (!request.getContextPath().isEmpty()) {
-      base += request.getContextPath();
-    }
-    return base;
-  }
+	@RequestMapping(value = "/setcookie")
+	ResponseEntity<String> getCookie(HttpServletRequest req, HttpServletResponse response)
+			throws JsonProcessingException, UnsupportedEncodingException {
+		HttpHeaders headers = new HttpHeaders();
+		headers.add("Content-Type", "application/json");
+		ResponseEntity<String> resp = null;
+		boolean valid = false;
+		String token = getToken(req.getHeader("Authorization"));
+		if (token == null) {
+			Cookie[] cks = req.getCookies();
+			for (Cookie ck : cks) {
+				if (ck.getName().equals(AuthProps.getProperty("cookieKey"))) {
+					// invalidates cookie if present and token is null
+					ck.setMaxAge(0);
+					response.addCookie(ck);
+				}
+			}
+			return new ResponseEntity<>("{\"success\":" + valid + "}", headers, HttpStatus.FORBIDDEN);
+		}
+		TokenValidation tkVal = new TokenValidation(token);
+		valid = tkVal.isValid();
+		if (valid) {
+			Cookie c = new Cookie(AuthProps.getProperty("cookieKey"), URLEncoder.encode(token, "UTF-8"));
+			// c.setSecure(true);
+			c.setMaxAge(computeExpires(tkVal));
+			c.setHttpOnly(true);
+			response.addCookie(c);
+			resp = new ResponseEntity<>("{\"success\":" + valid + "}", headers, HttpStatus.OK);
+		} else {
+			resp = new ResponseEntity<>("{\"success\":" + valid + "}", headers, HttpStatus.FORBIDDEN);
+		}
+		return resp;
+	}
 
-  @RequestMapping(value = "/setcookie")
-  ResponseEntity<String> getCookie(HttpServletRequest req,HttpServletResponse response) throws JsonProcessingException, UnsupportedEncodingException{
-      HttpHeaders headers = new HttpHeaders();
-      headers.add("Content-Type", "application/json");
-      ResponseEntity<String> resp=null;
-      boolean valid=false;
-      String token=getToken(req.getHeader("Authorization"));
-      if(token==null) {
-          Cookie[] cks=req.getCookies();
-          for(Cookie ck:cks) {
-              if(ck.getName().equals(AuthProps.getProperty("cookieKey"))){
-                  //invalidates cookie if present and token is null
-                  ck.setMaxAge(0);
-                  response.addCookie(ck);
-              }
-          }
-          return new ResponseEntity<>("{\"success\":"+valid+"}", headers, HttpStatus.FORBIDDEN);
-      }
-      TokenValidation tkVal=new TokenValidation(token);
-      valid=tkVal.isValid();
-      if(valid) {
-          Cookie c = new Cookie(AuthProps.getProperty("cookieKey"),URLEncoder.encode(token, "UTF-8" ));
-          //c.setSecure(true);
-          c.setMaxAge(computeExpires(tkVal));
-          c.setHttpOnly(true);
-          response.addCookie(c);
-          resp= new ResponseEntity<>("{\"success\":"+valid+"}", headers, HttpStatus.OK);
-      }else {
-          resp= new ResponseEntity<>("{\"success\":"+valid+"}", headers, HttpStatus.FORBIDDEN);
-      }
-      return resp;
-  }
+	@RequestMapping(value = "{identifier}/{region}/{size}/{rotation}/{quality}.{format}")
+	public ResponseEntity<byte[]> getImageRepresentation(@PathVariable String identifier, @PathVariable String region,
+			@PathVariable String size, @PathVariable String rotation, @PathVariable String quality,
+			@PathVariable String format, HttpServletRequest request, HttpServletResponse response,
+			WebRequest webRequest) throws UnsupportedFormatException, UnsupportedOperationException, IOException,
+			InvalidParametersException, ResourceNotFoundException, BDRCAPIException {
+		long deb = System.currentTimeMillis();
+		Application.perf.debug("Entering endpoint getImageRepresentation " + identifier);
+		ResourceAccessValidation accValidation = new ResourceAccessValidation((Access) request.getAttribute("access"),
+				IdentifierInfo.getIndentifierInfo(identifier));
+		identifier = URLDecoder.decode(identifier, "UTF-8");
+		if (!accValidation.isAccessible(request)) {
+			HttpHeaders headers1 = new HttpHeaders();
+			headers1.setCacheControl(CacheControl.noCache());
+			if (serviceInfo.authEnabled() && serviceInfo.hasValidProperties()) {
+				return new ResponseEntity<>("You must be authenticated before accessing this resource".getBytes(),
+						headers1, HttpStatus.UNAUTHORIZED);
+			} else {
+				return new ResponseEntity<>("Insufficient rights".getBytes(), headers1, HttpStatus.FORBIDDEN);
+			}
+		}
+		HttpHeaders headers = new HttpHeaders();
+		String path;
+		if (request.getPathInfo() != null) {
+			path = request.getPathInfo();
+		} else {
+			path = request.getServletPath();
+		}
+		long deb1 = System.currentTimeMillis();
+		Application.perf.debug("getting image modification date " + identifier);
+		long modified = imageService.getImageModificationDate(identifier).toEpochMilli();
+		Application.perf.debug("done getting image modification date after " + (System.currentTimeMillis() - deb1)
+				+ " ms " + identifier);
+		webRequest.checkNotModified(modified);
+		headers.setDate("Last-Modified", modified);
 
-  @RequestMapping(value = "{identifier}/{region}/{size}/{rotation}/{quality}.{format}")
-  public ResponseEntity<byte[]> getImageRepresentation(		  
-          @PathVariable String identifier, @PathVariable String region,
-          @PathVariable String size, @PathVariable String rotation,
-          @PathVariable String quality, @PathVariable String format,
-          HttpServletRequest request, HttpServletResponse response, WebRequest webRequest)
-      throws UnsupportedFormatException, UnsupportedOperationException, IOException, InvalidParametersException,
-             ResourceNotFoundException, BDRCAPIException {
-	  Log.warn("Entering endpoint getImageRepresentation", identifier);
-    ResourceAccessValidation accValidation=new ResourceAccessValidation((Access)request.getAttribute("access"),IdentifierInfo.getIndentifierInfo(identifier));
-    identifier = URLDecoder.decode(identifier, "UTF-8");
-    if(!accValidation.isAccessible(request)) {
-        HttpHeaders headers1=new HttpHeaders();
-        headers1.setCacheControl(CacheControl.noCache());
-        if(serviceInfo.authEnabled() && serviceInfo.hasValidProperties()) {
-            return new ResponseEntity<>("You must be authenticated before accessing this resource".getBytes(), headers1, HttpStatus.UNAUTHORIZED);
-        }else {
-            return new ResponseEntity<>("Insufficient rights".getBytes(), headers1, HttpStatus.FORBIDDEN);
-        }
-    }
-    HttpHeaders headers = new HttpHeaders();
-    String path;
-    if (request.getPathInfo() != null) {
-      path = request.getPathInfo();
-    } else {
-      path = request.getServletPath();
-    }
-    Log.warn("getting image modification date", identifier);
-    long modified = imageService.getImageModificationDate(identifier).toEpochMilli();
-    webRequest.checkNotModified(modified);
-    headers.setDate("Last-Modified", modified);
+		ImageApiSelector selector = new ImageApiSelector();
+		try {
+			selector.setIdentifier(identifier);
+			selector.setRegion(region);
+			selector.setSize(size);
+			selector.setRotation(rotation);
+			if (quality.equals("native")) {
+				quality = "default";
+			}
+			selector.setQuality(ImageApiProfile.Quality.valueOf(quality.toUpperCase()));
+			selector.setFormat(ImageApiProfile.Format.valueOf(format.toUpperCase()));
+		} catch (ResolvingException e) {
+			throw new InvalidParametersException(e);
+		}
+		deb1 = System.currentTimeMillis();
+		Application.perf.debug("reading from image service " + identifier);
+		de.digitalcollections.iiif.model.image.ImageService info = new de.digitalcollections.iiif.model.image.ImageService(
+				"http://foo.org/" + identifier);
+		imageService.readImageInfo(identifier, info);
+		Application.perf.debug(
+				"end reading from image service after " + (System.currentTimeMillis() - deb1) + " ms " + identifier);
+		ImageApiProfile profile = ImageApiProfile.merge(info.getProfiles());
+		String canonicalForm;
+		try {
+			canonicalForm = selector.getCanonicalForm(new Dimension(info.getWidth(), info.getHeight()), profile,
+					ImageApiProfile.Quality.COLOR); // TODO: Make this variable on the actual image
+		} catch (ResolvingException e) {
+			throw new InvalidParametersException(e);
+		}
+		String canonicalUrl = getUrlBase(request) + path.substring(0, path.indexOf(identifier)) + canonicalForm;
+		if (!canonicalForm.equals(selector.toString())) {
+			response.setHeader("Link", String.format("<%s>;rel=\"canonical\"", canonicalUrl));
+			response.sendRedirect(canonicalUrl);
+			return null;
+		} else {
+			headers.add("Link", String.format("<%s>;rel=\"canonical\"", canonicalUrl));
+			final String mimeType = selector.getFormat().getMimeType().getTypeName();
+			headers.setContentType(MediaType.parseMediaType(mimeType));
 
-    ImageApiSelector selector = new ImageApiSelector();
-    try {
-      selector.setIdentifier(identifier);
-      selector.setRegion(region);
-      selector.setSize(size);
-      selector.setRotation(rotation);
-      if (quality.equals("native")) {
-        quality = "default";
-      }
-      selector.setQuality(ImageApiProfile.Quality.valueOf(quality.toUpperCase()));
-      selector.setFormat(ImageApiProfile.Format.valueOf(format.toUpperCase()));
-    } catch (ResolvingException e) {
-      throw new InvalidParametersException(e);
-    }
-    Log.warn("reading from image service", identifier);    
-    de.digitalcollections.iiif.model.image.ImageService info = new de.digitalcollections.iiif.model.image.ImageService(
-        "http://foo.org/" + identifier);
-    imageService.readImageInfo(identifier, info);
-    Log.warn("end reading from image service", identifier);
-    ImageApiProfile profile = ImageApiProfile.merge(info.getProfiles());
-    String canonicalForm;
-    try {
-      canonicalForm = selector.getCanonicalForm(
-          new Dimension(info.getWidth(), info.getHeight()),
-          profile, ImageApiProfile.Quality.COLOR); // TODO: Make this variable on the actual image
-    } catch (ResolvingException e) {
-      throw new InvalidParametersException(e);
-    }
-    String canonicalUrl = getUrlBase(request) + path.substring(0, path.indexOf(identifier)) + canonicalForm;
-    if (!canonicalForm.equals(selector.toString())) {
-      response.setHeader("Link", String.format("<%s>;rel=\"canonical\"", canonicalUrl));
-      response.sendRedirect(canonicalUrl);
-      return null;
-    } else {
-      headers.add("Link", String.format("<%s>;rel=\"canonical\"", canonicalUrl));
-      final String mimeType = selector.getFormat().getMimeType().getTypeName();
-      headers.setContentType(MediaType.parseMediaType(mimeType));
+			String filename = path.replaceFirst("/image/", "").replace('/', '_').replace(',', '_');
+			headers.set("Content-Disposition", "inline; filename=" + filename);
+			headers.add("Link",
+					String.format("<%s>;rel=\"profile\"", info.getProfiles().get(0).getIdentifier().toString()));
+			deb1 = System.currentTimeMillis();
+			Application.perf.debug("processing image output stream " + identifier);
+			ByteArrayOutputStream os = new ByteArrayOutputStream();
+			imageService.processImage(identifier, selector, profile, os);
+			Application.perf.debug("ended processing image output stream after " + (System.currentTimeMillis() - deb1)
+					+ " ms " + identifier);
+			if (accValidation.isOpenAccess()) {
+				headers.setCacheControl(CacheControl.maxAge(maxAge, TimeUnit.MILLISECONDS).cachePublic());
+			} else {
+				headers.setCacheControl(CacheControl.maxAge(maxAge, TimeUnit.MILLISECONDS).cachePrivate());
+			}
+			Application.perf.debug("returning getImageRepresentation after total of "
+					+ (System.currentTimeMillis() - deb) + " ms " + identifier);
+			return new ResponseEntity<>(os.toByteArray(), headers, HttpStatus.OK);
+		}
+	}
 
-      String filename = path.replaceFirst("/image/", "").replace('/', '_').replace(',', '_');
-      headers.set("Content-Disposition", "inline; filename=" + filename);
-      headers.add("Link", String.format("<%s>;rel=\"profile\"", info.getProfiles().get(0).getIdentifier().toString()));
-      Log.warn("preaparing output stream", identifier+" at "+System.currentTimeMillis());      
-      ByteArrayOutputStream os = new ByteArrayOutputStream();
-      imageService.processImage(identifier, selector, profile, os);
-      if(accValidation.isOpenAccess()) {
-          headers.setCacheControl(CacheControl.maxAge(maxAge,TimeUnit.MILLISECONDS).cachePublic());
-      }else {
-          headers.setCacheControl(CacheControl.maxAge(maxAge,TimeUnit.MILLISECONDS).cachePrivate());
-      }
-      Log.warn("returning getImageRepresentation", identifier);      
-      return new ResponseEntity<>(os.toByteArray(), headers, HttpStatus.OK);
-    }
-  }
+	@RequestMapping(value = "{identifier}/info.json", method = { RequestMethod.GET, RequestMethod.HEAD })
+	public ResponseEntity<String> getInfo(@PathVariable String identifier, HttpServletRequest req,
+			HttpServletResponse res, WebRequest webRequest) throws Exception {
+		long deb = System.currentTimeMillis();
+		Application.perf.debug("Entering endpoint getInfo " + identifier);
+		ResourceAccessValidation accValidation = new ResourceAccessValidation((Access) req.getAttribute("access"),
+				IdentifierInfo.getIndentifierInfo(identifier));
+		boolean unAuthorized = !accValidation.isAccessible(req);
+		long modified = imageService.getImageModificationDate(identifier).toEpochMilli();
+		webRequest.checkNotModified(modified);
+		String path;
+		if (req.getPathInfo() != null) {
+			path = req.getPathInfo();
+		} else {
+			path = req.getServletPath();
+		}
+		String baseUrl = getUrlBase(req);
 
-  @RequestMapping(value = "{identifier}/info.json",
-          method = {RequestMethod.GET, RequestMethod.HEAD})
-  public ResponseEntity<String> getInfo(@PathVariable String identifier, HttpServletRequest req,
-          HttpServletResponse res, WebRequest webRequest) throws Exception {
-	Log.warn("Entering endpoint getInfo", identifier);
-	ResourceAccessValidation accValidation=new ResourceAccessValidation((Access)req.getAttribute("access"),IdentifierInfo.getIndentifierInfo(identifier));
-    boolean unAuthorized=!accValidation.isAccessible(req);
-    long modified = imageService.getImageModificationDate(identifier).toEpochMilli();
-    webRequest.checkNotModified(modified);
-    String path;
-    if (req.getPathInfo() != null) {
-      path = req.getPathInfo(); 
-    } else {
-      path = req.getServletPath();
-    }
-    String baseUrl = getUrlBase(req);    
+		de.digitalcollections.iiif.model.image.ImageService info = new de.digitalcollections.iiif.model.image.ImageService(
+				baseUrl + path.replace("/info.json", ""));
+		if (unAuthorized && serviceInfo.authEnabled() && serviceInfo.hasValidProperties()) {
+			info.addService(serviceInfo);
+		}
+		Application.perf.debug("getInfo read ImageInfo " + identifier);
+		imageService.readImageInfo(identifier, info);
+		HttpHeaders headers = new HttpHeaders();
+		headers.setDate("Last-Modified", modified);
+		String contentType = req.getHeader("Accept");
+		System.out.println("CONTENT-TYPE >>" + contentType);
+		if ("application/ld+json".equals(contentType)) {
+			headers.set("Content-Type", contentType);
+		} else {
+			headers.set("Content-Type", "application/json");
+			headers.add("Link", "<http://iiif.io/api/image/2/context.json>; "
+					+ "rel=\"http://www.w3.org/ns/json-ld#context\"; " + "type=\"application/ld+json\"");
+		}
+		headers.add("Link",
+				String.format("<%s>;rel=\"profile\"", info.getProfiles().get(0).getIdentifier().toString()));
+		// We set the header ourselves, since using @CrossOrigin doesn't expose "*", but
+		// always sets the requesting domain
+		// headers.add("Access-Control-Allow-Origin", "*");
+		Application.perf
+				.debug("getInfo ready to return after " + (System.currentTimeMillis() - deb) + " ms " + identifier);
+		if (unAuthorized) {
+			if (serviceInfo.hasValidProperties() && serviceInfo.authEnabled()) {
+				headers.setCacheControl(CacheControl.maxAge(maxAge, TimeUnit.MILLISECONDS).cachePublic());
+				return new ResponseEntity<>(objectMapper.writeValueAsString(info), headers, HttpStatus.UNAUTHORIZED);
+			} else {
+				headers.setCacheControl(CacheControl.noCache());
+				return new ResponseEntity<>(objectMapper.writeValueAsString(info), headers, HttpStatus.FORBIDDEN);
+			}
+		} else {
+			headers.setCacheControl(CacheControl.maxAge(maxAge, TimeUnit.MILLISECONDS).cachePublic());
+			return new ResponseEntity<>(objectMapper.writeValueAsString(info), headers, HttpStatus.OK);
+		}
+	}
 
-    de.digitalcollections.iiif.model.image.ImageService info = new de.digitalcollections.iiif.model.image.ImageService(
-        baseUrl + path.replace("/info.json", ""));
-    if(unAuthorized && serviceInfo.authEnabled() && serviceInfo.hasValidProperties()) {
-        info.addService(serviceInfo);
-    }
-    Log.warn("getInfo read ImageInfo", identifier);
-	    imageService.readImageInfo(identifier, info);
-    HttpHeaders headers = new HttpHeaders();
-    headers.setDate("Last-Modified", modified);
-    String contentType = req.getHeader("Accept");
-    System.out.println("CONTENT-TYPE >>"+contentType);
-    if ("application/ld+json".equals(contentType)) {
-      headers.set("Content-Type", contentType);
-    } else {
-      headers.set("Content-Type", "application/json");
-      headers.add("Link", "<http://iiif.io/api/image/2/context.json>; "
-              + "rel=\"http://www.w3.org/ns/json-ld#context\"; "
-              + "type=\"application/ld+json\"");
-    }
-    headers.add("Link", String.format("<%s>;rel=\"profile\"", info.getProfiles().get(0).getIdentifier().toString()));
-    // We set the header ourselves, since using @CrossOrigin doesn't expose "*", but always sets the requesting domain
-    //headers.add("Access-Control-Allow-Origin", "*");
-    Log.warn("getInfo ready to return", identifier);
-    if(unAuthorized) {
-        if(serviceInfo.hasValidProperties() && serviceInfo.authEnabled()) {
-            headers.setCacheControl(CacheControl.maxAge(maxAge,TimeUnit.MILLISECONDS).cachePublic());
-            return new ResponseEntity<>(objectMapper.writeValueAsString(info), headers, HttpStatus.UNAUTHORIZED);
-        }else {
-            headers.setCacheControl(CacheControl.noCache());
-            return new ResponseEntity<>(objectMapper.writeValueAsString(info), headers, HttpStatus.FORBIDDEN);
-        }
-    }else {
-        headers.setCacheControl(CacheControl.maxAge(maxAge,TimeUnit.MILLISECONDS).cachePublic());
-        return new ResponseEntity<>(objectMapper.writeValueAsString(info), headers, HttpStatus.OK);
-    }
-  }
+	@RequestMapping(value = "{identifier}", method = { RequestMethod.GET, RequestMethod.HEAD })
+	public String getInfoRedirect(@PathVariable String identifier, HttpServletResponse response) {
+		// response.setHeader("Access-Control-Allow-Origin", "*");
+		// return "redirect:/image/" + VERSION + "/" + identifier + "/info.json";
+		return "redirect:/" + identifier + "/info.json";
+	}
 
-  @RequestMapping(value = "{identifier}", method = {RequestMethod.GET, RequestMethod.HEAD})
-  public String getInfoRedirect(@PathVariable String identifier, HttpServletResponse response) {
-    //response.setHeader("Access-Control-Allow-Origin", "*");
-    //return "redirect:/image/" + VERSION + "/" + identifier + "/info.json";
-    return "redirect:/" + identifier + "/info.json";
-  }
+	public int computeExpires(TokenValidation tkVal) {
+		long expires = tkVal.getVerifiedJwt().getExpiresAt().toInstant().getEpochSecond();
+		long current = Calendar.getInstance().getTime().toInstant().getEpochSecond();
+		return (int) (expires - current);
+	}
 
-  public int computeExpires(TokenValidation tkVal) {
-      long expires=tkVal.getVerifiedJwt().getExpiresAt().toInstant().getEpochSecond();
-      long current=Calendar.getInstance().getTime().toInstant().getEpochSecond();
-      return (int)(expires-current);
-  }
-
-  String getToken(String header) {
-      try {
-          if(header!=null) {
-              return header.split(" ")[1];
-          }
-      }
-      catch(Exception ex) {
-          ex.printStackTrace();
-          return null;
-      }
-      return null;
-  }
+	String getToken(String header) {
+		try {
+			if (header != null) {
+				return header.split(" ")[1];
+			}
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			return null;
+		}
+		return null;
+	}
 }

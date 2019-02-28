@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
   <!-- see https://docs.spring.io/spring-boot/docs/current/reference/html/boot-features-logging.html#_profile_specific_configuration -->
-  <springProfile name="PROD">
+  <springProfile name="PROD">    
     <appender name="default" class="ch.qos.logback.core.rolling.RollingFileAppender">
       <file>./log/myhymir-iiif-server.log</file>
       <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
@@ -17,21 +17,47 @@
         <pattern>[%d{ISO8601} %5p] %40.40c:%4L [%-8t] - %m%n</pattern>
       </encoder>
     </appender>
-  </springProfile>
-  
+    <appender name="PROD_PERF" class="ch.qos.logback.core.rolling.RollingFileAppender">
+      <file>./log/perfProd.log</file>
+      <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+        <fileNamePattern>./log/perfProd.%d{yyyy-MM-dd}.log</fileNamePattern>
+      </rollingPolicy>
+      <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+        <fileNamePattern>./log/perfProd.%d{yyyy-MM}.%i.log.gz</fileNamePattern>
+        <maxFileSize>100MB</maxFileSize>
+        <maxHistory>90</maxHistory>
+        <totalSizeCap>5GB</totalSizeCap>
+      </rollingPolicy>
+      <encoder>
+        <pattern>[%d{ISO8601} %5p] %40.40c:%4L [%-8t] - %m%n</pattern>
+      </encoder>
+    </appender>
+    <logger name="performance" level="debug" additivity="false">
+		<appender-ref ref="PROD_PERF" />
+	</logger>    
+  </springProfile>  
   <springProfile name="local">
     <appender name="default" class="ch.qos.logback.core.ConsoleAppender">
       <encoder>
         <pattern>[%d{ISO8601} %5p] %40.40c:%4L [%-8t] - %m%n</pattern>
       </encoder>
     </appender>
+    <!-- appender name="PERF" class="ch.qos.logback.core.FileAppender">
+		<file>./log/perf.log</file>
+		<encoder>
+			<pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{35} - %msg%n</pattern>
+		</encoder>
+	</appender>
+	<logger name="performance" level="debug" additivity="false">
+		<appender-ref ref="PERF" />
+	</logger-->
   </springProfile>
 
   <!--  <logger name="de.digitalcollections.iiif.hymir.presentation.backend" level="error" />
   <logger name="de.digitalcollections.iiif.hymir.presentation.business" level="error" />
   <logger name="de.digitalcollections.core" level="error" />-->
 
-  <root level="warn">
+  <root level="info">
     <appender-ref ref="default" />
   </root>
 

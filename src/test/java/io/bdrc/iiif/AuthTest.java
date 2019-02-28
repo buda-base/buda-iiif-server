@@ -26,99 +26,63 @@ import io.bdrc.auth.rdf.RdfAuthModel;
 import io.bdrc.auth.rdf.RdfConstants;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = TestApplication.class,webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+@SpringBootTest(classes = TestApplication.class, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class AuthTest {
 
+	static String publicToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJodHRwczovL2Rldi1iZHJjLmF1dGgwLmNvbS9hcGkvdjIvIiwic3ViIjoiYXV0aDB8NWJlOTkyZDlkN2VjZTg3ZjE1OWM4YmVkIiwiYXpwIjoiRzBBam1DS3NwTm5nSnNUdFJuSGFBVUNENDRaeHdvTUoiLCJpc3MiOiJodHRwczovL2Rldi1iZHJjLmF1dGgwLmNvbS8iLCJleHAiOjE3MzU3MzgyNjR9.zqOALhi8Gz1io-B1pWIgHVvkSa0U6BuGmB18FnF3CIg\n";
+	static String adminToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJodHRwczovL2Rldi1iZHJjLmF1dGgwLmNvbS9hcGkvdjIvIiwic3ViIjoiYXV0aDB8NWJlOTkyMGJlYzMxMjMyMGY1NjI5NGRjIiwiYXpwIjoiRzBBam1DS3NwTm5nSnNUdFJuSGFBVUNENDRaeHdvTUoiLCJpc3MiOiJodHRwczovL2Rldi1iZHJjLmF1dGgwLmNvbS8iLCJleHAiOjE3MzU3Mzc1OTB9.m1V64-90tjNRMD18RQTF8SBlMFOcqgSuPwtALZBLd8U";
+	public static HashMap<String, String> map = new HashMap<>();
+	public static final String PUBLIC_RES = "/test/v2/bdr:V29329_I1KG15042::I1KG150420322.jpg/full/full/0/default.jpg";
+	public static final String RESTRICTED_CHINA = "/test/v2/bdr:V28810_I4644::46440001.tif/full/full/0/default.jpg";
+	public static final String FAIR_USE = "/test/v2/bdr:V1PD96945_I1PD96947::I1PD969470131.tif/full/full/0/default.jpg";
 
-    static String publicToken="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJodHRwczovL2Rldi1iZHJjLmF1dGgwLmNvbS9hcGkvdjIvIiwic3ViIjoiYXV0aDB8NWJlOTkyZDlkN2VjZTg3ZjE1OWM4YmVkIiwiYXpwIjoiRzBBam1DS3NwTm5nSnNUdFJuSGFBVUNENDRaeHdvTUoiLCJpc3MiOiJodHRwczovL2Rldi1iZHJjLmF1dGgwLmNvbS8iLCJleHAiOjE3MzU3MzgyNjR9.zqOALhi8Gz1io-B1pWIgHVvkSa0U6BuGmB18FnF3CIg\n";
-    static String adminToken="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJodHRwczovL2Rldi1iZHJjLmF1dGgwLmNvbS9hcGkvdjIvIiwic3ViIjoiYXV0aDB8NWJlOTkyMGJlYzMxMjMyMGY1NjI5NGRjIiwiYXpwIjoiRzBBam1DS3NwTm5nSnNUdFJuSGFBVUNENDRaeHdvTUoiLCJpc3MiOiJodHRwczovL2Rldi1iZHJjLmF1dGgwLmNvbS8iLCJleHAiOjE3MzU3Mzc1OTB9.m1V64-90tjNRMD18RQTF8SBlMFOcqgSuPwtALZBLd8U";
-    public static HashMap<String,String> map=new HashMap<>();
-    public static final String PUBLIC_RES="/test/v2/bdr:V29329_I1KG15042::I1KG150420322.jpg/full/full/0/default.jpg";
-    public static final String RESTRICTED_CHINA="/test/v2/bdr:V28810_I4644::46440001.tif/full/full/0/default.jpg";
-    public static final String FAIR_USE="/test/v2/bdr:V1PD96945_I1PD96947::I1PD969470131.tif/full/full/0/default.jpg";
+	@Autowired
+	Environment environment;
 
-    @Autowired
-    Environment environment;
+	@BeforeClass
+	public static void init() throws IOException {
+		InputStream input = TestApplication.class.getClassLoader().getResourceAsStream("test.properties");
+		Properties props = new Properties();
+		props.load(input);
+		AuthProps.init(props);
+		RdfAuthModel.initForStaticTests();
+		map.put(PUBLIC_RES, RdfConstants.OPEN);
+		map.put(RESTRICTED_CHINA, RdfConstants.RESTRICTED_CHINA);
+		map.put(FAIR_USE, RdfConstants.FAIR_USE);
+	}
 
-    @BeforeClass
-    public static void init() throws IOException {
-        InputStream input=TestApplication.class.getClassLoader().getResourceAsStream("test.properties");
-        Properties props=new Properties();
-        props.load(input);
-        AuthProps.init(props);
-        RdfAuthModel.initForStaticTests();
-        map.put(PUBLIC_RES, RdfConstants.OPEN);
-        map.put(RESTRICTED_CHINA, RdfConstants.RESTRICTED_CHINA);
-        map.put(FAIR_USE, RdfConstants.FAIR_USE);
-    }
+	@Test
+	public void publicResource() throws ClientProtocolException, IOException, IllegalArgumentException,
+			CertificateException, InvalidKeySpecException, NoSuchAlgorithmException {
+		HttpClient client = HttpClientBuilder.create().build();
+		HttpGet get = new HttpGet("http://localhost:" + environment.getProperty("local.server.port") + PUBLIC_RES);
+		// get.addHeader("Authorization", "Bearer "+publicToken);
+		HttpResponse resp = client.execute(get);
+		System.out.println("STATUS >>> " + resp.getStatusLine());
+		assert (resp.getStatusLine().getStatusCode() == 200);
+	}
 
-    @Test
-    public void publicResource() throws ClientProtocolException, IOException, IllegalArgumentException, CertificateException, InvalidKeySpecException, NoSuchAlgorithmException {
-        HttpClient client=HttpClientBuilder.create().build();
-        HttpGet get=new HttpGet("http://localhost:"+environment.getProperty("local.server.port")+PUBLIC_RES);
-        //get.addHeader("Authorization", "Bearer "+publicToken);
-        HttpResponse resp=client.execute(get);
-        System.out.println("STATUS >>> "+resp.getStatusLine());
-        assert(resp.getStatusLine().getStatusCode()==200);
-    }
+	@Test
+	public void ChinaRestrictedResource() throws ClientProtocolException, IOException, IllegalArgumentException,
+			CertificateException, InvalidKeySpecException, NoSuchAlgorithmException {
+		// with public Token and authorized picture
+		HttpClient client = HttpClientBuilder.create().build();
+		HttpGet get = new HttpGet("http://localhost:" + environment.getProperty("local.server.port") + PUBLIC_RES);
+		get.addHeader("Authorization", "Bearer " + publicToken);
+		HttpResponse resp = client.execute(get);
+		assert (resp.getStatusLine().getStatusCode() == 200);
+		// with public Token and restricted picture
+		client = HttpClientBuilder.create().build();
+		get = new HttpGet("http://localhost:" + environment.getProperty("local.server.port") + RESTRICTED_CHINA);
+		get.addHeader("Authorization", "Bearer " + publicToken);
+		resp = client.execute(get);
+		assert (resp.getStatusLine().getStatusCode() == 401);
+		// with admin Token and restricted picture
+		client = HttpClientBuilder.create().build();
+		get = new HttpGet("http://localhost:" + environment.getProperty("local.server.port") + RESTRICTED_CHINA);
+		get.addHeader("Authorization", "Bearer " + adminToken);
+		resp = client.execute(get);
+		assert (resp.getStatusLine().getStatusCode() == 200);
+	}
 
-
-    @Test
-    public void ChinaRestrictedResource() throws ClientProtocolException, IOException, IllegalArgumentException, CertificateException, InvalidKeySpecException, NoSuchAlgorithmException {
-        //with public Token and authorized picture
-        HttpClient client=HttpClientBuilder.create().build();
-        HttpGet get=new HttpGet("http://localhost:"+environment.getProperty("local.server.port")+PUBLIC_RES);
-        get.addHeader("Authorization", "Bearer "+publicToken);
-        HttpResponse resp=client.execute(get);
-        assert(resp.getStatusLine().getStatusCode()==200);
-        //with public Token and restricted picture
-        client=HttpClientBuilder.create().build();
-        get=new HttpGet("http://localhost:"+environment.getProperty("local.server.port")+RESTRICTED_CHINA);
-        get.addHeader("Authorization", "Bearer "+publicToken);
-        resp=client.execute(get);
-        assert(resp.getStatusLine().getStatusCode()==401);
-        //with admin Token and restricted picture
-        client=HttpClientBuilder.create().build();
-        get=new HttpGet("http://localhost:"+environment.getProperty("local.server.port")+RESTRICTED_CHINA);
-        get.addHeader("Authorization", "Bearer "+adminToken);
-        resp=client.execute(get);
-        assert(resp.getStatusLine().getStatusCode()==200);
-    }
-
-    //No way to test fair use logic in a self contained way (actually we could mock it,
-    //but there's so point doing this since we wouldn't test the actually implemented logic)
-    /*@Test
-    public void fairUseResource() throws ClientProtocolException, IOException, IllegalArgumentException, CertificateException, InvalidKeySpecException, NoSuchAlgorithmException {
-
-        //with public Token and restricted picture
-        HttpClient client=HttpClientBuilder.create().build();
-        HttpGet get=new HttpGet("http://localhost:"+environment.getProperty("local.server.port")+FAIR_USE);
-        get.addHeader("Authorization", "Bearer "+publicToken);
-        HttpResponse resp=client.execute(get);
-        assert(resp.getStatusLine().getStatusCode()==401);
-        //with admin Token and restricted picture
-        client=HttpClientBuilder.create().build();
-        get=new HttpGet("http://localhost:"+environment.getProperty("local.server.port")+FAIR_USE);
-        get.addHeader("Authorization", "Bearer "+adminToken);
-        resp=client.execute(get);
-        assert(resp.getStatusLine().getStatusCode()==200);
-    }*/
-
-    /*@Test
-    public void serviceInfoTest() throws ClientProtocolException, IOException, IllegalArgumentException, CertificateException, InvalidKeySpecException, NoSuchAlgorithmException {
-        //with public Token and restricted picture
-        ObjectMapper mapper=new ObjectMapper();
-        HttpClient client=HttpClientBuilder.create().build();
-        HttpGet get=new HttpGet("http://localhost:"+environment.getProperty("local.server.port")+"/image/v2/bdr:V28810_I4644::46440001.tif/info.json");
-        get.addHeader("Authorization", "Bearer "+publicToken);
-        HttpResponse resp=client.execute(get);
-        assert(resp.getStatusLine().getStatusCode()==401);
-        HttpEntity ent=resp.getEntity();
-        ByteArrayOutputStream baos=new ByteArrayOutputStream();
-        ent.writeTo(baos);
-        String json_resp=baos.toString();
-        JsonNode node=mapper.readTree(json_resp);
-        baos.close();
-        assert(node.at("/service/profile").asText().equals("http://iiif.io/api/auth/1/login"));
-    }*/
 }
