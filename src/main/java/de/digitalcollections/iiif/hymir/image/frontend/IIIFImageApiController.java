@@ -187,7 +187,8 @@ public class IIIFImageApiController {
 		String canonicalForm;
 		try {
 			canonicalForm = selector.getCanonicalForm(new Dimension(info.getWidth(), info.getHeight()), profile,
-					ImageApiProfile.Quality.COLOR); // TODO: Make this variable on the actual image
+					/* ImageApiProfile.Quality.COLOR */ selector.getQuality()); // TODO: Make this variable on the
+																				// actual image
 		} catch (ResolvingException e) {
 			throw new InvalidParametersException(e);
 		}
@@ -208,7 +209,7 @@ public class IIIFImageApiController {
 			deb1 = System.currentTimeMillis();
 			Application.perf.debug("processing image output stream " + identifier);
 			ByteArrayOutputStream os = new ByteArrayOutputStream();
-			imageService.processImage(identifier, selector, profile, os, imgReader);
+			imageService.processImage(identifier, selector, profile, os, imgReader, request.getRequestURI());
 			Application.perf.debug("ended processing image output stream after " + (System.currentTimeMillis() - deb1)
 					+ " ms " + identifier);
 			if (accValidation.isOpenAccess()) {
@@ -246,7 +247,7 @@ public class IIIFImageApiController {
 			info.addService(serviceInfo);
 		}
 		Application.perf.debug("getInfo read ImageInfo " + identifier);
-		imageService.readImageInfo(identifier, info);
+		imageService.readImageInfo(identifier, info, null);
 		HttpHeaders headers = new HttpHeaders();
 		headers.setDate("Last-Modified", modified);
 		String contentType = req.getHeader("Accept");
