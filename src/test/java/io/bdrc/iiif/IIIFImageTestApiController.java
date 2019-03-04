@@ -74,24 +74,6 @@ public class IIIFImageTestApiController {
 		return base;
 	}
 
-	/*
-	 * @RequestMapping(value = "/setcookie") ResponseEntity<String>
-	 * getCookie(HttpServletRequest req,HttpServletResponse response) throws
-	 * JsonProcessingException, UnsupportedEncodingException{ HttpHeaders headers =
-	 * new HttpHeaders(); headers.add("Content-Type", "application/json");
-	 * ResponseEntity<String> resp=null; boolean valid=false; String
-	 * token=getToken(req.getHeader("Authorization")); if(token==null) { return new
-	 * ResponseEntity<>("{\"success\":"+valid+"}", headers, HttpStatus.FORBIDDEN); }
-	 * TokenValidation tkVal=new TokenValidation(token); valid=tkVal.isValid();
-	 * if(valid) { Cookie c = new
-	 * Cookie(AuthProps.getProperty("cookieKey"),URLEncoder.encode(token, "UTF-8"
-	 * )); //c.setSecure(true); c.setMaxAge(computeExpires(tkVal));
-	 * c.setHttpOnly(true); response.addCookie(c); resp= new
-	 * ResponseEntity<>("{\"success\":"+valid+"}", headers, HttpStatus.OK); }else {
-	 * resp= new ResponseEntity<>("{\"success\":"+valid+"}", headers,
-	 * HttpStatus.FORBIDDEN); } return resp; }
-	 */
-
 	@RequestMapping(value = "{identifier}/{region}/{size}/{rotation}/{quality}.{format}")
 	public ResponseEntity<byte[]> getImageRepresentation(@PathVariable String identifier, @PathVariable String region,
 			@PathVariable String size, @PathVariable String rotation, @PathVariable String quality,

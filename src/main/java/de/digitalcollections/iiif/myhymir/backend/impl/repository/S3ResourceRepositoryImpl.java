@@ -29,6 +29,8 @@ import de.digitalcollections.core.model.api.resource.exceptions.ResourceIOExcept
 import de.digitalcollections.core.model.impl.resource.S3Resource;
 import de.digitalcollections.iiif.hymir.model.exception.ResourceNotFoundException;
 import de.digitalcollections.iiif.myhymir.Application;
+import de.digitalcollections.iiif.myhymir.ServerCache;
+import io.bdrc.pdf.presentation.exceptions.BDRCAPIException;
 
 /**
  * A ResourceRepository implementation to use with Amazon S3 services
@@ -93,21 +95,30 @@ public class S3ResourceRepositoryImpl implements ResourceRepository<Resource> {
 	public InputStream getInputStream(S3Resource r) throws ResourceIOException, ResourceNotFoundException {
 		log.info("Getting input stream for resource {}", r);
 		Application.perf.debug("getting S3 client " + r.getIdentifier());
-		S3Object obj = null;
-		final AmazonS3 s3 = S3ResourceRepositoryImpl.getClientInstance();
-		try {
-			final GetObjectRequest request = new GetObjectRequest(S3_BUCKET, r.getIdentifier());
-			obj = s3.getObject(request);
-			Application.perf.debug("S3 object received " + r.getIdentifier());
-			Application.perf.debug("S3 object size is " + obj.getObjectMetadata().getContentLength());
-		} catch (AmazonS3Exception e) {
-			final String msg = r.getIdentifier();
-			log.error(">>>>>>>> S3 client failed for identifier {} >> {}", msg, e.getStatusCode());
-			throw new ResourceNotFoundException();
+		final String msg = r.getIdentifier();
+		S3Object obj = (S3Object) ServerCache.getObjectFromCache("IIIF_IMG", "S3_" + msg);
+		log.info("READ S3 object from Cache for identifier {} >> {}", msg, obj);
+		if (obj == null) {
+			final AmazonS3 s3 = S3ResourceRepositoryImpl.getClientInstance();
+			try {
+				final GetObjectRequest request = new GetObjectRequest(S3_BUCKET, r.getIdentifier());
+				obj = s3.getObject(request);
+				log.info("Adding S3 object for identifier {} to cache >> {}", msg, obj);
+				ServerCache.addToCache("IIIF_IMG", "S3_" + msg, obj);
+				Application.perf.debug("S3 object received " + r.getIdentifier());
+				Application.perf.debug("S3 object size is " + obj.getObjectMetadata().getContentLength());
+			} catch (AmazonS3Exception e) {
+
+				log.error(">>>>>>>> S3 client failed for identifier {} >> {}", msg, e.getStatusCode());
+				throw new ResourceNotFoundException();
+			} catch (BDRCAPIException e) {
+				log.error(">>>>>>>> S3 client failed for identifier {} >> {}", msg, e.getMessage());
+				e.printStackTrace();
+			}
 		}
 		final InputStream stream = obj.getObjectContent();
 		Application.perf.debug("S3 stream returned " + r.getIdentifier());
-		log.trace("Obj stream from s3 >> {}", stream);
+		log.info("Obj stream from s3 >> {}", stream);
 		return stream;
 	}
 

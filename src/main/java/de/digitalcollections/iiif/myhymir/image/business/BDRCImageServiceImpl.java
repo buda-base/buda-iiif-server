@@ -170,9 +170,11 @@ public class BDRCImageServiceImpl implements ImageService {
 			throw new ResourceNotFoundException();
 		}
 		ImageInputStream iis = ImageIO.createImageInputStream(resourceService.getInputStream(res));
+		System.out.println("S3 object IIIS >> " + ImageIO.getImageReaders(iis));
 		ImageReader reader = Streams.stream(ImageIO.getImageReaders(iis)).findFirst()
 				.orElseThrow(UnsupportedFormatException::new);
 		reader.setInput(iis);
+		System.out.println("S3 object IIIS READER >> " + reader);
 		Application.perf
 				.debug("Image service return reader at " + (System.currentTimeMillis() - deb) + " ms " + identifier);
 		return reader;
