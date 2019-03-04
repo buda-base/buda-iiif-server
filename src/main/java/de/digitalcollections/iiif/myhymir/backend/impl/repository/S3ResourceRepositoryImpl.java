@@ -98,24 +98,24 @@ public class S3ResourceRepositoryImpl implements ResourceRepository<Resource> {
 		final String msg = r.getIdentifier();
 		S3Object obj = (S3Object) ServerCache.getObjectFromCache("IIIF_IMG", "S3_" + msg);
 		log.info("READ S3 object from Cache for identifier {} >> {}", msg, obj);
-		if (obj == null) {
-			final AmazonS3 s3 = S3ResourceRepositoryImpl.getClientInstance();
-			try {
-				final GetObjectRequest request = new GetObjectRequest(S3_BUCKET, r.getIdentifier());
-				obj = s3.getObject(request);
-				log.info("Adding S3 object for identifier {} to cache >> {}", msg, obj);
-				ServerCache.addToCache("IIIF_IMG", "S3_" + msg, obj);
-				Application.perf.debug("S3 object received " + r.getIdentifier());
-				Application.perf.debug("S3 object size is " + obj.getObjectMetadata().getContentLength());
-			} catch (AmazonS3Exception e) {
+		// if (obj == null) {
+		final AmazonS3 s3 = S3ResourceRepositoryImpl.getClientInstance();
+		try {
+			final GetObjectRequest request = new GetObjectRequest(S3_BUCKET, r.getIdentifier());
+			obj = s3.getObject(request);
+			log.info("Adding S3 object for identifier {} to cache >> {}", msg, obj);
+			ServerCache.addToCache("IIIF_IMG", "S3_" + msg, obj);
+			Application.perf.debug("S3 object received " + r.getIdentifier());
+			Application.perf.debug("S3 object size is " + obj.getObjectMetadata().getContentLength());
+		} catch (AmazonS3Exception e) {
 
-				log.error(">>>>>>>> S3 client failed for identifier {} >> {}", msg, e.getStatusCode());
-				throw new ResourceNotFoundException();
-			} catch (BDRCAPIException e) {
-				log.error(">>>>>>>> S3 client failed for identifier {} >> {}", msg, e.getMessage());
-				e.printStackTrace();
-			}
+			log.error(">>>>>>>> S3 client failed for identifier {} >> {}", msg, e.getStatusCode());
+			throw new ResourceNotFoundException();
+		} catch (BDRCAPIException e) {
+			log.error(">>>>>>>> S3 client failed for identifier {} >> {}", msg, e.getMessage());
+			e.printStackTrace();
 		}
+		// }
 		final InputStream stream = obj.getObjectContent();
 		Application.perf.debug("S3 stream returned " + r.getIdentifier());
 		log.info("Obj stream from s3 >> {}", stream);
