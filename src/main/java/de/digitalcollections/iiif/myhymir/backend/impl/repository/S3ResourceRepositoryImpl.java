@@ -92,23 +92,23 @@ public class S3ResourceRepositoryImpl implements ResourceRepository<Resource> {
 
 	public InputStream getInputStream(S3Resource r) throws ResourceIOException, ResourceNotFoundException {
 		log.info("Getting input stream for resource {}", r);
-		Application.perf.debug("getting S3 client ", r.getIdentifier() + " at " + System.currentTimeMillis());
+		Application.perf.debug("getting S3 client " + r.getIdentifier());
 		final AmazonS3 s3 = S3ResourceRepositoryImpl.getClientInstance();
 		S3Object obj = null;
 		try {
 			final GetObjectRequest request = new GetObjectRequest(S3_BUCKET, r.getIdentifier());
 			obj = s3.getObject(request);
-			Application.perf.debug("S3 object received", r.getIdentifier() + " at " + System.currentTimeMillis());
-			Application.perf.debug("S3 image size is", obj.getObjectMetadata().getContentLength());
-			log.info("S3 image size is " + obj.getObjectMetadata().getContentLength());
-			log.trace("Obj from s3 >> {}", obj);
+			Application.perf.debug("S3 object received " + r.getIdentifier());
+			Application.perf.debug("S3 object size is " + obj.getObjectMetadata().getContentLength());
+			// log.info("S3 image size is " + obj.getObjectMetadata().getContentLength());
+			// log.trace("Obj from s3 >> {}", obj);
 		} catch (AmazonS3Exception e) {
 			final String msg = r.getIdentifier();
 			log.error(">>>>>>>> S3 client failed for identifier {} >> {}", msg, e.getStatusCode());
 			throw new ResourceNotFoundException();
 		}
 		final InputStream stream = obj.getObjectContent();
-		Application.perf.debug("S3 stream returned ", r.getIdentifier() + " at " + System.currentTimeMillis());
+		Application.perf.debug("S3 stream returned " + r.getIdentifier());
 		log.trace("Obj stream from s3 >> {}", stream);
 		return stream;
 	}
