@@ -9,6 +9,7 @@ import java.net.URLEncoder;
 import java.util.Calendar;
 import java.util.concurrent.TimeUnit;
 
+import javax.imageio.ImageReader;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -28,7 +29,6 @@ import org.springframework.web.context.request.WebRequest;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
-import de.digitalcollections.iiif.hymir.image.business.api.ImageService;
 import de.digitalcollections.iiif.hymir.model.exception.InvalidParametersException;
 import de.digitalcollections.iiif.hymir.model.exception.ResourceNotFoundException;
 import de.digitalcollections.iiif.hymir.model.exception.UnsupportedFormatException;
@@ -38,6 +38,7 @@ import de.digitalcollections.iiif.model.image.ResolvingException;
 import de.digitalcollections.iiif.model.jackson.IiifObjectMapper;
 import de.digitalcollections.iiif.myhymir.Application;
 import de.digitalcollections.iiif.myhymir.ResourceAccessValidation;
+import de.digitalcollections.iiif.myhymir.image.business.BDRCImageServiceImpl;
 import io.bdrc.auth.Access;
 import io.bdrc.auth.AuthProps;
 import io.bdrc.auth.TokenValidation;
@@ -53,7 +54,7 @@ public class IIIFImageApiController {
 	// public static final String VERSION = "v2";
 
 	@Autowired
-	private ImageService imageService;
+	private BDRCImageServiceImpl imageService;
 
 	@Autowired
 	private AuthServiceInfo serviceInfo;
@@ -178,9 +179,10 @@ public class IIIFImageApiController {
 		Application.perf.debug("reading from image service " + identifier);
 		de.digitalcollections.iiif.model.image.ImageService info = new de.digitalcollections.iiif.model.image.ImageService(
 				"http://foo.org/" + identifier);
-		imageService.readImageInfo(identifier, info);
+		ImageReader imgReader = imageService.readImageInfo(identifier, info, null);
 		Application.perf.debug(
 				"end reading from image service after " + (System.currentTimeMillis() - deb1) + " ms " + identifier);
+
 		ImageApiProfile profile = ImageApiProfile.merge(info.getProfiles());
 		String canonicalForm;
 		try {
@@ -206,7 +208,7 @@ public class IIIFImageApiController {
 			deb1 = System.currentTimeMillis();
 			Application.perf.debug("processing image output stream " + identifier);
 			ByteArrayOutputStream os = new ByteArrayOutputStream();
-			imageService.processImage(identifier, selector, profile, os);
+			imageService.processImage(identifier, selector, profile, os, imgReader);
 			Application.perf.debug("ended processing image output stream after " + (System.currentTimeMillis() - deb1)
 					+ " ms " + identifier);
 			if (accValidation.isOpenAccess()) {

@@ -102,7 +102,7 @@ public class IIIFImageTestApiController {
 				+ format;
 		System.out.println("PATH >>>>> " + pth);
 		ResourceAccessValidation accValidation = new ResourceAccessValidation((Access) request.getAttribute("access"),
-				AuthTest.map.get(pth));
+				AuthTest1.map.get(pth));
 		identifier = URLDecoder.decode(identifier, "UTF-8");
 		if (!accValidation.isAccessible(request)) {
 			HttpHeaders headers1 = new HttpHeaders();
@@ -127,7 +127,7 @@ public class IIIFImageTestApiController {
 		String pth = "/test/v2/" + identifier + "/info.json";
 		System.out.println("PATH >>>>> " + pth);
 		ResourceAccessValidation accValidation = new ResourceAccessValidation((Access) req.getAttribute("access"),
-				AuthTest.map.get(pth));
+				AuthTest1.map.get(pth));
 		boolean unAuthorized = !accValidation.isAccessible(req);
 		long modified = imageService.getImageModificationDate(identifier).toEpochMilli();
 		webRequest.checkNotModified(modified);

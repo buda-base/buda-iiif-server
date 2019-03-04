@@ -99,6 +99,8 @@ public class S3ResourceRepositoryImpl implements ResourceRepository<Resource> {
 			final GetObjectRequest request = new GetObjectRequest(S3_BUCKET, r.getIdentifier());
 			obj = s3.getObject(request);
 			Application.perf.debug("S3 object received", r.getIdentifier() + " at " + System.currentTimeMillis());
+			Application.perf.debug("S3 image size is", obj.getObjectMetadata().getContentLength());
+			log.info("S3 image size is " + obj.getObjectMetadata().getContentLength());
 			log.trace("Obj from s3 >> {}", obj);
 		} catch (AmazonS3Exception e) {
 			final String msg = r.getIdentifier();

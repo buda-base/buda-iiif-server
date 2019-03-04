@@ -182,6 +182,22 @@ public class BDRCImageServiceImpl implements ImageService {
 		enrichInfo(getReader(identifier), info);
 	}
 
+	public ImageReader readImageInfo(String identifier, de.digitalcollections.iiif.model.image.ImageService info,
+			ImageReader imgReader)
+			throws UnsupportedFormatException, UnsupportedOperationException, ResourceNotFoundException, IOException {
+		imgReader = getReader(identifier);
+		enrichInfo(imgReader, info);
+		return imgReader;
+	}
+
+	public de.digitalcollections.iiif.model.image.ImageService readImageInfo(String identifier)
+			throws UnsupportedFormatException, UnsupportedOperationException, ResourceNotFoundException, IOException {
+		de.digitalcollections.iiif.model.image.ImageService info = new de.digitalcollections.iiif.model.image.ImageService(
+				identifier);
+		enrichInfo(getReader(identifier), info);
+		return info;
+	}
+
 	/**
 	 * Determine parameters for image reading based on the IIIF selector and a given
 	 * scaling factor
@@ -215,6 +231,57 @@ public class BDRCImageServiceImpl implements ImageService {
 	private DecodedImage readImage(String identifier, ImageApiSelector selector, ImageApiProfile profile)
 			throws IOException, ResourceNotFoundException, UnsupportedFormatException, InvalidParametersException {
 		ImageReader reader = getReader(identifier);
+
+		if ((selector.getRotation().getRotation() % 90) != 0) {
+			throw new UnsupportedOperationException("Can only rotate by multiples of 90 degrees.");
+		}
+
+		Dimension nativeDimensions = new Dimension(reader.getWidth(0), reader.getHeight(0));
+		Rectangle targetRegion;
+		try {
+			targetRegion = selector.getRegion().resolve(nativeDimensions);
+		} catch (ResolvingException e) {
+			throw new InvalidParametersException(e);
+		}
+		Dimension croppedDimensions = new Dimension(targetRegion.width, targetRegion.height);
+		Dimension targetSize;
+		try {
+			targetSize = selector.getSize().resolve(croppedDimensions, profile);
+		} catch (ResolvingException e) {
+			throw new InvalidParametersException(e);
+		}
+
+		// Determine the closest resolution to the target that can be decoded directly
+		double targetScaleFactor = targetSize.width / targetRegion.getWidth();
+		double decodeScaleFactor = 1.0;
+		int imageIndex = 0;
+		for (int idx = 0; idx < reader.getNumImages(true); idx++) {
+			double factor = (double) reader.getWidth(idx) / nativeDimensions.width;
+			if (factor < targetScaleFactor) {
+				continue;
+			}
+			if (Math.abs(targetScaleFactor - factor) < Math.abs(targetScaleFactor - decodeScaleFactor)) {
+				decodeScaleFactor = factor;
+				imageIndex = idx;
+			}
+		}
+		ImageReadParam readParam = getReadParam(reader, selector, decodeScaleFactor);
+		int rotation = (int) selector.getRotation().getRotation();
+		if (readParam instanceof TurboJpegImageReadParam
+				&& ((TurboJpegImageReadParam) readParam).getRotationDegree() != 0) {
+			if (rotation == 90 || rotation == 270) {
+				int w = targetSize.width;
+				targetSize.width = targetSize.height;
+				targetSize.height = w;
+			}
+			rotation = 0;
+		}
+		return new DecodedImage(reader.read(imageIndex, readParam), targetSize, rotation);
+	}
+
+	private DecodedImage readImage(String identifier, ImageApiSelector selector, ImageApiProfile profile,
+			ImageReader reader)
+			throws IOException, ResourceNotFoundException, UnsupportedFormatException, InvalidParametersException {
 
 		if ((selector.getRotation().getRotation() % 90) != 0) {
 			throw new UnsupportedOperationException("Can only rotate by multiples of 90 degrees.");
@@ -321,6 +388,23 @@ public class BDRCImageServiceImpl implements ImageService {
 			throws InvalidParametersException, UnsupportedOperationException, UnsupportedFormatException,
 			ResourceNotFoundException, IOException {
 		DecodedImage img = readImage(identifier, selector, profile);
+		BufferedImage outImg = transformImage(img.img, img.targetSize, img.rotation, selector.getRotation().isMirror(),
+				selector.getQuality());
+
+		ImageWriter writer = Streams
+				.stream(ImageIO.getImageWriters(new ImageTypeSpecifier(outImg), selector.getFormat().name()))
+				.findFirst().orElseThrow(UnsupportedFormatException::new);
+		ImageOutputStream ios = ImageIO.createImageOutputStream(os);
+		writer.setOutput(ios);
+		writer.write(null, new IIOImage(outImg, null, null), null);
+		writer.dispose();
+		ios.flush();
+	}
+
+	public void processImage(String identifier, ImageApiSelector selector, ImageApiProfile profile, OutputStream os,
+			ImageReader imgReader) throws InvalidParametersException, UnsupportedOperationException,
+			UnsupportedFormatException, ResourceNotFoundException, IOException {
+		DecodedImage img = readImage(identifier, selector, profile, imgReader);
 		BufferedImage outImg = transformImage(img.img, img.targetSize, img.rotation, selector.getRotation().isMirror(),
 				selector.getQuality());
 
