@@ -77,12 +77,12 @@ public class IdentifierInfo {
 
 	public static IdentifierInfo getIndentifierInfo(String identifier)
 			throws ClientProtocolException, IOException, ResourceNotFoundException, BDRCAPIException {
-		IdentifierInfo info = (IdentifierInfo) ServerCache.getObjectFromCache("identifier", identifier);
+		IdentifierInfo info = (IdentifierInfo) ServerCache.getObjectFromCache("identifier", "ID_" + identifier);
 		if (info != null) {
 			return info;
 		} else {
 			info = new IdentifierInfo(identifier);
-			ServerCache.addToCache("identifier", identifier, info);
+			ServerCache.addToCache("identifier", "ID_" + identifier, info);
 			return info;
 		}
 	}

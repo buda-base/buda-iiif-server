@@ -29,8 +29,6 @@ import de.digitalcollections.core.model.api.resource.exceptions.ResourceIOExcept
 import de.digitalcollections.core.model.impl.resource.S3Resource;
 import de.digitalcollections.iiif.hymir.model.exception.ResourceNotFoundException;
 import de.digitalcollections.iiif.myhymir.Application;
-import de.digitalcollections.iiif.myhymir.ServerCache;
-import io.bdrc.pdf.presentation.exceptions.BDRCAPIException;
 
 /**
  * A ResourceRepository implementation to use with Amazon S3 services
@@ -101,16 +99,10 @@ public class S3ResourceRepositoryImpl implements ResourceRepository<Resource> {
 		try {
 			final GetObjectRequest request = new GetObjectRequest(S3_BUCKET, r.getIdentifier());
 			obj = s3.getObject(request);
-			log.info("Adding S3 object for identifier {} to cache >> {}", msg, obj);
-			ServerCache.addToCache("IIIF_IMG", "S3_" + msg, obj);
-			Application.perf.debug("S3 object received and put in cache {}", "S3_" + msg);
 			Application.perf.debug("S3 object size is " + obj.getObjectMetadata().getContentLength());
 		} catch (AmazonS3Exception e) {
 			log.error(">>>>>>>> S3 client failed for identifier {} >> {}", msg, e.getStatusCode());
 			throw new ResourceNotFoundException();
-		} catch (BDRCAPIException e) {
-			log.error(">>>>>>>> S3 client failed for identifier {} >> {}", msg, e.getMessage());
-			e.printStackTrace();
 		}
 		final InputStream stream = obj.getObjectContent();
 		Application.perf.debug("S3 stream returned for {}", r.getIdentifier());

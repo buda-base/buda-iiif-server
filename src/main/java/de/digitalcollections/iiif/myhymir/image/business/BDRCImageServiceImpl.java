@@ -169,21 +169,8 @@ public class BDRCImageServiceImpl implements ImageService {
 		} catch (ResourceIOException e) {
 			throw new ResourceNotFoundException();
 		}
-		// S3Object obj = (S3Object) ServerCache.getObjectFromCache("IIIF_IMG","S3_" +
-		// ((S3Resource) res).getIdentifier());
-		// Application.perf.debug("Find S3 object in cache {} for identifier {}",
-		// obj,"S3_" + ((S3Resource) res).getIdentifier());
-		InputStream input = null;
-		// if (obj == null) {
-		input = resourceService.getInputStream(res);
-		// } else {
-		// input = obj.getObjectContent();
-		// }
-		// System.out.println("INPUT STREAM IN GET READER >> " + input);
+		InputStream input = resourceService.getInputStream(res);
 		ImageInputStream iis = ImageIO.createImageInputStream(input);
-		// System.out.println("IMAGE INPUT STREAM IN GET READER >> " + iis);
-		// System.out.println("IMAGE READERS >> " +
-		// ImageIO.getImageReaders(iis).hasNext());
 		ImageReader reader = Streams.stream(ImageIO.getImageReaders(iis)).findFirst()
 				.orElseThrow(UnsupportedFormatException::new);
 		reader.setInput(iis);
@@ -350,13 +337,17 @@ public class BDRCImageServiceImpl implements ImageService {
 	public void processImage(String identifier, ImageApiSelector selector, ImageApiProfile profile, OutputStream os,
 			ImageReader imgReader, String uri) throws InvalidParametersException, UnsupportedOperationException,
 			UnsupportedFormatException, ResourceNotFoundException, IOException {
+		long deb = System.currentTimeMillis();
+		Application.perf.debug("Entering Processimage....");
 		BufferedImage outImg = ((BufferedImage) ServerCache.getObjectFromCache("IIIF_IMG", uri));
 		DecodedImage img = ((DecodedImage) ServerCache.getObjectFromCache("IIIF_IMG", "DI_" + identifier));
+		Application.perf.debug("Entering Processimage cache read in {} ms", System.currentTimeMillis() - deb);
+		Application.perf.debug("Entering Processimage.... with outImg {}", outImg);
+		Application.perf.debug("Entering Processimage.... with img {}", img);
 		if (img == null) {
 			img = readImage(identifier, selector, profile, imgReader);
 		}
 		if (outImg == null) {
-
 			outImg = transformImage(img.img, img.targetSize, img.rotation, selector.getRotation().isMirror(),
 					selector.getQuality());
 			try {
@@ -375,6 +366,7 @@ public class BDRCImageServiceImpl implements ImageService {
 		writer.write(null, new IIOImage(outImg, null, null), null);
 		writer.dispose();
 		ios.flush();
+		Application.perf.debug("Done with Processimage.... in {} ms", System.currentTimeMillis() - deb);
 	}
 
 	@Override
