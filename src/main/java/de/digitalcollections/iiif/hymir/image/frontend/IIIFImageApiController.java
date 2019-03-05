@@ -219,6 +219,7 @@ public class IIIFImageApiController {
 			}
 			Application.perf.debug("returning getImageRepresentation after total of "
 					+ (System.currentTimeMillis() - deb) + " ms " + identifier);
+			imgReader.dispose();
 			return new ResponseEntity<>(os.toByteArray(), headers, HttpStatus.OK);
 		}
 	}

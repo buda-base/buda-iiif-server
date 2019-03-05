@@ -5,6 +5,7 @@ import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.time.Instant;
 
@@ -152,14 +153,13 @@ public class BDRCImageServiceImpl implements ImageService {
 		tile.setHeight(reader.getHeight(0));
 		tile.addScaleFactor(1, 2, 4, 8);
 		info.addTile(tile);
-
 	}
 
 	/** Try to obtain a {@link ImageReader} for a given identifier **/
 	private ImageReader getReader(String identifier)
 			throws ResourceNotFoundException, UnsupportedFormatException, IOException {
 		long deb = System.currentTimeMillis();
-		Application.perf.debug("Image service reading " + identifier);
+		Application.perf.debug("Image service reading {}", identifier);
 		if (imageSecurityService != null && !imageSecurityService.isAccessAllowed(identifier)) {
 			throw new ResourceNotFoundException();
 		}
@@ -169,8 +169,21 @@ public class BDRCImageServiceImpl implements ImageService {
 		} catch (ResourceIOException e) {
 			throw new ResourceNotFoundException();
 		}
-		ImageInputStream iis = ImageIO.createImageInputStream(resourceService.getInputStream(res));
-		System.out.println("S3 object IIIS >> " + ImageIO.getImageReaders(iis));
+		// S3Object obj = (S3Object) ServerCache.getObjectFromCache("IIIF_IMG","S3_" +
+		// ((S3Resource) res).getIdentifier());
+		// Application.perf.debug("Find S3 object in cache {} for identifier {}",
+		// obj,"S3_" + ((S3Resource) res).getIdentifier());
+		InputStream input = null;
+		// if (obj == null) {
+		input = resourceService.getInputStream(res);
+		// } else {
+		// input = obj.getObjectContent();
+		// }
+		// System.out.println("INPUT STREAM IN GET READER >> " + input);
+		ImageInputStream iis = ImageIO.createImageInputStream(input);
+		// System.out.println("IMAGE INPUT STREAM IN GET READER >> " + iis);
+		// System.out.println("IMAGE READERS >> " +
+		// ImageIO.getImageReaders(iis).hasNext());
 		ImageReader reader = Streams.stream(ImageIO.getImageReaders(iis)).findFirst()
 				.orElseThrow(UnsupportedFormatException::new);
 		reader.setInput(iis);
