@@ -25,6 +25,7 @@ import com.itextpdf.text.Image;
 import com.itextpdf.text.Rectangle;
 import com.itextpdf.text.pdf.PdfWriter;
 
+import de.digitalcollections.iiif.myhymir.Application;
 import de.digitalcollections.iiif.myhymir.ServerCache;
 import de.digitalcollections.iiif.myhymir.backend.impl.repository.S3ResourceRepositoryImpl;
 import io.bdrc.iiif.resolver.IdentifierInfo;
@@ -41,8 +42,12 @@ public class ArchiveBuilder {
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public static void buildPdf(Iterator<String> idList, IdentifierInfo inf, String output) throws BDRCAPIException {
+		long deb = System.currentTimeMillis();
+		Application.perf.debug("Starting building pdf {}", inf.volumeId);
 		ExecutorService service = Executors.newFixedThreadPool(50);
 		AmazonS3 s3 = S3ResourceRepositoryImpl.getClientInstance();
+		Application.perf.debug("S3 client obtained in building pdf {} after ", inf.volumeId,
+				System.currentTimeMillis() - deb);
 		TreeMap<Integer, Future<?>> t_map = new TreeMap<>();
 		int i = 1;
 		while (idList.hasNext()) {
@@ -64,6 +69,8 @@ public class ArchiveBuilder {
 		}
 		writer.open();
 		document.open();
+		Application.perf.debug("building pdf writer and document opened {} after {}", inf.volumeId,
+				System.currentTimeMillis() - deb);
 		for (int k = 1; k <= t_map.keySet().size(); k++) {
 			Future<?> tmp = t_map.get(k);
 			Image img = null;
@@ -89,6 +96,8 @@ public class ArchiveBuilder {
 			}
 		}
 		document.close();
+		Application.perf.debug("pdf document finished and closed for {} after {}", inf.volumeId,
+				System.currentTimeMillis() - deb);
 		ServerCache.addToCache(IIIF, output.substring(4), stream.toByteArray());
 		writer.close();
 		ServerCache.addToCache("pdfjobs", output, true);

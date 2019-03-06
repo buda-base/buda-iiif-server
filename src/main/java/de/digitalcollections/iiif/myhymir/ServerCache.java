@@ -26,7 +26,7 @@ public class ServerCache {
 	public static void addToCache(String cacheName, String name, Object res) throws BDRCAPIException {
 		try {
 			CacheAccess<Object, Object> access = getCacheAccess(cacheName);
-			log.info("Added " + res + " name :" + name + " to " + cacheName);
+			log.debug("Added " + res + " name :" + name + " to " + cacheName);
 			access.put(name, res);
 			res = null;
 		} catch (CacheException e) {
@@ -38,7 +38,7 @@ public class ServerCache {
 
 	public static Object getObjectFromCache(String cacheName, String name) {
 		CacheAccess<Object, Object> access = getCacheAccess(cacheName);
-		log.info("Got " + access.get(name) + " with name :" + name + " from " + cacheName);
+		log.debug("Got " + access.get(name) + " with name :" + name + " from " + cacheName);
 		return access.get(name);
 	}
 

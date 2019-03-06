@@ -116,10 +116,10 @@ public class IdentifierInfo {
 		this.asset = qs.get("?itemId").toString();
 		this.access = qs.get("?access").toString();
 		this.imageList = qs.get("?imageList").toString();
-		this.totalPages = /* Integer.parseInt( */qs.get("?totalPages").asLiteral().getInt()/* ) */;
+		this.totalPages = qs.get("?totalPages").asLiteral().getInt();
 		qe.close();
 		Application.perf
-				.debug("getting ldspdi response after " + (System.currentTimeMillis() - deb) + " ms " + identifier);
+				.debug("getting fuseki response after " + (System.currentTimeMillis() - deb) + " ms " + identifier);
 		if (getAccessShortName().equals(RdfConstants.FAIR_USE)) {
 			initFairUse();
 		}
