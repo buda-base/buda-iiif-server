@@ -46,7 +46,7 @@ public class ArchiveBuilder {
 		Application.perf.debug("Starting building pdf {}", inf.volumeId);
 		ExecutorService service = Executors.newFixedThreadPool(50);
 		AmazonS3 s3 = S3ResourceRepositoryImpl.getClientInstance();
-		Application.perf.debug("S3 client obtained in building pdf {} after ", inf.volumeId,
+		Application.perf.debug("S3 client obtained in building pdf {} after {} ", inf.volumeId,
 				System.currentTimeMillis() - deb);
 		TreeMap<Integer, Future<?>> t_map = new TreeMap<>();
 		int i = 1;
@@ -105,8 +105,12 @@ public class ArchiveBuilder {
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public static void buildZip(Iterator<String> idList, IdentifierInfo inf, String output) throws BDRCAPIException {
+		long deb = System.currentTimeMillis();
+		Application.perf.debug("Starting building zip {}", inf.volumeId);
 		ExecutorService service = Executors.newFixedThreadPool(50);
 		AmazonS3 s3 = S3ResourceRepositoryImpl.getClientInstance();
+		Application.perf.debug("S3 client obtained in building pdf {} after {} ", inf.volumeId,
+				System.currentTimeMillis() - deb);
 		TreeMap<Integer, Future<?>> t_map = new TreeMap<>();
 		TreeMap<Integer, String> images = new TreeMap<>();
 		int i = 1;
@@ -123,6 +127,8 @@ public class ArchiveBuilder {
 		ServerCache.addToCache("zipjobs", output, false);
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		ZipOutputStream zipOut = new ZipOutputStream(baos);
+		Application.perf.debug("building zip stream opened {} after {}", inf.volumeId,
+				System.currentTimeMillis() - deb);
 		try {
 			for (int k = 1; k <= t_map.keySet().size(); k++) {
 				Future<?> tmp = t_map.get(k);
@@ -146,6 +152,8 @@ public class ArchiveBuilder {
 		} catch (IOException | ExecutionException | InterruptedException e) {
 			throw new BDRCAPIException(500, GENERIC_APP_ERROR_CODE, e);
 		}
+		Application.perf.debug("zip document finished and closed for {} after {}", inf.volumeId,
+				System.currentTimeMillis() - deb);
 		ServerCache.addToCache(IIIF_ZIP, output.substring(3), baos.toByteArray());
 		ServerCache.addToCache("zipjobs", output, true);
 	}
