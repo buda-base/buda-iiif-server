@@ -91,7 +91,6 @@ public class S3ResourceRepositoryImpl implements ResourceRepository<Resource> {
 	}
 
 	public InputStream getInputStream(S3Resource r) throws ResourceIOException, ResourceNotFoundException {
-		log.info("Getting input stream for resource {}", r);
 		Application.perf.debug("getting S3 client " + r.getIdentifier());
 		final String msg = r.getIdentifier();
 		S3Object obj = null;

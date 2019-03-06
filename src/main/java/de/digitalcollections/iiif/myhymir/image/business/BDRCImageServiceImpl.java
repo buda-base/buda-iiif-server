@@ -42,10 +42,8 @@ import de.digitalcollections.iiif.model.image.ResolvingException;
 import de.digitalcollections.iiif.model.image.Size;
 import de.digitalcollections.iiif.model.image.TileInfo;
 import de.digitalcollections.iiif.myhymir.Application;
-import de.digitalcollections.iiif.myhymir.ServerCache;
 import de.digitalcollections.turbojpeg.imageio.TurboJpegImageReadParam;
 import de.digitalcollections.turbojpeg.imageio.TurboJpegImageReader;
-import io.bdrc.pdf.presentation.exceptions.BDRCAPIException;
 
 @Service
 @Primary
@@ -174,7 +172,7 @@ public class BDRCImageServiceImpl implements ImageService {
 		ImageReader reader = Streams.stream(ImageIO.getImageReaders(iis)).findFirst()
 				.orElseThrow(UnsupportedFormatException::new);
 		reader.setInput(iis);
-		System.out.println("S3 object IIIS READER >> " + reader);
+		Application.perf.debug("S3 object IIIS READER >> {}", reader);
 		Application.perf
 				.debug("Image service return reader at " + (System.currentTimeMillis() - deb) + " ms " + identifier);
 		return reader;
@@ -226,11 +224,11 @@ public class BDRCImageServiceImpl implements ImageService {
 	private DecodedImage readImage(String identifier, ImageApiSelector selector, ImageApiProfile profile,
 			ImageReader reader)
 			throws IOException, ResourceNotFoundException, UnsupportedFormatException, InvalidParametersException {
-
+		long deb = System.currentTimeMillis();
+		Application.perf.debug("Entering readImage for creating DecodedImage");
 		if ((selector.getRotation().getRotation() % 90) != 0) {
 			throw new UnsupportedOperationException("Can only rotate by multiples of 90 degrees.");
 		}
-
 		Dimension nativeDimensions = new Dimension(reader.getWidth(0), reader.getHeight(0));
 		Rectangle targetRegion;
 		try {
@@ -271,6 +269,8 @@ public class BDRCImageServiceImpl implements ImageService {
 			}
 			rotation = 0;
 		}
+		Application.perf.debug("Done readingImage computing DecodedImage after {} ms",
+				System.currentTimeMillis() - deb);
 		return new DecodedImage(reader.read(imageIndex, readParam), targetSize, rotation);
 	}
 
@@ -339,29 +339,10 @@ public class BDRCImageServiceImpl implements ImageService {
 			UnsupportedFormatException, ResourceNotFoundException, IOException {
 		long deb = System.currentTimeMillis();
 		Application.perf.debug("Entering Processimage....");
-		BufferedImage outImg = null;
-		DecodedImage img = null;
-		// BufferedImage outImg = ((BufferedImage)
-		// ServerCache.getObjectFromCache("IIIF_IMG", uri));
-		// DecodedImage img = ((DecodedImage) ServerCache.getObjectFromCache("IIIF_IMG",
-		// "DI_" + identifier));
-		Application.perf.debug("Entering Processimage cache read in {} ms", System.currentTimeMillis() - deb);
-		Application.perf.debug("Entering Processimage.... with outImg {}", outImg);
-		Application.perf.debug("Entering Processimage.... with img {}", img);
-		if (img == null) {
-			img = readImage(identifier, selector, profile, imgReader);
-		}
-		if (outImg == null) {
-			outImg = transformImage(img.img, img.targetSize, img.rotation, selector.getRotation().isMirror(),
-					selector.getQuality());
-			try {
-				ServerCache.addToCache("IIIF_IMG", "DI_" + identifier, img);
-				ServerCache.addToCache("IIIF_IMG", uri, outImg);
-			} catch (BDRCAPIException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
+		DecodedImage img = readImage(identifier, selector, profile, imgReader);
+		Application.perf.debug("Done readingImage DecodedImage created");
+		BufferedImage outImg = transformImage(img.img, img.targetSize, img.rotation, selector.getRotation().isMirror(),
+				selector.getQuality());
 		ImageWriter writer = Streams
 				.stream(ImageIO.getImageWriters(new ImageTypeSpecifier(outImg), selector.getFormat().name()))
 				.findFirst().orElseThrow(UnsupportedFormatException::new);
