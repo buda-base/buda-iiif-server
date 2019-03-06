@@ -1,6 +1,7 @@
 package de.digitalcollections.iiif.myhymir;
 
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
@@ -32,10 +33,11 @@ public class Application extends SpringBootServletInitializer {
 
 	// static final String configPath= System.getProperty("iiifserv.configpath");
 	public static final Logger perf = LoggerFactory.getLogger("performance");
+	private static Properties props;
 
 	public static void main(String[] args) throws Exception {
 		InputStream input = Application.class.getClassLoader().getResourceAsStream("iiifserv.properties");
-		Properties props = new Properties();
+		props = new Properties();
 		props.load(input);
 		try {
 			InputStream is = new FileInputStream("/etc/buda/share/shared-private.properties");
@@ -51,6 +53,23 @@ public class Application extends SpringBootServletInitializer {
 		SpringApplication.run(Application.class, args);
 		RdfAuthModel.init();
 		perf.debug("Application main", "Test PERF Log ");
+	}
+
+	public static void initForTests() throws IOException {
+		InputStream input = Application.class.getClassLoader().getResourceAsStream("iiifserv.properties");
+		props = new Properties();
+		props.load(input);
+		try {
+			InputStream is = new FileInputStream("/etc/buda/share/shared-private.properties");
+			props.load(is);
+
+		} catch (Exception ex) {
+			// do nothing, continue props initialization
+		}
+	}
+
+	public static String getProperty(String key) {
+		return props.getProperty(key);
 	}
 
 	@Override
