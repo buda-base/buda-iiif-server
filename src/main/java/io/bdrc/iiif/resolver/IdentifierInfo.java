@@ -4,14 +4,21 @@ import java.io.IOException;
 import java.util.HashMap;
 
 import org.apache.commons.text.StringSubstitutor;
+import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.jena.query.QueryExecution;
 import org.apache.jena.query.QueryExecutionFactory;
 import org.apache.jena.query.QueryFactory;
 import org.apache.jena.query.QuerySolution;
 import org.apache.jena.query.ResultSet;
+import org.json.simple.JSONObject;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.digitalcollections.iiif.hymir.model.exception.ResourceNotFoundException;
 import de.digitalcollections.iiif.myhymir.Application;
@@ -32,39 +39,46 @@ public class IdentifierInfo {
 	public int totalPages = 0;
 	private HashMap<String, Class<Void>> fair_use;
 
-	/*
-	 * @SuppressWarnings("unchecked") public IdentifierInfo(String identifier)
-	 * throws ClientProtocolException, IOException, ResourceNotFoundException {
-	 * this.identifier = identifier; long deb = System.currentTimeMillis();
-	 * Application.perf.debug("Creating ldspdi connexion " + identifier + " at " +
-	 * System.currentTimeMillis()); HttpClient httpClient =
-	 * HttpClientBuilder.create().build(); HttpPost request = new
-	 * HttpPost("http://purl.bdrc.io/query/IIIFPres_volumeInfo"); JSONObject object
-	 * = new JSONObject(); this.volumeId = identifier.split("::")[0]; if
-	 * (identifier.split("::").length > 1) { this.imageId =
-	 * identifier.split("::")[1]; } object.put("R_RES", volumeId); String message =
-	 * object.toString(); request.setEntity(new StringEntity(message, "UTF8"));
-	 * request.setHeader("Content-type", "application/json"); HttpResponse response
-	 * = httpClient.execute(request); Application.perf
-	 * .debug("getting ldspdi response after " + (System.currentTimeMillis() - deb)
-	 * + " ms " + identifier); ObjectMapper mapper = new ObjectMapper(); JsonNode
-	 * node = mapper.readTree(response.getEntity().getContent()); node =
-	 * node.findPath("results").findPath("bindings"); if (node != null) { if
-	 * (isValidJson(node)) { this.work =
-	 * node.findValue("workId").findValue("value").toString().replaceAll("\"", "");
-	 * this.asset =
-	 * node.findValue("itemId").findValue("value").toString().replaceAll("\"", "");
-	 * this.access =
-	 * node.findValue("access").findValue("value").toString().replaceAll("\"", "");
-	 * this.imageList =
-	 * node.findValue("imageList").findValue("value").toString().replaceAll("\"",
-	 * ""); this.totalPages = Integer
-	 * .parseInt(node.findValue("totalPages").findValue("value").toString().
-	 * replaceAll("\"", "")); } else { throw new ResourceNotFoundException(); } }
-	 * else { throw new ResourceNotFoundException(); }
-	 * 
-	 * if (getAccessShortName().equals(RdfConstants.FAIR_USE)) { initFairUse(); } }
-	 */
+	@SuppressWarnings("unchecked")
+	public IdentifierInfo(String identifier) throws ClientProtocolException, IOException, ResourceNotFoundException {
+		this.identifier = identifier;
+		long deb = System.currentTimeMillis();
+		Application.perf.debug("Creating ldspdi connexion " + identifier + " at " + System.currentTimeMillis());
+		HttpClient httpClient = HttpClientBuilder.create().build();
+		HttpPost request = new HttpPost("http://purl.bdrc.io/query/IIIFPres_volumeInfo");
+		JSONObject object = new JSONObject();
+		this.volumeId = identifier.split("::")[0];
+		if (identifier.split("::").length > 1) {
+			this.imageId = identifier.split("::")[1];
+		}
+		object.put("R_RES", volumeId);
+		String message = object.toString();
+		request.setEntity(new StringEntity(message, "UTF8"));
+		request.setHeader("Content-type", "application/json");
+		HttpResponse response = httpClient.execute(request);
+		Application.perf
+				.debug("getting ldspdi response after " + (System.currentTimeMillis() - deb) + " ms " + identifier);
+		ObjectMapper mapper = new ObjectMapper();
+		JsonNode node = mapper.readTree(response.getEntity().getContent());
+		node = node.findPath("results").findPath("bindings");
+		if (node != null) {
+			if (isValidJson(node)) {
+				this.work = node.findValue("workId").findValue("value").toString().replaceAll("\"", "");
+				this.asset = node.findValue("itemId").findValue("value").toString().replaceAll("\"", "");
+				this.access = node.findValue("access").findValue("value").toString().replaceAll("\"", "");
+				this.imageList = node.findValue("imageList").findValue("value").toString().replaceAll("\"", "");
+				this.totalPages = Integer
+						.parseInt(node.findValue("totalPages").findValue("value").toString().replaceAll("\"", ""));
+			} else {
+				throw new ResourceNotFoundException();
+			}
+		} else {
+			throw new ResourceNotFoundException();
+		}
+		if (getAccessShortName().equals(RdfConstants.FAIR_USE)) {
+			initFairUse();
+		}
+	}
 
 	public static IdentifierInfo getIndentifierInfo(String identifier)
 			throws ClientProtocolException, IOException, ResourceNotFoundException, BDRCAPIException {
@@ -79,7 +93,8 @@ public class IdentifierInfo {
 		}
 	}
 
-	public IdentifierInfo(String identifier) {
+	// unused and unefficient direct connection to fuseki
+	public IdentifierInfo(String identifier, String s) {
 		long deb = System.currentTimeMillis();
 		Application.perf.debug("Creating fuseki connexion " + identifier + " at " + deb);
 		this.identifier = identifier;
