@@ -339,8 +339,12 @@ public class BDRCImageServiceImpl implements ImageService {
 			UnsupportedFormatException, ResourceNotFoundException, IOException {
 		long deb = System.currentTimeMillis();
 		Application.perf.debug("Entering Processimage....");
-		BufferedImage outImg = ((BufferedImage) ServerCache.getObjectFromCache("IIIF_IMG", uri));
-		DecodedImage img = ((DecodedImage) ServerCache.getObjectFromCache("IIIF_IMG", "DI_" + identifier));
+		BufferedImage outImg = null;
+		DecodedImage img = null;
+		// BufferedImage outImg = ((BufferedImage)
+		// ServerCache.getObjectFromCache("IIIF_IMG", uri));
+		// DecodedImage img = ((DecodedImage) ServerCache.getObjectFromCache("IIIF_IMG",
+		// "DI_" + identifier));
 		Application.perf.debug("Entering Processimage cache read in {} ms", System.currentTimeMillis() - deb);
 		Application.perf.debug("Entering Processimage.... with outImg {}", outImg);
 		Application.perf.debug("Entering Processimage.... with img {}", img);
