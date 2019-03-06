@@ -346,7 +346,7 @@ public class BDRCImageServiceImpl implements ImageService {
 				selector.getQuality());
 		Iterator it = ImageIO.getImageWriters(new ImageTypeSpecifier(outImg), selector.getFormat().name());
 		while (it.hasNext()) {
-			System.out.println("WRITER=" + it.next());
+			Application.perf.debug("WRITER in list {}", it.next());
 		}
 		ImageWriter writer = Streams
 				.stream(ImageIO.getImageWriters(new ImageTypeSpecifier(outImg), selector.getFormat().name()))
