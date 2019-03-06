@@ -8,8 +8,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.time.Instant;
+import java.util.Iterator;
 
-import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReadParam;
 import javax.imageio.ImageReader;
@@ -199,6 +199,7 @@ public class BDRCImageServiceImpl implements ImageService {
 	private ImageReadParam getReadParam(ImageReader reader, ImageApiSelector selector, double decodeScaleFactor)
 			throws IOException, InvalidParametersException {
 		ImageReadParam readParam = reader.getDefaultReadParam();
+		Application.perf.debug("Entering ReadParam with ImageReadParam {}", readParam);
 		Dimension nativeDimensions = new Dimension(reader.getWidth(0), reader.getHeight(0));
 		Rectangle targetRegion;
 		try {
@@ -343,12 +344,18 @@ public class BDRCImageServiceImpl implements ImageService {
 		Application.perf.debug("Done readingImage DecodedImage created");
 		BufferedImage outImg = transformImage(img.img, img.targetSize, img.rotation, selector.getRotation().isMirror(),
 				selector.getQuality());
+		Iterator it = ImageIO.getImageWriters(new ImageTypeSpecifier(outImg), selector.getFormat().name());
+		while (it.hasNext()) {
+			System.out.println("WRITER=" + it.next());
+		}
 		ImageWriter writer = Streams
 				.stream(ImageIO.getImageWriters(new ImageTypeSpecifier(outImg), selector.getFormat().name()))
 				.findFirst().orElseThrow(UnsupportedFormatException::new);
+		Application.perf.debug("IN process image, writer is {}", writer);
 		ImageOutputStream ios = ImageIO.createImageOutputStream(os);
 		writer.setOutput(ios);
-		writer.write(null, new IIOImage(outImg, null, null), null);
+		// writer.write(null, new IIOImage(outImg, null, null), null);
+		writer.write(outImg);
 		writer.dispose();
 		ios.flush();
 		Application.perf.debug("Done with Processimage.... in {} ms", System.currentTimeMillis() - deb);
