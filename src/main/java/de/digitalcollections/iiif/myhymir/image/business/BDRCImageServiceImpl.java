@@ -13,7 +13,6 @@ import java.util.Iterator;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReadParam;
 import javax.imageio.ImageReader;
-import javax.imageio.ImageTypeSpecifier;
 import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
@@ -344,17 +343,30 @@ public class BDRCImageServiceImpl implements ImageService {
 		Application.perf.debug("Done readingImage DecodedImage created");
 		BufferedImage outImg = transformImage(img.img, img.targetSize, img.rotation, selector.getRotation().isMirror(),
 				selector.getQuality());
-		Iterator it = ImageIO.getImageWriters(new ImageTypeSpecifier(outImg), selector.getFormat().name());
+		/** Debugging code ***/
+		Iterator<ImageWriter> it = ImageIO.getImageWritersByMIMEType("image/jpeg");
 		while (it.hasNext()) {
 			Application.perf.debug("WRITER in list {}", it.next());
 		}
-		ImageWriter writer = Streams
-				.stream(ImageIO.getImageWriters(new ImageTypeSpecifier(outImg), selector.getFormat().name()))
-				.findFirst().orElseThrow(UnsupportedFormatException::new);
-		Application.perf.debug("IN process image, writer is {}", writer);
+		/** end debugging code **/
+		ImageWriter writer = null;
+		Iterator<ImageWriter> writers = ImageIO
+				.getImageWritersByMIMEType(selector.getFormat().getMimeType().getTypeName());
+		while (writers.hasNext()) {
+			ImageWriter w = writers.next();
+			if (writer == null) {
+				// picks the first non null ImageWriter (they might be registered and null)
+				writer = w;
+				Application.perf.debug("FOUND REGISTERED WRITER in list {}", writer);
+			}
+
+		}
+		if (writer == null) {
+			throw new UnsupportedFormatException(selector.getFormat().getMimeType().getTypeName());
+		}
+		Application.perf.debug("USING NON NULL WRITER {}", writer);
 		ImageOutputStream ios = ImageIO.createImageOutputStream(os);
 		writer.setOutput(ios);
-		// writer.write(null, new IIOImage(outImg, null, null), null);
 		writer.write(outImg);
 		writer.dispose();
 		ios.flush();
