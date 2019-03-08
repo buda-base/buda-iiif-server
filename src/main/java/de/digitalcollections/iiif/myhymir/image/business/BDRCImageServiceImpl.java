@@ -354,11 +354,11 @@ public class BDRCImageServiceImpl implements ImageService {
 				.getImageWritersByMIMEType(selector.getFormat().getMimeType().getTypeName());
 		while (writers.hasNext()) {
 			ImageWriter w = writers.next();
-			// if (writer == null) {
-			// picks the first non null ImageWriter (they might be registered and null)
-			writer = w;
-			Application.perf.debug("FOUND REGISTERED WRITER in list {}", writer);
-			// }
+			if (writer == null) {
+				// picks the first non null ImageWriter (they might be registered and null)
+				writer = w;
+				Application.perf.debug("FOUND REGISTERED WRITER in list {}", writer);
+			}
 
 		}
 		if (writer == null) {
@@ -379,7 +379,6 @@ public class BDRCImageServiceImpl implements ImageService {
 			throw new ResourceNotFoundException();
 		}
 		try {
-
 			Resource res = resourceService.get(identifier, ResourcePersistenceType.RESOLVED, MimeType.MIME_IMAGE);
 			return Instant.ofEpochMilli(res.getLastModified());
 		} catch (ResourceIOException e) {
