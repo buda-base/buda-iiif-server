@@ -17,7 +17,7 @@ import javax.imageio.stream.ImageOutputStream;
 
 import org.junit.Test;
 
-public class IIIFImageTest {
+public class IIIFImageTest1 {
 
 	@Test
 	public void iiiftext() throws IOException {
@@ -30,7 +30,7 @@ public class IIIFImageTest {
 				System.out.println(imageWriter.getClass());
 			}
 		}
-		InputStream input = IIIFImageTest.class.getClassLoader().getResourceAsStream("08860041.tif");
+		InputStream input = IIIFImageTest1.class.getClassLoader().getResourceAsStream("08860041.tif");
 		ImageInputStream iis;
 		try {
 			iis = ImageIO.createImageInputStream(input);
