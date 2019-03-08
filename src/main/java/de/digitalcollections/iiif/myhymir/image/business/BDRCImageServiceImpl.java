@@ -354,11 +354,11 @@ public class BDRCImageServiceImpl implements ImageService {
 				.getImageWritersByMIMEType(selector.getFormat().getMimeType().getTypeName());
 		while (writers.hasNext()) {
 			ImageWriter w = writers.next();
-			if (writer == null) {
-				// picks the first non null ImageWriter (they might be registered and null)
-				writer = w;
-				Application.perf.debug("FOUND REGISTERED WRITER in list {}", writer);
-			}
+			// if (writer == null) {
+			// picks the first non null ImageWriter (they might be registered and null)
+			writer = w;
+			Application.perf.debug("FOUND REGISTERED WRITER in list {}", writer);
+			// }
 
 		}
 		if (writer == null) {
