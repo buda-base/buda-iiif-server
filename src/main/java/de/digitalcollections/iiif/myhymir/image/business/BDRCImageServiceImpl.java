@@ -409,7 +409,7 @@ public class BDRCImageServiceImpl implements ImageService {
 	}
 
 	@Override
-	public Instant getImageModificationDate(String identifier) throws ResourceNotFoundException {
+    public Instant getImageModificationDate(String identifier) throws ResourceNotFoundException {
 		if (imageSecurityService != null && !imageSecurityService.isAccessAllowed(identifier)) {
 			throw new ResourceNotFoundException();
 		}
