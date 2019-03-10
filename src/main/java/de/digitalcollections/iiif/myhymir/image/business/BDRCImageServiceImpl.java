@@ -36,9 +36,13 @@ import de.digitalcollections.iiif.hymir.model.exception.InvalidParametersExcepti
 import de.digitalcollections.iiif.hymir.model.exception.ResourceNotFoundException;
 import de.digitalcollections.iiif.hymir.model.exception.UnsupportedFormatException;
 import de.digitalcollections.iiif.model.image.ImageApiProfile;
+import de.digitalcollections.iiif.model.image.ImageApiProfile.Format;
+import de.digitalcollections.iiif.model.image.ImageApiProfile.Quality;
 import de.digitalcollections.iiif.model.image.ImageApiSelector;
+import de.digitalcollections.iiif.model.image.RegionRequest;
 import de.digitalcollections.iiif.model.image.ResolvingException;
 import de.digitalcollections.iiif.model.image.Size;
+import de.digitalcollections.iiif.model.image.SizeRequest;
 import de.digitalcollections.iiif.model.image.TileInfo;
 import de.digitalcollections.iiif.myhymir.Application;
 import de.digitalcollections.turbojpeg.imageio.TurboJpegImageReadParam;
@@ -273,7 +277,7 @@ public class BDRCImageServiceImpl implements ImageService {
 				System.currentTimeMillis() - deb);
 		return new DecodedImage(reader.read(imageIndex, readParam), targetSize, rotation);
 	}
-
+	
 	/** Apply transformations to an decoded image **/
 	private BufferedImage transformImage(BufferedImage inputImage, Dimension targetSize, int rotation, boolean mirror,
 			ImageApiProfile.Quality quality) {
@@ -334,6 +338,37 @@ public class BDRCImageServiceImpl implements ImageService {
 		// unused
 	}
 
+	public static boolean formatDiffer(final String identifier, final ImageApiSelector selector) {
+	    final Format outputF = selector.getFormat();
+	    final String lastFour = identifier.substring(identifier.length()-4).toLowerCase();
+	    if (outputF == Format.JPG && (lastFour.equals(".jpg") || lastFour.equals("jpeg")))
+            return false;
+        if (outputF == Format.PNG && lastFour.equals(".png"))
+            return false;
+        if (outputF == Format.TIF && (lastFour.equals(".tif")) || (lastFour.equals("tiff")))
+            return false;
+        return true;
+	}
+	
+	private static final RegionRequest fullRegionRequest = new RegionRequest();
+	private static final SizeRequest fullSizeRequest = new SizeRequest();
+	
+	// here we return a boolean telling us if the requested image is different from the original image
+	// on S3
+	public static boolean requestDiffersFromOriginal(final String identifier, final ImageApiSelector selector) {
+	    if (formatDiffer(identifier, selector))
+	        return true;
+	    if (selector.getQuality() != Quality.DEFAULT) // TODO: this could be improved but we can keep that for later
+	        return true;
+	    if (selector.getRotation().getRotation() != 0.)
+	        return true;
+	    if (!selector.getRegion().equals(fullRegionRequest)) // TODO: same here, could be improved by reading the dimensions of the image
+	        return true;
+	    if (!selector.getSize().equals(fullSizeRequest))
+	        return true;
+	    return false;
+	}
+	
 	public void processImage(String identifier, ImageApiSelector selector, ImageApiProfile profile, OutputStream os,
 			ImageReader imgReader, String uri) throws InvalidParametersException, UnsupportedOperationException,
 			UnsupportedFormatException, ResourceNotFoundException, IOException {

@@ -32,9 +32,9 @@ public class AuthServiceInfo extends Service{
     @JsonProperty("failureHeader")
     private PropertyValue failureHeader;
 
-    private String loginSvc=AuthProps.getProperty("authLoginSvc");
-    private String tokenSvc=AuthProps.getProperty("authTokenSvc");
-    private String logoutSvc=AuthProps.getProperty("authLogoutSvc");
+    private String loginSvc;
+    private String tokenSvc;
+    private String logoutSvc;
 
     public static String AUTH_LOGIN="http://iiif.io/api/auth/1/login";
     public static String AUTH_EXT="http://iiif.io/api/auth/1/external";
@@ -43,6 +43,13 @@ public class AuthServiceInfo extends Service{
 
     public AuthServiceInfo() throws URISyntaxException {
         super(new URI(AUTH_CONTEXT));
+        try {
+            loginSvc = AuthProps.getProperty("authLoginSvc");
+        } catch (Exception e) {
+            return;
+        }
+        tokenSvc = AuthProps.getProperty("authTokenSvc");
+        logoutSvc = AuthProps.getProperty("authLogoutSvc");
         boolean useExternal=Boolean.parseBoolean(AuthProps.getProperty("authExternal"));
         if(hasValidProperties()) {
             setIdentifier(new URI(loginSvc));
