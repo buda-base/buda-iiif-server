@@ -29,7 +29,6 @@ import com.google.common.collect.Streams;
 import com.sun.media.jai.codec.ImageCodec;
 import com.sun.media.jai.codec.ImageEncodeParam;
 import com.sun.media.jai.codec.ImageEncoder;
-import com.sun.media.jai.codec.JPEGEncodeParam;
 import com.sun.media.jai.codec.PNGEncodeParam;
 
 import de.digitalcollections.core.business.api.ResourceService;
@@ -440,14 +439,12 @@ public class BDRCImageServiceImpl implements ImageService {
             os.flush();
             break;
 
-        case JPG:
-            Application.perf.debug("USING JAI JPG for {} ", identifier);
-            JPEGEncodeParam jpgparam = new JPEGEncodeParam();
-            jpgparam.setQuality(0.7F);
-            ImageEncoder jpgencoder = ImageCodec.createImageEncoder("JPEG", os, jpgparam);
-            jpgencoder.encode(outImg);
-            os.flush();
-            break;
+        /*
+         * case JPG: Application.perf.debug("USING JAI JPG for {} ", identifier);
+         * JPEGEncodeParam jpgparam = new JPEGEncodeParam(); jpgparam.setQuality(0.7F);
+         * ImageEncoder jpgencoder = ImageCodec.createImageEncoder("JPEG", os,
+         * jpgparam); jpgencoder.encode(outImg); os.flush(); break;
+         */
         default:
             Application.perf.debug("USING NON NULL WRITER {}", writer);
             ImageOutputStream ios = ImageIO.createImageOutputStream(os);
