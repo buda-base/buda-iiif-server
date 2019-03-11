@@ -4,6 +4,7 @@ import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -30,6 +31,7 @@ import de.digitalcollections.core.model.api.MimeType;
 import de.digitalcollections.core.model.api.resource.Resource;
 import de.digitalcollections.core.model.api.resource.enums.ResourcePersistenceType;
 import de.digitalcollections.core.model.api.resource.exceptions.ResourceIOException;
+import de.digitalcollections.core.model.impl.resource.S3Resource;
 import de.digitalcollections.iiif.hymir.image.business.api.ImageSecurityService;
 import de.digitalcollections.iiif.hymir.image.business.api.ImageService;
 import de.digitalcollections.iiif.hymir.model.exception.InvalidParametersException;
@@ -45,12 +47,15 @@ import de.digitalcollections.iiif.model.image.Size;
 import de.digitalcollections.iiif.model.image.SizeRequest;
 import de.digitalcollections.iiif.model.image.TileInfo;
 import de.digitalcollections.iiif.myhymir.Application;
+import de.digitalcollections.iiif.myhymir.ServerCache;
 import de.digitalcollections.turbojpeg.imageio.TurboJpegImageReadParam;
 import de.digitalcollections.turbojpeg.imageio.TurboJpegImageReader;
 
 @Service
 @Primary
 public class BDRCImageServiceImpl implements ImageService {
+
+	public static final String IIIF_IMG = "IIIF_IMG";
 
 	@Autowired(required = false)
 	private ImageSecurityService imageSecurityService;
@@ -160,17 +165,25 @@ public class BDRCImageServiceImpl implements ImageService {
 	private ImageReader getReader(String identifier)
 			throws ResourceNotFoundException, UnsupportedFormatException, IOException {
 		long deb = System.currentTimeMillis();
-		Application.perf.debug("Image service reading {}", identifier);
-		if (imageSecurityService != null && !imageSecurityService.isAccessAllowed(identifier)) {
-			throw new ResourceNotFoundException();
+		byte[] bytes = (byte[]) ServerCache.getObjectFromCache(IIIF_IMG, identifier);
+		InputStream input = null;
+		if (bytes != null) {
+			input = new ByteArrayInputStream(bytes);
+			Application.perf.debug("Image service image was cached {}", input);
+		} else {
+			Application.perf.debug("Image service reading {}", identifier);
+			if (imageSecurityService != null && !imageSecurityService.isAccessAllowed(identifier)) {
+				throw new ResourceNotFoundException();
+			}
+			Resource res;
+			try {
+				res = resourceService.get(identifier, ResourcePersistenceType.RESOLVED, MimeType.MIME_IMAGE);
+			} catch (ResourceIOException e) {
+				throw new ResourceNotFoundException();
+			}
+			input = resourceService.getInputStream((S3Resource) res);
+			Application.perf.debug("Image service read {} from s3 {}", input, identifier);
 		}
-		Resource res;
-		try {
-			res = resourceService.get(identifier, ResourcePersistenceType.RESOLVED, MimeType.MIME_IMAGE);
-		} catch (ResourceIOException e) {
-			throw new ResourceNotFoundException();
-		}
-		InputStream input = resourceService.getInputStream(res);
 		ImageInputStream iis = ImageIO.createImageInputStream(input);
 		ImageReader reader = Streams.stream(ImageIO.getImageReaders(iis)).findFirst()
 				.orElseThrow(UnsupportedFormatException::new);
@@ -277,7 +290,7 @@ public class BDRCImageServiceImpl implements ImageService {
 				System.currentTimeMillis() - deb);
 		return new DecodedImage(reader.read(imageIndex, readParam), targetSize, rotation);
 	}
-	
+
 	/** Apply transformations to an decoded image **/
 	private BufferedImage transformImage(BufferedImage inputImage, Dimension targetSize, int rotation, boolean mirror,
 			ImageApiProfile.Quality quality) {
@@ -339,41 +352,43 @@ public class BDRCImageServiceImpl implements ImageService {
 	}
 
 	public static boolean formatDiffer(final String identifier, final ImageApiSelector selector) {
-	    final Format outputF = selector.getFormat();
-	    final String lastFour = identifier.substring(identifier.length()-4).toLowerCase();
-	    if (outputF == Format.JPG && (lastFour.equals(".jpg") || lastFour.equals("jpeg")))
-            return false;
-        if (outputF == Format.PNG && lastFour.equals(".png"))
-            return false;
-        if (outputF == Format.TIF && (lastFour.equals(".tif")) || (lastFour.equals("tiff")))
-            return false;
-        return true;
+		final Format outputF = selector.getFormat();
+		final String lastFour = identifier.substring(identifier.length() - 4).toLowerCase();
+		if (outputF == Format.JPG && (lastFour.equals(".jpg") || lastFour.equals("jpeg")))
+			return false;
+		if (outputF == Format.PNG && lastFour.equals(".png"))
+			return false;
+		if (outputF == Format.TIF && (lastFour.equals(".tif")) || (lastFour.equals("tiff")))
+			return false;
+		return true;
 	}
-	
+
 	private static final RegionRequest fullRegionRequest = new RegionRequest();
 	private static final SizeRequest fullSizeRequest = new SizeRequest();
-	
-	// here we return a boolean telling us if the requested image is different from the original image
+
+	// here we return a boolean telling us if the requested image is different from
+	// the original image
 	// on S3
 	public static boolean requestDiffersFromOriginal(final String identifier, final ImageApiSelector selector) {
-	    if (formatDiffer(identifier, selector))
-	        return true;
-	    if (selector.getQuality() != Quality.DEFAULT) // TODO: this could be improved but we can keep that for later
-	        return true;
-	    if (selector.getRotation().getRotation() != 0.)
-	        return true;
-	    if (!selector.getRegion().equals(fullRegionRequest)) // TODO: same here, could be improved by reading the dimensions of the image
-	        return true;
-	    if (!selector.getSize().equals(fullSizeRequest))
-	        return true;
-	    return false;
+		if (formatDiffer(identifier, selector))
+			return true;
+		if (selector.getQuality() != Quality.DEFAULT) // TODO: this could be improved but we can keep that for later
+			return true;
+		if (selector.getRotation().getRotation() != 0.)
+			return true;
+		if (!selector.getRegion().equals(fullRegionRequest)) // TODO: same here, could be improved by reading the
+																// dimensions of the image
+			return true;
+		if (!selector.getSize().equals(fullSizeRequest))
+			return true;
+		return false;
 	}
-	
+
 	public void processImage(String identifier, ImageApiSelector selector, ImageApiProfile profile, OutputStream os,
 			ImageReader imgReader, String uri) throws InvalidParametersException, UnsupportedOperationException,
 			UnsupportedFormatException, ResourceNotFoundException, IOException {
 		long deb = System.currentTimeMillis();
-		Application.perf.debug("Entering Processimage....");
+		Application.perf.debug("Entering Processimage.... with reader {} ", imgReader);
 		DecodedImage img = readImage(identifier, selector, profile, imgReader);
 		Application.perf.debug("Done readingImage DecodedImage created");
 		BufferedImage outImg = transformImage(img.img, img.targetSize, img.rotation, selector.getRotation().isMirror(),
@@ -409,7 +424,7 @@ public class BDRCImageServiceImpl implements ImageService {
 	}
 
 	@Override
-    public Instant getImageModificationDate(String identifier) throws ResourceNotFoundException {
+	public Instant getImageModificationDate(String identifier) throws ResourceNotFoundException {
 		if (imageSecurityService != null && !imageSecurityService.isAccessAllowed(identifier)) {
 			throw new ResourceNotFoundException();
 		}

@@ -6,110 +6,118 @@ import java.util.UUID;
 import de.digitalcollections.core.model.api.MimeType;
 import de.digitalcollections.core.model.api.resource.Resource;
 
-public class S3Resource implements Resource{
+public class S3Resource implements Resource {
 
-    private String filenameExtension;
-    private long lastModified = -1;
-    private MimeType mimeType;
-    private long size = -1;
-    private UUID uuid = UUID.randomUUID();
-    private boolean readonly = false;
-    private URI uri;
-    private String identifier;
-    
-        
-    public S3Resource() {
-        super();        
-    }
+	private String filenameExtension;
+	private String id;
+	private long lastModified = -1;
+	private MimeType mimeType;
+	private long size = -1;
+	private UUID uuid = UUID.randomUUID();
+	private boolean readonly = false;
+	private URI uri;
+	private String identifier;
 
-    @Override
-    public String getFilename() {
-        // TODO Auto-generated method stub
-        return null;
-    }
+	public S3Resource() {
+		super();
+	}
 
-    @Override
-    public String getFilenameExtension() {
-      return filenameExtension;
-    }
+	@Override
+	public String getFilename() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
-    @Override
-    public void setFilenameExtension(String filenameExtension) {
-      this.filenameExtension = filenameExtension;
-    }
+	@Override
+	public String getFilenameExtension() {
+		return filenameExtension;
+	}
 
-    @Override
-    public long getLastModified() {
-      return this.lastModified;
-    }
+	@Override
+	public void setFilenameExtension(String filenameExtension) {
+		this.filenameExtension = filenameExtension;
+	}
 
-    @Override
-    public void setLastModified(long lastModified) {
-      this.lastModified = lastModified;
-    }
+	@Override
+	public long getLastModified() {
+		return this.lastModified;
+	}
 
-    @Override
-    public MimeType getMimeType() {
-      return this.mimeType;
-    }
+	@Override
+	public void setLastModified(long lastModified) {
+		this.lastModified = lastModified;
+	}
 
-    @Override
-    public void setMimeType(MimeType mimeType) {
-      this.mimeType = mimeType;
-    }
+	@Override
+	public MimeType getMimeType() {
+		return this.mimeType;
+	}
 
-    @Override
-    public boolean isReadonly() {
-      return this.readonly;
-    }
+	@Override
+	public void setMimeType(MimeType mimeType) {
+		this.mimeType = mimeType;
+	}
 
-    @Override
-    public void setReadonly(boolean readonly) {
-      this.readonly = readonly;
-    }
+	@Override
+	public boolean isReadonly() {
+		return this.readonly;
+	}
 
-    @Override
-    public long getSize() {
-      return size;
-    }
+	@Override
+	public void setReadonly(boolean readonly) {
+		this.readonly = readonly;
+	}
 
-    @Override
-    public void setSize(long size) {
-      this.size = size;
-    }
+	@Override
+	public long getSize() {
+		return size;
+	}
 
-    @Override
-    public URI getUri() {
-      return this.uri;
-    }
+	@Override
+	public void setSize(long size) {
+		this.size = size;
+	}
 
-    @Override
-    public void setUri(URI uri) {
-      this.uri = uri;
-    }
+	@Override
+	public URI getUri() {
+		return this.uri;
+	}
 
-    @Override
-    public UUID getUuid() {
-      return uuid;
-    }
+	@Override
+	public void setUri(URI uri) {
+		this.uri = uri;
+	}
 
-    @Override
-    public void setUuid(UUID uuid) {
-      this.uuid = uuid;
-    }
+	@Override
+	public UUID getUuid() {
+		return uuid;
+	}
 
-    public String getIdentifier() {
-        return identifier;
-    }
+	@Override
+	public void setUuid(UUID uuid) {
+		this.uuid = uuid;
+	}
 
-    public void setIdentifier(String identifier) {
-        this.identifier = identifier;
-    }
+	public String getIdentifier() {
+		return identifier;
+	}
 
-    @Override
-    public String toString() {
-        return "S3Resource [filenameExtension=" + filenameExtension + ", lastModified=" + lastModified + ", mimeType="
-                + mimeType + ", size=" + size + ", uuid=" + uuid + ", readonly=" + readonly + ", uri=" + uri
-                + ", identifier=" + identifier + "]";
-    }
+	public void setIdentifier(String identifier) {
+		this.identifier = identifier;
+	}
+
+	public String getId() {
+		return id;
+	}
+
+	public void setId(String id) {
+		this.id = id;
+	}
+
+	@Override
+	public String toString() {
+		return "S3Resource [filenameExtension=" + filenameExtension + ", lastModified=" + lastModified + ", mimeType="
+				+ mimeType + ", size=" + size + ", uuid=" + uuid + ", readonly=" + readonly + ", uri=" + uri
+				+ ", identifier=" + identifier + "]";
+	}
 }
