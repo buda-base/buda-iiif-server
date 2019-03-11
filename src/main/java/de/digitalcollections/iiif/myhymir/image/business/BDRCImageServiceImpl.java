@@ -101,7 +101,7 @@ public class BDRCImageServiceImpl implements ImageService {
 				ImageApiProfile.Feature.REGION_BY_PX, ImageApiProfile.Feature.REGION_SQUARE,
 				ImageApiProfile.Feature.ROTATION_BY_90S, ImageApiProfile.Feature.MIRRORING,
 				ImageApiProfile.Feature.SIZE_BY_CONFINED_WH, ImageApiProfile.Feature.SIZE_BY_DISTORTED_WH,
-				ImageApiProfile.Feature.SIZE_ABOVE_FULL, ImageApiProfile.Feature.SIZE_BY_H,
+				ImageApiProfile.Feature.SIZE_BY_H,
 				ImageApiProfile.Feature.SIZE_BY_PCT, ImageApiProfile.Feature.SIZE_BY_W,
 				ImageApiProfile.Feature.SIZE_BY_WH);
 
@@ -113,7 +113,7 @@ public class BDRCImageServiceImpl implements ImageService {
 				profile.setMaxHeight(maxHeight);
 			}
 		}
-		info.addProfile(ImageApiProfile.LEVEL_TWO, profile);
+		info.addProfile(ImageApiProfile.LEVEL_ONE, profile);
 
 		info.setWidth(reader.getWidth(0));
 		info.setHeight(reader.getHeight(0));
