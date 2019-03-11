@@ -112,13 +112,7 @@
 	    <groupId>ar.com.hjg</groupId>
 	    <artifactId>pngj</artifactId>
 	    <version>2.1.0</version>
-	</dependency>
-	<!-- https://mvnrepository.com/artifact/org.libjpegturbo/turbojpeg-wrapper -->
-	<dependency>
-	    <groupId>org.libjpegturbo</groupId>
-	    <artifactId>turbojpeg-wrapper</artifactId>
-	    <version>1.2.1.5</version>
-	</dependency>
+	</dependency>	
 	<!-- https://mvnrepository.com/artifact/javax.media/jai_imageio -->
 	<!-- dependency>
 	    <groupId>javax.media</groupId>
