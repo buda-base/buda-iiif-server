@@ -376,6 +376,7 @@ public class BDRCImageServiceImpl implements ImageService {
 
 	private static final RegionRequest fullRegionRequest = new RegionRequest();
 	private static final SizeRequest fullSizeRequest = new SizeRequest();
+	private static final SizeRequest maxSizeRequest = new SizeRequest(true);
 
 	// here we return a boolean telling us if the requested image is different from
 	// the original image
@@ -390,7 +391,7 @@ public class BDRCImageServiceImpl implements ImageService {
 		if (!selector.getRegion().equals(fullRegionRequest)) // TODO: same here, could be improved by reading the
 																// dimensions of the image
 			return true;
-		if (!selector.getSize().equals(fullSizeRequest))
+		if (!selector.getSize().equals(fullSizeRequest) && !selector.getSize().equals(maxSizeRequest))
 			return true;
 		return false;
 	}
