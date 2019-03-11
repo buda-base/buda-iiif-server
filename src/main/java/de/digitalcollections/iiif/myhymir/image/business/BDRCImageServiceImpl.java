@@ -429,23 +429,23 @@ public class BDRCImageServiceImpl implements ImageService {
         if (writer == null) {
             throw new UnsupportedFormatException(selector.getFormat().getMimeType().getTypeName());
         }
-        if (selector.getFormat() == Format.PNG) {
+        switch (selector.getFormat()) {
+        case PNG:
             Application.perf.debug("USING JAI PNG for {} ", identifier);
             ImageEncodeParam param = PNGEncodeParam.getDefaultEncodeParam(outImg);
             String format = "PNG";
             ImageEncoder encoder = ImageCodec.createImageEncoder(format, os, param);
             encoder.encode(outImg);
             os.flush();
-        }
-        if (selector.getFormat() == Format.JPG) {
+
+        case JPG:
             Application.perf.debug("USING JAI JPG for {} ", identifier);
-            String format = "JPEG";
-            JPEGEncodeParam param = new JPEGEncodeParam();
-            param.setQuality(0.5F);
-            ImageEncoder encoder = ImageCodec.createImageEncoder(format, os, param);
-            encoder.encode(outImg);
+            JPEGEncodeParam jpgparam = new JPEGEncodeParam();
+            jpgparam.setQuality(0.5F);
+            ImageEncoder jpgencoder = ImageCodec.createImageEncoder("JPEG", os, jpgparam);
+            jpgencoder.encode(outImg);
             os.flush();
-        } else {
+        default:
             Application.perf.debug("USING NON NULL WRITER {}", writer);
             ImageOutputStream ios = ImageIO.createImageOutputStream(os);
             writer.setOutput(ios);
