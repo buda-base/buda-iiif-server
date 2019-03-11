@@ -18,6 +18,7 @@ import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
 
+import org.apache.commons.io.IOUtils;
 import org.imgscalr.Scalr;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -50,6 +51,7 @@ import de.digitalcollections.iiif.myhymir.Application;
 import de.digitalcollections.iiif.myhymir.ServerCache;
 import de.digitalcollections.turbojpeg.imageio.TurboJpegImageReadParam;
 import de.digitalcollections.turbojpeg.imageio.TurboJpegImageReader;
+import io.bdrc.pdf.presentation.exceptions.BDRCAPIException;
 
 @Service
 @Primary
@@ -161,15 +163,17 @@ public class BDRCImageServiceImpl implements ImageService {
 		info.addTile(tile);
 	}
 
-	/** Try to obtain a {@link ImageReader} for a given identifier **/
+	/**
+	 * Try to obtain a {@link ImageReader} for a given identifier
+	 * 
+	 * @throws BDRCAPIException
+	 **/
 	private ImageReader getReader(String identifier)
 			throws ResourceNotFoundException, UnsupportedFormatException, IOException {
 		long deb = System.currentTimeMillis();
 		byte[] bytes = (byte[]) ServerCache.getObjectFromCache(IIIF_IMG, identifier);
-		InputStream input = null;
 		if (bytes != null) {
-			input = new ByteArrayInputStream(bytes);
-			Application.perf.debug("Image service image was cached {}", input);
+			Application.perf.debug("Image service image was cached {}", identifier);
 		} else {
 			Application.perf.debug("Image service reading {}", identifier);
 			if (imageSecurityService != null && !imageSecurityService.isAccessAllowed(identifier)) {
@@ -181,10 +185,17 @@ public class BDRCImageServiceImpl implements ImageService {
 			} catch (ResourceIOException e) {
 				throw new ResourceNotFoundException();
 			}
-			input = resourceService.getInputStream((S3Resource) res);
-			Application.perf.debug("Image service read {} from s3 {}", input, identifier);
+			InputStream S3input = resourceService.getInputStream((S3Resource) res);
+			try {
+				ServerCache.addToCache(IIIF_IMG, identifier, IOUtils.toByteArray(S3input));
+			} catch (BDRCAPIException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			bytes = (byte[]) ServerCache.getObjectFromCache(IIIF_IMG, identifier);
+			Application.perf.debug("Image service read {} from s3 {}", S3input, identifier);
 		}
-		ImageInputStream iis = ImageIO.createImageInputStream(input);
+		ImageInputStream iis = ImageIO.createImageInputStream(new ByteArrayInputStream(bytes));
 		ImageReader reader = Streams.stream(ImageIO.getImageReaders(iis)).findFirst()
 				.orElseThrow(UnsupportedFormatException::new);
 		reader.setInput(iis);

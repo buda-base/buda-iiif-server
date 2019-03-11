@@ -1,5 +1,6 @@
 package de.digitalcollections.iiif.hymir.image.frontend;
 
+import java.awt.Dimension;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -209,14 +210,15 @@ public class IIIFImageApiController {
 		Application.perf.debug("end reading from image service after {} ms for {} with reader {}",
 				(System.currentTimeMillis() - deb1), identifier, imgReader);
 		final String canonicalForm;
-		/*
-		 * try { // canonicalForm = selector.getCanonicalForm(new
-		 * Dimension(info.getWidth(), // info.getHeight()), profile, //
-		 * selector.getQuality()); // TODO: Make this variable on the // actual image }
-		 * catch (ResolvingException e) { throw new InvalidParametersException(e); }
-		 */
-		// final String canonicalUrl = getUrlBase(request) + path.substring(0,
-		// path.indexOf(identifier)) + canonicalForm;
+		try {
+			canonicalForm = selector.getCanonicalForm(new Dimension(info.getWidth(), info.getHeight()), profile,
+					selector.getQuality());
+			// TODO: Make this variable on the // actual image }
+		} catch (ResolvingException e) {
+			throw new InvalidParametersException(e);
+		}
+
+		final String canonicalUrl = getUrlBase(request) + path.substring(0, path.indexOf(identifier)) + canonicalForm;
 
 		// if (!canonicalForm.equals(selector.toString())) {
 		// response.setHeader("Link", String.format("<%s>;rel=\"canonical\"",
@@ -225,7 +227,7 @@ public class IIIFImageApiController {
 		// return null;
 		// }
 
-		// headers.add("Link", String.format("<%s>;rel=\"canonical\"", canonicalUrl));
+		headers.add("Link", String.format("<%s>;rel=\"canonical\"", canonicalUrl));
 		deb1 = System.currentTimeMillis();
 		Application.perf.debug("processing image output stream for {}", identifier);
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
