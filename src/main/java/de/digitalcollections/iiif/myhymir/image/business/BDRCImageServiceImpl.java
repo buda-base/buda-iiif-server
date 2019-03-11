@@ -26,11 +26,6 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
 import com.google.common.collect.Streams;
-import com.sun.media.jai.codec.ImageCodec;
-import com.sun.media.jai.codec.ImageEncodeParam;
-import com.sun.media.jai.codec.ImageEncoder;
-import com.sun.media.jai.codec.JPEGEncodeParam;
-import com.sun.media.jai.codec.PNGEncodeParam;
 
 import de.digitalcollections.core.business.api.ResourceService;
 import de.digitalcollections.core.model.api.MimeType;
@@ -106,9 +101,8 @@ public class BDRCImageServiceImpl implements ImageService {
                 ImageApiProfile.Feature.REGION_BY_PX, ImageApiProfile.Feature.REGION_SQUARE,
                 ImageApiProfile.Feature.ROTATION_BY_90S, ImageApiProfile.Feature.MIRRORING,
                 ImageApiProfile.Feature.SIZE_BY_CONFINED_WH, ImageApiProfile.Feature.SIZE_BY_DISTORTED_WH,
-                ImageApiProfile.Feature.SIZE_ABOVE_FULL, ImageApiProfile.Feature.SIZE_BY_H,
-                ImageApiProfile.Feature.SIZE_BY_PCT, ImageApiProfile.Feature.SIZE_BY_W,
-                ImageApiProfile.Feature.SIZE_BY_WH);
+                ImageApiProfile.Feature.SIZE_BY_H, ImageApiProfile.Feature.SIZE_BY_PCT,
+                ImageApiProfile.Feature.SIZE_BY_W, ImageApiProfile.Feature.SIZE_BY_WH);
 
         // Indicate to the client if we cannot deliver full resolution versions of the
         // image
@@ -118,7 +112,7 @@ public class BDRCImageServiceImpl implements ImageService {
                 profile.setMaxHeight(maxHeight);
             }
         }
-        info.addProfile(ImageApiProfile.LEVEL_TWO, profile);
+        info.addProfile(ImageApiProfile.LEVEL_ONE, profile);
 
         info.setWidth(reader.getWidth(0));
         info.setHeight(reader.getHeight(0));
@@ -381,6 +375,7 @@ public class BDRCImageServiceImpl implements ImageService {
 
     private static final RegionRequest fullRegionRequest = new RegionRequest();
     private static final SizeRequest fullSizeRequest = new SizeRequest();
+    private static final SizeRequest maxSizeRequest = new SizeRequest(true);
 
     // here we return a boolean telling us if the requested image is different from
     // the original image
@@ -395,7 +390,7 @@ public class BDRCImageServiceImpl implements ImageService {
         if (!selector.getRegion().equals(fullRegionRequest)) // TODO: same here, could be improved by reading the
                                                              // dimensions of the image
             return true;
-        if (!selector.getSize().equals(fullSizeRequest))
+        if (!selector.getSize().equals(fullSizeRequest) && !selector.getSize().equals(maxSizeRequest))
             return true;
         return false;
     }
@@ -425,34 +420,17 @@ public class BDRCImageServiceImpl implements ImageService {
             writer = w;
             Application.perf.debug("FOUND REGISTERED WRITER in list {}", writer);
             // }
+
         }
         if (writer == null) {
             throw new UnsupportedFormatException(selector.getFormat().getMimeType().getTypeName());
         }
-        switch (selector.getFormat()) {
-        case PNG:
-            Application.perf.debug("USING JAI PNG for {} ", identifier);
-            ImageEncodeParam param = PNGEncodeParam.getDefaultEncodeParam(outImg);
-            String format = "PNG";
-            ImageEncoder encoder = ImageCodec.createImageEncoder(format, os, param);
-            encoder.encode(outImg);
-            os.flush();
-
-        case JPG:
-            Application.perf.debug("USING JAI JPG for {} ", identifier);
-            JPEGEncodeParam jpgparam = new JPEGEncodeParam();
-            jpgparam.setQuality(0.5F);
-            ImageEncoder jpgencoder = ImageCodec.createImageEncoder("JPEG", os, jpgparam);
-            jpgencoder.encode(outImg);
-            os.flush();
-        default:
-            Application.perf.debug("USING NON NULL WRITER {}", writer);
-            ImageOutputStream ios = ImageIO.createImageOutputStream(os);
-            writer.setOutput(ios);
-            writer.write(outImg);
-            writer.dispose();
-            ios.flush();
-        }
+        Application.perf.debug("USING NON NULL WRITER {}", writer);
+        ImageOutputStream ios = ImageIO.createImageOutputStream(os);
+        writer.setOutput(ios);
+        writer.write(outImg);
+        writer.dispose();
+        ios.flush();
         Application.perf.debug("Done with Processimage.... in {} ms", System.currentTimeMillis() - deb);
     }
 
