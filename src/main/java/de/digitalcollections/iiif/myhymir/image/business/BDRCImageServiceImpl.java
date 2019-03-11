@@ -438,6 +438,7 @@ public class BDRCImageServiceImpl implements ImageService {
             ImageEncoder encoder = ImageCodec.createImageEncoder(format, os, param);
             encoder.encode(outImg);
             os.flush();
+            break;
 
         case JPG:
             Application.perf.debug("USING JAI JPG for {} ", identifier);
@@ -446,6 +447,7 @@ public class BDRCImageServiceImpl implements ImageService {
             ImageEncoder jpgencoder = ImageCodec.createImageEncoder("JPEG", os, jpgparam);
             jpgencoder.encode(outImg);
             os.flush();
+            break;
         default:
             Application.perf.debug("USING NON NULL WRITER {}", writer);
             ImageOutputStream ios = ImageIO.createImageOutputStream(os);
