@@ -48,10 +48,10 @@ public class Application extends SpringBootServletInitializer {
 		}
 		if ("true".equals(props.getProperty("useAuth"))) {
 			AuthProps.init(props);
+			RdfAuthModel.init();
 		}
 		S3ResourceRepositoryImpl.initWithProps(props);
 		SpringApplication.run(Application.class, args);
-		RdfAuthModel.init();
 		perf.debug("Application main", "Test PERF Log ");
 	}
 
