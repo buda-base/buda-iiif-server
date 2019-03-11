@@ -344,7 +344,7 @@ public class BDRCImageServiceImpl implements ImageService {
 		BufferedImage outImg = transformImage(img.img, img.targetSize, img.rotation, selector.getRotation().isMirror(),
 				selector.getQuality());
 		/** Debugging code ***/
-		Iterator<ImageWriter> it = ImageIO.getImageWritersByMIMEType("image/jpeg");
+		Iterator<ImageWriter> it = ImageIO.getImageWritersByMIMEType("image/png");
 		while (it.hasNext()) {
 			Application.perf.debug("WRITER in list {}", it.next());
 		}
