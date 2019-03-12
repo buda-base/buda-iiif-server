@@ -166,35 +166,21 @@ public class IIIFImageApiController {
         } else {
             path = request.getServletPath();
         }
-        long deb1 = System.currentTimeMillis();
-        Application.perf.debug("getting image modification date for {}", identifier);
+        if (accValidation.isOpenAccess()) {
+            headers.setCacheControl(CacheControl.maxAge(maxAge, TimeUnit.MILLISECONDS).cachePublic());
+        } else {
+            headers.setCacheControl(CacheControl.maxAge(maxAge, TimeUnit.MILLISECONDS).cachePrivate());
+        }
         long modified = imageService.getImageModificationDate(identifier).toEpochMilli();
-        Application.perf.debug("done getting image modification date after {} ms for {}",
-                (System.currentTimeMillis() - deb1), identifier);
         webRequest.checkNotModified(modified);
         headers.setDate("Last-Modified", modified);
-
-        ImageApiSelector selector = new ImageApiSelector();
-        try {
-            selector.setIdentifier(identifier);
-            selector.setRegion(region);
-            selector.setSize(size);
-            selector.setRotation(rotation);
-            if (quality.equals("native")) {
-                quality = "default";
-            }
-            selector.setQuality(ImageApiProfile.Quality.valueOf(quality.toUpperCase()));
-            selector.setFormat(ImageApiProfile.Format.valueOf(format.toUpperCase()));
-        } catch (ResolvingException e) {
-            throw new InvalidParametersException(e);
-        }
-        deb1 = System.currentTimeMillis();
+        ImageApiSelector selector = getImageApiSelector(identifier, region, size, rotation, quality, format);
+        long deb1 = System.currentTimeMillis();
         Application.perf.debug("reading from image service {}", identifier);
         final ImageApiProfile profile = ImageApiProfile.LEVEL_TWO;
         ImageService info = new ImageService("http://foo.org/" + identifier, profile);
         // TODO: what's this foo.org thing?
-        final String mimeType = selector.getFormat().getMimeType().getTypeName();
-        headers.setContentType(MediaType.parseMediaType(mimeType));
+        headers.setContentType(MediaType.parseMediaType(selector.getFormat().getMimeType().getTypeName()));
         final String filename = path.replaceFirst("/image/", "").replace('/', '_').replace(',', '_');
         headers.set("Content-Disposition", "inline; filename=" + filename);
         headers.add("Link", String.format("<%s>;rel=\"profile\"", profile.getIdentifier().toString()));
@@ -214,6 +200,7 @@ public class IIIFImageApiController {
             Application.perf.debug("got the bytes in {} ms for {}", (System.currentTimeMillis() - deb1), identifier);
             return new ResponseEntity<>(osbytes, headers, HttpStatus.OK);
         }
+        deb1 = System.currentTimeMillis();
         final ImageReader imgReader = imageService.readImageInfo(identifier, info, null);
         Application.perf.debug("end reading from image service after {} ms for {} with reader {}",
                 (System.currentTimeMillis() - deb1), identifier, imgReader);
@@ -224,21 +211,14 @@ public class IIIFImageApiController {
         } catch (ResolvingException e) {
             throw new InvalidParametersException(e);
         }
-        final String canonicalUrl = getUrlBase(request) + path.substring(0, path.indexOf(identifier)) + canonicalForm;
-        headers.add("Link", String.format("<%s>;rel=\"canonical\"", canonicalUrl));
+        headers.add("Link", String.format("<%s>;rel=\"canonical\"",
+                getUrlBase(request) + path.substring(0, path.indexOf(identifier)) + canonicalForm));
         deb1 = System.currentTimeMillis();
         Application.perf.debug("processing image output stream for {}", identifier);
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         imageService.processImage(identifier, selector, profile, os, imgReader, request.getRequestURI());
-        Application.perf.debug("ended processing image output stream after {} ms for {}",
+        Application.perf.debug("returning getImageRepresentation, ended processing image after {} ms for {}",
                 (System.currentTimeMillis() - deb1), identifier);
-        if (accValidation.isOpenAccess()) {
-            headers.setCacheControl(CacheControl.maxAge(maxAge, TimeUnit.MILLISECONDS).cachePublic());
-        } else {
-            headers.setCacheControl(CacheControl.maxAge(maxAge, TimeUnit.MILLISECONDS).cachePrivate());
-        }
-        Application.perf.debug("returning getImageRepresentation after total of {} ms for {}",
-                (System.currentTimeMillis() - deb), identifier);
         imgReader.dispose();
         return new ResponseEntity<>(os.toByteArray(), headers, HttpStatus.OK);
     }
@@ -323,5 +303,24 @@ public class IIIFImageApiController {
             return null;
         }
         return null;
+    }
+
+    public ImageApiSelector getImageApiSelector(String identifier, String region, String size, String rotation,
+            String quality, String format) throws InvalidParametersException {
+        ImageApiSelector selector = new ImageApiSelector();
+        try {
+            selector.setIdentifier(identifier);
+            selector.setRegion(region);
+            selector.setSize(size);
+            selector.setRotation(rotation);
+            if (quality.equals("native")) {
+                quality = "default";
+            }
+            selector.setQuality(ImageApiProfile.Quality.valueOf(quality.toUpperCase()));
+            selector.setFormat(ImageApiProfile.Format.valueOf(format.toUpperCase()));
+        } catch (ResolvingException e) {
+            throw new InvalidParametersException(e);
+        }
+        return selector;
     }
 }

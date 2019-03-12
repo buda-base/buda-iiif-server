@@ -11,9 +11,11 @@ import java.io.OutputStream;
 import java.time.Instant;
 import java.util.Iterator;
 
+import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReadParam;
 import javax.imageio.ImageReader;
+import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
@@ -29,7 +31,6 @@ import com.google.common.collect.Streams;
 import com.sun.media.jai.codec.ImageCodec;
 import com.sun.media.jai.codec.ImageEncodeParam;
 import com.sun.media.jai.codec.ImageEncoder;
-import com.sun.media.jai.codec.JPEGEncodeParam;
 import com.sun.media.jai.codec.PNGEncodeParam;
 
 import de.digitalcollections.core.business.api.ResourceService;
@@ -416,17 +417,14 @@ public class BDRCImageServiceImpl implements ImageService {
         }
         /** end debugging code **/
         ImageWriter writer = null;
-        Iterator<ImageWriter> writers = ImageIO
-                .getImageWritersByMIMEType(selector.getFormat().getMimeType().getTypeName());
+        Iterator<ImageWriter> writers = ImageIO.getImageWritersByMIMEType("image/jpeg");
+
         while (writers.hasNext()) {
             ImageWriter w = writers.next();
-            // if (writer == null) {
-            // picks the first non null ImageWriter (they might be registered and null)
+            Application.perf.debug("FOUND REGISTERED WRITER in list {}", w);
             writer = w;
-            Application.perf.debug("FOUND REGISTERED WRITER in list {}", writer);
-            // }
-
         }
+
         if (writer == null) {
             throw new UnsupportedFormatException(selector.getFormat().getMimeType().getTypeName());
         }
@@ -441,37 +439,25 @@ public class BDRCImageServiceImpl implements ImageService {
             break;
 
         case JPG:
+            Iterator<ImageWriter> it1 = ImageIO.getImageWritersByMIMEType("image/jpeg");
+            while (it1.hasNext()) {
+                Application.perf.debug("WRITERS---> in list {}", it1.next());
+            }
+            ImageWriter wtr = ImageIO.getImageWritersByMIMEType("image/jpeg").next();
+            Application.perf.debug("USING JPEG WRITER {} for {}", wtr, identifier);
+            // This setting, using 0.75f as compression quality produces the same
+            // as the default setting, with no writeParam --> writer.write(outImg)
 
-            /*
-             * Application.perf.debug("Writing JPG for {} ", identifier);
-             * Iterator<ImageWriter> wts = ImageIO.getImageWritersByMIMEType("image/jpeg");
-             * while (wts.hasNext()) { ImageWriter w = wts.next(); // if (writer == null) {
-             * // picks the first non null ImageWriter (they might be registered and null)
-             * writer = w; Application.perf.debug("FOUND REGISTERED WRITER in list {}",
-             * writer); // } }
-             * 
-             * Application.perf.debug("USING WRITER {}", writer); // This setting, using
-             * 0.75f as compression quality produces the same // as the default setting,
-             * with no writeParam --> writer.write(outImg)
-             * 
-             * ImageWriteParam jpgWriteParam = writer.getDefaultWriteParam();
-             * jpgWriteParam.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
-             * jpgWriteParam.setCompressionQuality(0.75f);
-             * 
-             * ImageOutputStream is = ImageIO.createImageOutputStream(os);
-             * writer.setOutput(is); // writer.write(outImg); writer.write(null, new
-             * IIOImage(outImg, null, null), jpgWriteParam); writer.dispose(); is.flush();
-             * break;
-             */
+            ImageWriteParam jpgWriteParam = wtr.getDefaultWriteParam();
+            jpgWriteParam.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+            jpgWriteParam.setCompressionQuality(0.75f);
 
-            Application.perf.debug("USING JAI JPG for {} ", identifier);
-            JPEGEncodeParam jpgparam = new JPEGEncodeParam();
-            // 0.75F is the default - being the optimal trade off in between quality
-            // and processing time - by ImageIO
-            jpgparam.setQuality(0.75F);
-            ImageEncoder jpgencoder = ImageCodec.createImageEncoder("JPEG", os, jpgparam);
-            jpgencoder.encode(outImg);
-            os.flush();
+            ImageOutputStream is = ImageIO.createImageOutputStream(os);
+            wtr.setOutput(is);
+            // writer.write(outImg);
+            wtr.write(null, new IIOImage(outImg, null, null), jpgWriteParam);
+            wtr.dispose();
+            is.flush();
             break;
 
         default:
