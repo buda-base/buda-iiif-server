@@ -409,22 +409,14 @@ public class BDRCImageServiceImpl implements ImageService {
         DecodedImage img = readImage(identifier, selector, profile, imgReader);
         Application.perf.debug("Done readingImage DecodedImage created");
         BufferedImage outImg = transformImage(img.img, img.targetSize, img.rotation, selector.getRotation().isMirror(),
-                selector.getQuality());
-        /** Debugging code ***/
-        Iterator<ImageWriter> it = ImageIO.getImageWritersByMIMEType("image/png");
-        while (it.hasNext()) {
-            Application.perf.debug("WRITER in list {}", it.next());
-        }
-        /** end debugging code **/
+                selector.getQuality());        
         ImageWriter writer = null;
-        Iterator<ImageWriter> writers = ImageIO.getImageWritersByMIMEType("image/jpeg");
-
+        Iterator<ImageWriter> writers = ImageIO.getImageWritersByMIMEType(selector.getFormat().getMimeType().getTypeName());
         while (writers.hasNext()) {
             ImageWriter w = writers.next();
             Application.perf.debug("FOUND REGISTERED WRITER in list {}", w);
             writer = w;
         }
-
         if (writer == null) {
             throw new UnsupportedFormatException(selector.getFormat().getMimeType().getTypeName());
         }
