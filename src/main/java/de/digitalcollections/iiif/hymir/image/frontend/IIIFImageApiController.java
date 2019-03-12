@@ -38,6 +38,7 @@ import de.digitalcollections.core.model.api.resource.enums.ResourcePersistenceTy
 import de.digitalcollections.iiif.hymir.model.exception.InvalidParametersException;
 import de.digitalcollections.iiif.hymir.model.exception.ResourceNotFoundException;
 import de.digitalcollections.iiif.hymir.model.exception.UnsupportedFormatException;
+import de.digitalcollections.iiif.model.PropertyValue;
 import de.digitalcollections.iiif.model.image.ImageApiProfile;
 import de.digitalcollections.iiif.model.image.ImageApiSelector;
 import de.digitalcollections.iiif.model.image.ImageService;
@@ -245,6 +246,13 @@ public class IIIFImageApiController {
 		return new ResponseEntity<>(os.toByteArray(), headers, HttpStatus.OK);
 	}
 
+    public static boolean pngOutput(final String filename) {
+        final String ext = filename.substring(filename.length()-4).toLowerCase();
+        return (ext.equals(".tif") || ext.equals("tiff"));
+    }
+
+    public static final PropertyValue pngHint = new PropertyValue("png", "jpg");
+
 	@RequestMapping(value = "{identifier}/info.json", method = { RequestMethod.GET, RequestMethod.HEAD })
 	public ResponseEntity<String> getInfo(@PathVariable String identifier, HttpServletRequest req,
 			HttpServletResponse res, WebRequest webRequest) throws Exception {
@@ -263,10 +271,12 @@ public class IIIFImageApiController {
 		}
 		String baseUrl = getUrlBase(req);
 
-		de.digitalcollections.iiif.model.image.ImageService info = new de.digitalcollections.iiif.model.image.ImageService(
-				baseUrl + path.replace("/info.json", ""));
+		BDRCImageService info = new BDRCImageService(baseUrl + path.replace("/info.json", ""));
 		if (unAuthorized && serviceInfo.authEnabled() && serviceInfo.hasValidProperties()) {
 			info.addService(serviceInfo);
+		}
+		if (pngOutput(identifier)) {
+		    info.setFormatHints(pngHint);
 		}
 		Application.perf.debug("getInfo read ImageInfo for {}", identifier);
 		imageService.readImageInfo(identifier, info, null);
