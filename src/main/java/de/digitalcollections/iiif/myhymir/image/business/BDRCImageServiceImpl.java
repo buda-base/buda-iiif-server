@@ -11,9 +11,11 @@ import java.io.OutputStream;
 import java.time.Instant;
 import java.util.Iterator;
 
+import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReadParam;
 import javax.imageio.ImageReader;
+import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
@@ -439,12 +441,33 @@ public class BDRCImageServiceImpl implements ImageService {
             os.flush();
             break;
 
-        /*
-         * case JPG: Application.perf.debug("USING JAI JPG for {} ", identifier);
-         * JPEGEncodeParam jpgparam = new JPEGEncodeParam(); jpgparam.setQuality(0.7F);
-         * ImageEncoder jpgencoder = ImageCodec.createImageEncoder("JPEG", os,
-         * jpgparam); jpgencoder.encode(outImg); os.flush(); break;
-         */
+        case JPG:
+            Application.perf.debug("Writing JPG for {} ", identifier);
+            Iterator<ImageWriter> wts = ImageIO.getImageWritersByMIMEType("image/jpeg");
+            while (wts.hasNext()) {
+                ImageWriter w = wts.next();
+                // if (writer == null) {
+                // picks the first non null ImageWriter (they might be registered and null)
+                writer = w;
+                Application.perf.debug("FOUND REGISTERED WRITER in list {}", writer);
+                // }
+            }
+            Application.perf.debug("USING WRITER {}", writer);
+            // This setting, using 0.75f as compression quality produces the same
+            // as the default setting, with no writeParam --> writer.write(outImg)
+
+            ImageWriteParam jpgWriteParam = writer.getDefaultWriteParam();
+            jpgWriteParam.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+            jpgWriteParam.setCompressionQuality(0.75f);
+
+            ImageOutputStream is = ImageIO.createImageOutputStream(os);
+            writer.setOutput(is);
+            // writer.write(outImg);
+            writer.write(null, new IIOImage(outImg, null, null), jpgWriteParam);
+            writer.dispose();
+            is.flush();
+            break;
+
         default:
             Application.perf.debug("USING NON NULL WRITER {}", writer);
             ImageOutputStream ios = ImageIO.createImageOutputStream(os);
