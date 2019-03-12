@@ -35,6 +35,7 @@
             </dependency>
         </dependencies>
   </dependencyManagement>
+  
   <dependencies>
   	<!-- https://mvnrepository.com/artifact/de.digitalcollections.imageio/imageio-openjpeg -->
 	
@@ -47,12 +48,36 @@
     <dependency>
         <groupId>de.digitalcollections</groupId>
         <artifactId>iiif-server-hymir</artifactId>
-        <version>3.6.3</version>        
+        <version>3.6.3</version> 
+        <exclusions>
+            <exclusion>
+                <groupId>de.digitalcollections.imageio</groupId>
+                <artifactId>imageio-jnr</artifactId>
+            </exclusion>
+        </exclusions>       
     </dependency>
     <dependency>
       <groupId>de.digitalcollections.core</groupId>
       <artifactId>dc-core-backend-file</artifactId>
       <version>2.2.0</version>
+      <exclusions>
+            <exclusion>
+                <groupId>de.digitalcollections.imageio</groupId>
+                <artifactId>imageio-jnr</artifactId>
+            </exclusion>
+        </exclusions> 
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/de.digitalcollections.imageio/imageio-turbojpeg -->
+    <dependency>
+        <groupId>de.digitalcollections.imageio</groupId>
+        <artifactId>imageio-turbojpeg</artifactId>
+        <version>0.3.1</version>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/de.digitalcollections.imageio/imageio-openjpeg -->
+    <dependency>
+        <groupId>de.digitalcollections.imageio</groupId>
+        <artifactId>imageio-openjpeg</artifactId>
+        <version>0.3.1</version>
     </dependency>
      <!-- Used by S3 ResourceRepository -->
     <dependency>
@@ -106,29 +131,19 @@
         <groupId>com.maxmind.geoip2</groupId>
         <artifactId>geoip2</artifactId>
         <version>2.12.0</version>
+    </dependency>    
+    <!-- https://mvnrepository.com/artifact/javax.media.jai/com.springsource.javax.media.jai.core -->
+    <dependency>
+        <groupId>javax.media.jai</groupId>
+        <artifactId>com.springsource.javax.media.jai.core</artifactId>
+        <version>1.1.3</version>
     </dependency>
-    <!-- https://mvnrepository.com/artifact/ar.com.hjg/pngj -->
-	<dependency>
-	    <groupId>ar.com.hjg</groupId>
-	    <artifactId>pngj</artifactId>
-	    <version>2.1.0</version>
-	</dependency>	
-	<!-- https://mvnrepository.com/artifact/javax.media/jai_imageio -->
-	<!-- dependency>
-	    <groupId>javax.media</groupId>
-	    <artifactId>jai_imageio</artifactId>
-	    <version>1.1.1</version>
-	</dependency>	
-	<dependency>
-	    <groupId>javax.media</groupId>
-	    <artifactId>jai-core</artifactId>
-	    <version>1.1.3</version>
-	</dependency-->
-	<!-- dependency>
-	    <groupId>com.github.jai-imageio</groupId>
-	    <artifactId>jai-imageio-core</artifactId>
-	    <version>1.3.1</version>
-	</dependency-->	
+    <!-- https://mvnrepository.com/artifact/javax.media.jai/com.springsource.javax.media.jai.codec -->
+    <dependency>
+        <groupId>javax.media.jai</groupId>
+        <artifactId>com.springsource.javax.media.jai.codec</artifactId>
+        <version>1.1.3</version>
+    </dependency>    
   </dependencies>
   <build>
     <plugins>
@@ -196,6 +211,11 @@
       <releases>
         <enabled>false</enabled>
       </releases>
+    </repository>  
+    <repository>
+        <id>com.springsource.repository.bundles.external</id>
+        <name>SpringSource Enterprise Bundle Repository - External Bundle Releases</name>
+        <url>http://repository.springsource.com/maven/bundles/external</url>
     </repository>
   </repositories>
 </project>
