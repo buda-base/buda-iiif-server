@@ -97,18 +97,12 @@ public class BDRCImageServiceImpl implements ImageService {
     }
 
     /** Update ImageService based on the image **/
-    private void enrichInfo(ImageReader reader, de.digitalcollections.iiif.model.image.ImageService info)
-            throws IOException {
+    private void enrichInfo(ImageReader reader, de.digitalcollections.iiif.model.image.ImageService info) throws IOException {
 
         ImageApiProfile profile = new ImageApiProfile();
-        profile.addFeature(ImageApiProfile.Feature.BASE_URI_REDIRECT, ImageApiProfile.Feature.CORS,
-                ImageApiProfile.Feature.JSONLD_MEDIA_TYPE, ImageApiProfile.Feature.PROFILE_LINK_HEADER,
-                ImageApiProfile.Feature.CANONICAL_LINK_HEADER, ImageApiProfile.Feature.REGION_BY_PCT,
-                ImageApiProfile.Feature.REGION_BY_PX, ImageApiProfile.Feature.REGION_SQUARE,
-                ImageApiProfile.Feature.ROTATION_BY_90S, ImageApiProfile.Feature.MIRRORING,
-                ImageApiProfile.Feature.SIZE_BY_CONFINED_WH, ImageApiProfile.Feature.SIZE_BY_DISTORTED_WH,
-                ImageApiProfile.Feature.SIZE_BY_H, ImageApiProfile.Feature.SIZE_BY_PCT,
-                ImageApiProfile.Feature.SIZE_BY_W, ImageApiProfile.Feature.SIZE_BY_WH);
+        profile.addFeature(ImageApiProfile.Feature.BASE_URI_REDIRECT, ImageApiProfile.Feature.CORS, ImageApiProfile.Feature.JSONLD_MEDIA_TYPE, ImageApiProfile.Feature.PROFILE_LINK_HEADER, ImageApiProfile.Feature.CANONICAL_LINK_HEADER,
+                ImageApiProfile.Feature.REGION_BY_PCT, ImageApiProfile.Feature.REGION_BY_PX, ImageApiProfile.Feature.REGION_SQUARE, ImageApiProfile.Feature.ROTATION_BY_90S, ImageApiProfile.Feature.MIRRORING,
+                ImageApiProfile.Feature.SIZE_BY_CONFINED_WH, ImageApiProfile.Feature.SIZE_BY_DISTORTED_WH, ImageApiProfile.Feature.SIZE_BY_H, ImageApiProfile.Feature.SIZE_BY_PCT, ImageApiProfile.Feature.SIZE_BY_W, ImageApiProfile.Feature.SIZE_BY_WH);
 
         // Indicate to the client if we cannot deliver full resolution versions of the
         // image
@@ -173,8 +167,7 @@ public class BDRCImageServiceImpl implements ImageService {
      * 
      * @throws BDRCAPIException
      **/
-    private ImageReader getReader(String identifier)
-            throws ResourceNotFoundException, UnsupportedFormatException, IOException {
+    private ImageReader getReader(String identifier) throws ResourceNotFoundException, UnsupportedFormatException, IOException {
         long deb = System.currentTimeMillis();
         byte[] bytes = (byte[]) ServerCache.getObjectFromCache(IIIF_IMG, identifier);
         if (bytes != null) {
@@ -201,24 +194,19 @@ public class BDRCImageServiceImpl implements ImageService {
             Application.perf.debug("Image service read {} from s3 {}", S3input, identifier);
         }
         ImageInputStream iis = ImageIO.createImageInputStream(new ByteArrayInputStream(bytes));
-        ImageReader reader = Streams.stream(ImageIO.getImageReaders(iis)).findFirst()
-                .orElseThrow(UnsupportedFormatException::new);
+        ImageReader reader = Streams.stream(ImageIO.getImageReaders(iis)).findFirst().orElseThrow(UnsupportedFormatException::new);
         reader.setInput(iis);
         Application.perf.debug("S3 object IIIS READER >> {}", reader);
-        Application.perf
-                .debug("Image service return reader at " + (System.currentTimeMillis() - deb) + " ms " + identifier);
+        Application.perf.debug("Image service return reader at " + (System.currentTimeMillis() - deb) + " ms " + identifier);
         return reader;
     }
 
     @Override
-    public void readImageInfo(String identifier, de.digitalcollections.iiif.model.image.ImageService info)
-            throws UnsupportedFormatException, UnsupportedOperationException, ResourceNotFoundException, IOException {
+    public void readImageInfo(String identifier, de.digitalcollections.iiif.model.image.ImageService info) throws UnsupportedFormatException, UnsupportedOperationException, ResourceNotFoundException, IOException {
         enrichInfo(getReader(identifier), info);
     }
 
-    public ImageReader readImageInfo(String identifier, de.digitalcollections.iiif.model.image.ImageService info,
-            ImageReader imgReader)
-            throws UnsupportedFormatException, UnsupportedOperationException, ResourceNotFoundException, IOException {
+    public ImageReader readImageInfo(String identifier, de.digitalcollections.iiif.model.image.ImageService info, ImageReader imgReader) throws UnsupportedFormatException, UnsupportedOperationException, ResourceNotFoundException, IOException {
         imgReader = getReader(identifier);
         enrichInfo(imgReader, info);
         return imgReader;
@@ -228,8 +216,7 @@ public class BDRCImageServiceImpl implements ImageService {
      * Determine parameters for image reading based on the IIIF selector and a given
      * scaling factor
      **/
-    private ImageReadParam getReadParam(ImageReader reader, ImageApiSelector selector, double decodeScaleFactor)
-            throws IOException, InvalidParametersException {
+    private ImageReadParam getReadParam(ImageReader reader, ImageApiSelector selector, double decodeScaleFactor) throws IOException, InvalidParametersException {
         ImageReadParam readParam = reader.getDefaultReadParam();
         Application.perf.debug("Entering ReadParam with ImageReadParam {}", readParam);
         Dimension nativeDimensions = new Dimension(reader.getWidth(0), reader.getHeight(0));
@@ -242,9 +229,7 @@ public class BDRCImageServiceImpl implements ImageService {
         // IIIF regions are always relative to the native size, while ImageIO regions
         // are always relative to the decoded
         // image size, hence the conversion
-        Rectangle decodeRegion = new Rectangle((int) Math.ceil(targetRegion.getX() * decodeScaleFactor),
-                (int) Math.ceil(targetRegion.getY() * decodeScaleFactor),
-                (int) Math.ceil(targetRegion.getWidth() * decodeScaleFactor),
+        Rectangle decodeRegion = new Rectangle((int) Math.ceil(targetRegion.getX() * decodeScaleFactor), (int) Math.ceil(targetRegion.getY() * decodeScaleFactor), (int) Math.ceil(targetRegion.getWidth() * decodeScaleFactor),
                 (int) Math.ceil(targetRegion.getHeight() * decodeScaleFactor));
         readParam.setSourceRegion(decodeRegion);
         // TurboJpegImageReader can rotate during decoding
@@ -254,9 +239,7 @@ public class BDRCImageServiceImpl implements ImageService {
         return readParam;
     }
 
-    private DecodedImage readImage(String identifier, ImageApiSelector selector, ImageApiProfile profile,
-            ImageReader reader)
-            throws IOException, ResourceNotFoundException, UnsupportedFormatException, InvalidParametersException {
+    private DecodedImage readImage(String identifier, ImageApiSelector selector, ImageApiProfile profile, ImageReader reader) throws IOException, ResourceNotFoundException, UnsupportedFormatException, InvalidParametersException {
         long deb = System.currentTimeMillis();
         Application.perf.debug("Entering readImage for creating DecodedImage");
         if ((selector.getRotation().getRotation() % 90) != 0) {
@@ -293,8 +276,7 @@ public class BDRCImageServiceImpl implements ImageService {
         }
         ImageReadParam readParam = getReadParam(reader, selector, decodeScaleFactor);
         int rotation = (int) selector.getRotation().getRotation();
-        if (readParam instanceof TurboJpegImageReadParam
-                && ((TurboJpegImageReadParam) readParam).getRotationDegree() != 0) {
+        if (readParam instanceof TurboJpegImageReadParam && ((TurboJpegImageReadParam) readParam).getRotationDegree() != 0) {
             if (rotation == 90 || rotation == 270) {
                 int w = targetSize.width;
                 targetSize.width = targetSize.height;
@@ -302,14 +284,12 @@ public class BDRCImageServiceImpl implements ImageService {
             }
             rotation = 0;
         }
-        Application.perf.debug("Done readingImage computing DecodedImage after {} ms",
-                System.currentTimeMillis() - deb);
+        Application.perf.debug("Done readingImage computing DecodedImage after {} ms", System.currentTimeMillis() - deb);
         return new DecodedImage(reader.read(imageIndex, readParam), targetSize, rotation);
     }
 
     /** Apply transformations to an decoded image **/
-    private BufferedImage transformImage(BufferedImage inputImage, Dimension targetSize, int rotation, boolean mirror,
-            ImageApiProfile.Quality quality) {
+    private BufferedImage transformImage(BufferedImage inputImage, Dimension targetSize, int rotation, boolean mirror, ImageApiProfile.Quality quality) {
         BufferedImage img = inputImage;
         int inType = img.getType();
         boolean needsAdditionalScaling = !new Dimension(img.getWidth(), img.getHeight()).equals(targetSize);
@@ -362,8 +342,7 @@ public class BDRCImageServiceImpl implements ImageService {
 
     @Override
     public void processImage(String identifier, ImageApiSelector selector, ImageApiProfile profile, OutputStream os)
-            throws InvalidParametersException, UnsupportedOperationException, UnsupportedFormatException,
-            ResourceNotFoundException, IOException {
+            throws InvalidParametersException, UnsupportedOperationException, UnsupportedFormatException, ResourceNotFoundException, IOException {
         // unused
     }
 
@@ -374,7 +353,7 @@ public class BDRCImageServiceImpl implements ImageService {
             return false;
         if (outputF == Format.PNG && lastFour.equals(".png"))
             return false;
-        if (outputF == Format.TIF && (lastFour.equals(".tif")) || (lastFour.equals("tiff")))
+        if (outputF == Format.TIF && (lastFour.equals(".tif") || lastFour.equals("tiff")))
             return false;
         return true;
     }
@@ -401,15 +380,13 @@ public class BDRCImageServiceImpl implements ImageService {
         return false;
     }
 
-    public void processImage(String identifier, ImageApiSelector selector, ImageApiProfile profile, OutputStream os,
-            ImageReader imgReader, String uri) throws InvalidParametersException, UnsupportedOperationException,
-            UnsupportedFormatException, ResourceNotFoundException, IOException {
+    public void processImage(String identifier, ImageApiSelector selector, ImageApiProfile profile, OutputStream os, ImageReader imgReader, String uri)
+            throws InvalidParametersException, UnsupportedOperationException, UnsupportedFormatException, ResourceNotFoundException, IOException {
         long deb = System.currentTimeMillis();
         Application.perf.debug("Entering Processimage.... with reader {} ", imgReader);
         DecodedImage img = readImage(identifier, selector, profile, imgReader);
         Application.perf.debug("Done readingImage DecodedImage created");
-        BufferedImage outImg = transformImage(img.img, img.targetSize, img.rotation, selector.getRotation().isMirror(),
-                selector.getQuality());        
+        BufferedImage outImg = transformImage(img.img, img.targetSize, img.rotation, selector.getRotation().isMirror(), selector.getQuality());
         ImageWriter writer = null;
         Iterator<ImageWriter> writers = ImageIO.getImageWritersByMIMEType(selector.getFormat().getMimeType().getTypeName());
         while (writers.hasNext()) {
