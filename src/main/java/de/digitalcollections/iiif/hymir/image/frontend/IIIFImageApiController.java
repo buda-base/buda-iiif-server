@@ -158,9 +158,10 @@ public class IIIFImageApiController {
 		if (request.getPathInfo() != null) {
 			path = request.getPathInfo();
 		}
-		headers.setCacheControl(CacheControl.maxAge(maxAge, TimeUnit.MILLISECONDS).cachePrivate());
 		if (accValidation.isOpenAccess()) {
-			headers.setCacheControl(CacheControl.maxAge(maxAge, TimeUnit.MILLISECONDS).cachePublic());
+		    headers.setCacheControl(CacheControl.maxAge(maxAge, TimeUnit.MILLISECONDS).cachePublic());
+		} else {
+		    headers.setCacheControl(CacheControl.maxAge(maxAge, TimeUnit.MILLISECONDS).cachePrivate());
 		}
 		webRequest.checkNotModified(imageService.getImageModificationDate(identifier).toEpochMilli());
 		headers.setDate("Last-Modified", imageService.getImageModificationDate(identifier).toEpochMilli());
