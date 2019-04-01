@@ -63,7 +63,7 @@ public class IIIFImageTest {
         ImageWriteParam jpgWriteParam = writer.getDefaultWriteParam();
         jpgWriteParam.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
         jpgWriteParam.setCompressionQuality(0.75f);
-        OutputStream os = new FileOutputStream(new File("imgresult6.jpg"));
+        OutputStream os = new FileOutputStream(new File("imgresult.jpg"));
         ImageOutputStream ios = ImageIO.createImageOutputStream(os);
         writer.setOutput(ios);
         // writer.write(outImg);
@@ -71,25 +71,6 @@ public class IIIFImageTest {
         ios.flush();
         ios.close();
         writer.dispose();
-        // System.out.println("using reader ");
-        // System.loadLibrary("libturbojpeg");
-        /*
-         * TJCompressor tj; try { tj = new TJCompressor();
-         * System.out.println("compressor " + tj); tj.setJPEGQuality(75);
-         * tj.setSubsamp(TJ.SAMP_420);
-         * 
-         * byte[] jpegBytes;
-         * 
-         * jpegBytes = tj.compress(outImg, 0);
-         * 
-         * System.out.println("jpegBytes " + jpegBytes); BufferedImage img;
-         * 
-         * img = ImageIO.read(new ByteArrayInputStream(jpegBytes)); File outputfile =
-         * new File("image2.jpg"); ImageIO.write(img, "jpg", outputfile); } catch
-         * (IOException e) { // TODO Auto-generated catch block e.printStackTrace(); }
-         * catch (Exception e) { // TODO Auto-generated catch block e.printStackTrace();
-         * }
-         */
     }
 
 }

@@ -1,5 +1,6 @@
 package de.digitalcollections.iiif.myhymir;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,57 +25,56 @@ import io.bdrc.auth.rdf.RdfAuthModel;
 @Configuration
 @EnableAutoConfiguration
 @Primary
-@ComponentScan(basePackages = { "io.bdrc.archives", "io.bdrc.iiif", "de.digitalcollections.iiif.hymir",
-		"de.digitalcollections.iiif.myhymir", "de.digitalcollections.core.backend.impl.file.repository.resource.util" })
+@ComponentScan(basePackages = { "io.bdrc.archives", "io.bdrc.iiif", "de.digitalcollections.iiif.hymir", "de.digitalcollections.iiif.myhymir", "de.digitalcollections.core.backend.impl.file.repository.resource.util" })
 //,
 //        excludeFilters = @ComponentScan.Filter(
 //                type = FilterType.ASSIGNABLE_TYPE, value = {ResourceRepositoryImpl.class}))
 public class Application extends SpringBootServletInitializer {
 
-	// static final String configPath= System.getProperty("iiifserv.configpath");
-	public static final Logger perf = LoggerFactory.getLogger("performance");
-	private static Properties props;
+    static final String configPath = System.getProperty("iiifserv.configpath");
+    public static final Logger perf = LoggerFactory.getLogger("performance");
+    private static Properties props;
 
-	public static void main(String[] args) throws Exception {
-		InputStream input = Application.class.getClassLoader().getResourceAsStream("iiifserv.properties");
-		props = new Properties();
-		props.load(input);
-		try {
-			InputStream is = new FileInputStream("/etc/buda/share/shared-private.properties");
-			props.load(is);
+    public static void main(String[] args) throws Exception {
+        InputStream input = new FileInputStream(new File(configPath + "iiifserv.properties"));
+        props = new Properties();
+        props.load(input);
+        try {
+            InputStream is = new FileInputStream("/etc/buda/share/shared-private.properties");
+            props.load(is);
 
-		} catch (Exception ex) {
-			// do nothing, continue props initialization
-		}
-		if ("true".equals(props.getProperty("useAuth"))) {
-			AuthProps.init(props);
-			RdfAuthModel.init();
-		}
-		S3ResourceRepositoryImpl.initWithProps(props);
-		SpringApplication.run(Application.class, args);
-		perf.debug("Application main", "Test PERF Log ");
-	}
+        } catch (Exception ex) {
+            // do nothing, continue props initialization
+        }
+        if ("true".equals(props.getProperty("authEnabled"))) {
+            AuthProps.init(props);
+            RdfAuthModel.init();
+        }
+        S3ResourceRepositoryImpl.initWithProps(props);
+        SpringApplication.run(Application.class, args);
+        perf.debug("Application main", "Test PERF Log ");
+    }
 
-	public static void initForTests() throws IOException {
-		InputStream input = Application.class.getClassLoader().getResourceAsStream("iiifserv.properties");
-		props = new Properties();
-		props.load(input);
-		try {
-			InputStream is = new FileInputStream("/etc/buda/share/shared-private.properties");
-			props.load(is);
+    public static void initForTests() throws IOException {
+        InputStream input = Application.class.getClassLoader().getResourceAsStream("iiifserv.properties");
+        props = new Properties();
+        props.load(input);
+        try {
+            InputStream is = new FileInputStream("/etc/buda/share/shared-private.properties");
+            props.load(is);
 
-		} catch (Exception ex) {
-			// do nothing, continue props initialization
-		}
-	}
+        } catch (Exception ex) {
+            // do nothing, continue props initialization
+        }
+    }
 
-	public static String getProperty(String key) {
-		return props.getProperty(key);
-	}
+    public static String getProperty(String key) {
+        return props.getProperty(key);
+    }
 
-	@Override
-	protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
-		return application.sources(Application.class);
-	}
+    @Override
+    protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
+        return application.sources(Application.class);
+    }
 
 }
