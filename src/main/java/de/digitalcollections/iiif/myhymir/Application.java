@@ -56,7 +56,7 @@ public class Application extends SpringBootServletInitializer {
     }
 
     public static void initForTests() throws IOException {
-        InputStream input = Application.class.getClassLoader().getResourceAsStream("iiifserv.properties");
+        InputStream input = Application.class.getClassLoader().getResourceAsStream("iiifservOLD.properties");
         props = new Properties();
         props.load(input);
         try {

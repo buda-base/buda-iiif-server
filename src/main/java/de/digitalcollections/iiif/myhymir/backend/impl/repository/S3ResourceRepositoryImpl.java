@@ -46,20 +46,17 @@ public class S3ResourceRepositoryImpl implements ResourceRepository<Resource> {
     @Autowired
     S3ResourcePersistenceTypeHandler spt;
 
-    private static final ClientConfiguration config = new ClientConfiguration().withConnectionTimeout(300000)
-            .withMaxConnections(50).withMaxErrorRetry(100).withSocketTimeout(300000);
+    private static final ClientConfiguration config = new ClientConfiguration().withConnectionTimeout(300000).withMaxConnections(50).withMaxErrorRetry(100).withSocketTimeout(300000);
     private static String S3_BUCKET;
     private static AmazonS3ClientBuilder clientBuilder;
 
     public static void initWithProps(Properties p) {
         S3_BUCKET = p.getProperty("s3bucket");
-        clientBuilder = AmazonS3ClientBuilder.standard().withRegion(p.getProperty("awsRegion"))
-                .withClientConfiguration(config);
+        clientBuilder = AmazonS3ClientBuilder.standard().withRegion(p.getProperty("awsRegion")).withClientConfiguration(config);
     }
 
     @Override
-    public S3Resource create(String key, ResourcePersistenceType resourcePersistenceType, MimeType mimeType)
-            throws ResourceIOException, ResourceNotFoundException {
+    public S3Resource create(String key, ResourcePersistenceType resourcePersistenceType, MimeType mimeType) throws ResourceIOException, ResourceNotFoundException {
         S3Resource resource = new S3Resource();
         resource.setId(key);
         if (mimeType != null) {
@@ -79,8 +76,7 @@ public class S3ResourceRepositoryImpl implements ResourceRepository<Resource> {
     }
 
     @Override
-    public S3Resource find(String key, ResourcePersistenceType resourcePersistenceType, MimeType mimeType)
-            throws ResourceIOException, ResourceNotFoundException {
+    public S3Resource find(String key, ResourcePersistenceType resourcePersistenceType, MimeType mimeType) throws ResourceIOException, ResourceNotFoundException {
         S3Resource resource = create(key, resourcePersistenceType, mimeType);
         return resource;
     }
@@ -99,9 +95,11 @@ public class S3ResourceRepositoryImpl implements ResourceRepository<Resource> {
         final AmazonS3 s3 = S3ResourceRepositoryImpl.getClientInstance();
         try {
             final GetObjectRequest request = new GetObjectRequest(S3_BUCKET, r.getIdentifier());
+            System.out.println("IDENTIFIER >>" + r.getIdentifier());
             obj = s3.getObject(request);
             Application.perf.debug("S3 object size is " + obj.getObjectMetadata().getContentLength());
         } catch (AmazonS3Exception e) {
+            e.printStackTrace();
             log.error(">>>>>>>> S3 client failed for identifier {} >> {}", identifier, e.getStatusCode());
             throw new ResourceNotFoundException();
         }
