@@ -118,8 +118,6 @@ public class IIIFImageApiController {
         String token = getToken(req.getHeader("Authorization"));
         if (token == null) {
             Cookie[] cks = req.getCookies();
-            System.out.println("COOKIES >>" + cks);
-            log.info("Log COOKIES >>" + cks);
             for (Cookie ck : cks) {
                 if (ck.getName().equals(AuthProps.getProperty("cookieKey"))) {
                     // invalidates cookie if present and token is null

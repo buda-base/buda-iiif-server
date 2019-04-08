@@ -39,20 +39,12 @@ public class IIIFRdfAuthFilter implements Filter {
         String token = getToken(((HttpServletRequest) req).getHeader("Authorization"));
         if (token == null) {
             Cookie[] cookies = ((HttpServletRequest) req).getCookies();
-            log.info("Cookies in filter >>" + cookies);
             if (cookies != null) {
                 for (Cookie cook : cookies) {
-                    // if(cook.getName().equals("Set-Cookie")) {
-                    // String ck=cook.getValue();
-                    // String[] parts=ck.split(";");
-                    // for(String part:parts) {
                     if (cook.getName().equals(AuthProps.getProperty("cookieKey"))) {
                         token = cook.getValue();
-                        log.info("Token from Cookies in filter >>" + token);
                         break;
                     }
-                    // }
-                    // }
                 }
             }
         }
