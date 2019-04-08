@@ -8,6 +8,7 @@ import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -36,14 +37,18 @@ public class HeaderFilter implements Filter {
     }
 
     @Override
-    public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
-            throws IOException, ServletException {
-        HttpServletResponse response = (HttpServletResponse)res;
-        response.setHeader("Access-Control-Allow-Origin", allowOrigin);
-        response.setHeader("Access-Control-Allow-Headers",allowHeaders);
+    public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
+        HttpServletRequest request = (HttpServletRequest) req;
+        String orig = request.getHeader("Origin");
+        if (orig == null) {
+            orig = allowOrigin;
+        }
+        HttpServletResponse response = (HttpServletResponse) res;
+        response.setHeader("Access-Control-Allow-Origin", orig);
+        response.setHeader("Access-Control-Allow-Headers", allowHeaders);
         response.setHeader("Access-Control-Allow-Credentials", allowCredentials);
-        response.setHeader("Access-Control-Allow-Methods",allowMethods);
-        response.setHeader("Access-Control-Expose-Headers",exposeHeaders);
+        response.setHeader("Access-Control-Allow-Methods", allowMethods);
+        response.setHeader("Access-Control-Expose-Headers", exposeHeaders);
         chain.doFilter(req, res);
     }
 
