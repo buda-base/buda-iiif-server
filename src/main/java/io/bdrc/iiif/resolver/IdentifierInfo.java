@@ -154,13 +154,14 @@ public class IdentifierInfo {
         while (it2.hasNext()) {
             fair_use.put(it2.next(), Void.TYPE);
         }
+        System.out.println("FAIR USE IMAGES>>" + fair_use);
     }
 
-    public boolean isFairUsePublicImage() {
+    public boolean isFairUsePublicImage(String img) {
         if (fair_use == null) {
             return false;
         }
-        return fair_use.containsKey(imageId);
+        return fair_use.containsKey(img);
     }
 
     public boolean isValidJson(JsonNode node) {

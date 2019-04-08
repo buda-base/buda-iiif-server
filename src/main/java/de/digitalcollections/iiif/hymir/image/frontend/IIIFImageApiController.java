@@ -146,7 +146,11 @@ public class IIIFImageApiController {
     public ResponseEntity<byte[]> getImageRepresentation(@PathVariable String identifier, @PathVariable String region, @PathVariable String size, @PathVariable String rotation, @PathVariable String quality, @PathVariable String format,
             HttpServletRequest request, HttpServletResponse response, WebRequest webRequest) throws UnsupportedFormatException, UnsupportedOperationException, IOException, InvalidParametersException, ResourceNotFoundException, BDRCAPIException {
         long deb = System.currentTimeMillis();
-        ResourceAccessValidation accValidation = new ResourceAccessValidation((Access) request.getAttribute("access"), IdentifierInfo.getIndentifierInfo(identifier));
+        String img = "";
+        if (identifier.split("::").length > 1) {
+            img = identifier.split("::")[1];
+        }
+        ResourceAccessValidation accValidation = new ResourceAccessValidation((Access) request.getAttribute("access"), IdentifierInfo.getIndentifierInfo(identifier), img);
         identifier = URLDecoder.decode(identifier, "UTF-8");
         if (!accValidation.isAccessible(request)) {
             HttpHeaders headers1 = new HttpHeaders();
@@ -222,8 +226,12 @@ public class IIIFImageApiController {
     @RequestMapping(value = "{identifier}/info.json", method = { RequestMethod.GET, RequestMethod.HEAD })
     public ResponseEntity<String> getInfo(@PathVariable String identifier, HttpServletRequest req, HttpServletResponse res, WebRequest webRequest) throws Exception {
         long deb = System.currentTimeMillis();
+        String img = "";
+        if (identifier.split("::").length > 1) {
+            img = identifier.split("::")[1];
+        }
         Application.perf.debug("Entering endpoint getInfo for {}", identifier);
-        ResourceAccessValidation accValidation = new ResourceAccessValidation((Access) req.getAttribute("access"), IdentifierInfo.getIndentifierInfo(identifier));
+        ResourceAccessValidation accValidation = new ResourceAccessValidation((Access) req.getAttribute("access"), IdentifierInfo.getIndentifierInfo(identifier), img);
         boolean unAuthorized = !accValidation.isAccessible(req);
         webRequest.checkNotModified(imageService.getImageModificationDate(identifier).toEpochMilli());
         String path = req.getServletPath();
