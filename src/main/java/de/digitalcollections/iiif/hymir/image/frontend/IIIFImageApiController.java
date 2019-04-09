@@ -126,6 +126,7 @@ public class IIIFImageApiController {
                     // invalidates cookie if present and token is null
                     ck.setMaxAge(0);
                     response.addCookie(ck);
+                    return new ResponseEntity<>("{\"success\":" + true + "}", headers, HttpStatus.OK);
                 }
             }
             return new ResponseEntity<>("{\"success\":" + valid + "}", headers, HttpStatus.FORBIDDEN);
