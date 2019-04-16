@@ -39,14 +39,15 @@ public class WorkInfoService {
 
     private static WorkInfo fetchLdsWorkInfo(final String workId) throws BDRCAPIException {
         logger.debug("fetch workInfo on LDS for {}", workId);
-        final HttpClient httpClient = HttpClientBuilder.create().build(); //Use this instead
+        final HttpClient httpClient = HttpClientBuilder.create().build(); // Use this instead
         final WorkInfo resWorkInfo;
-        final String queryUrl = "http://buda1.bdrc.io/graph/IIIFPres_workGraph_noItem";
+        final String queryUrl = "http://buda1.bdrc.io/query/graph/IIIFPres_workGraph_noItem";
         logger.debug("query {} with argument R_RES={}", queryUrl, workId);
         try {
             final HttpPost request = new HttpPost(queryUrl);
-            // we suppose that the volumeId is well formed, which is checked by the Identifier constructor
-            final StringEntity params = new StringEntity("{\"R_RES\":\""+workId+"\"}", ContentType.APPLICATION_JSON);
+            // we suppose that the volumeId is well formed, which is checked by the
+            // Identifier constructor
+            final StringEntity params = new StringEntity("{\"R_RES\":\"" + workId + "\"}", ContentType.APPLICATION_JSON);
             request.addHeader(HttpHeaders.ACCEPT, "text/turtle");
             request.setEntity(params);
             final HttpResponse response = httpClient.execute(request);
@@ -67,9 +68,9 @@ public class WorkInfoService {
     }
 
     public static WorkInfo getWorkInfo(final String workId) throws BDRCAPIException {
-        WorkInfo resWorkInfo = (WorkInfo)cache.get(workId);
+        WorkInfo resWorkInfo = (WorkInfo) cache.get(workId);
         if (resWorkInfo != null) {
-            logger.debug("found workInfo in cache for "+workId);
+            logger.debug("found workInfo in cache for " + workId);
             return resWorkInfo;
         }
         resWorkInfo = fetchLdsWorkInfo(workId);

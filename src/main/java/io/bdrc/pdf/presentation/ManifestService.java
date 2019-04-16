@@ -30,7 +30,6 @@ import io.bdrc.pdf.presentation.models.Identifier;
 import io.bdrc.pdf.presentation.models.ImageInfo;
 import io.bdrc.pdf.presentation.models.VolumeInfo;
 
-
 public class ManifestService {
 
     private static final Logger logger = LoggerFactory.getLogger(ManifestService.class);
@@ -49,39 +48,40 @@ public class ManifestService {
 
     public static String getLabelForImage(final int imageIndex) {
         if (imageIndex < 2)
-            return "tbrc-"+(imageIndex+1);
-        return "p. "+(imageIndex-1);
+            return "tbrc-" + (imageIndex + 1);
+        return "p. " + (imageIndex - 1);
     }
 
     public static String getImageServiceUrl(final String filename, final Identifier id) {
-        return "http://iiif.bdrc.io/image/v2/"+id.getVolumeId()+"::"+filename;
+        return "http://iiif.bdrc.io/" + id.getVolumeId() + "::" + filename;
     }
 
     public static Sequence getSequenceFrom(final Identifier id, final List<ImageInfo> imageInfoList) throws BDRCAPIException {
-        final Sequence mainSeq = new Sequence(IIIFPresPrefix+id.getId()+"/sequence/main");
+        final Sequence mainSeq = new Sequence(IIIFPresPrefix + id.getId() + "/sequence/main");
         final int imageTotal = imageInfoList.size();
-        // in identifiers, pages go from 1, not 0, we do a translation for Java list indexes
-        final int beginIndex = (id.getBPageNum() == null) ? 0 : id.getBPageNum()-1;
+        // in identifiers, pages go from 1, not 0, we do a translation for Java list
+        // indexes
+        final int beginIndex = (id.getBPageNum() == null) ? 0 : id.getBPageNum() - 1;
         if (beginIndex > imageTotal) {
             throw new BDRCAPIException(404, GENERIC_APP_ERROR_CODE, "you asked a manifest for an image number that is greater than the total number of images");
         }
         final Integer ePageNum = id.getEPageNum();
-        int endIndex = imageTotal-1;
+        int endIndex = imageTotal - 1;
         if (ePageNum != null) {
-            if (ePageNum > imageTotal-1) {
+            if (ePageNum > imageTotal - 1) {
                 throw new BDRCAPIException(404, GENERIC_APP_ERROR_CODE, "you asked a manifest for an image number that is greater than the total number of images");
             }
-            endIndex = ePageNum-1;
+            endIndex = ePageNum - 1;
         }
-        for (int i = beginIndex ; i <= endIndex ; i++) {
+        for (int i = beginIndex; i <= endIndex; i++) {
             final ImageInfo imageInfo = imageInfoList.get(i);
             final String label = getLabelForImage(i);
-            final String canvasUri = IIIFPresPrefix+id.getId()+"/canvas/"+(i+1);
+            final String canvasUri = IIIFPresPrefix + id.getId() + "/canvas/" + (i + 1);
             final Canvas canvas = new Canvas(canvasUri, label);
             canvas.setWidth(imageInfo.width);
             canvas.setHeight(imageInfo.height);
             final String imageServiceUrl = getImageServiceUrl(imageInfo.filename, id);
-            //canvas.addIIIFImage(imageServiceUrl, ImageApiProfile.LEVEL_ONE);
+            // canvas.addIIIFImage(imageServiceUrl, ImageApiProfile.LEVEL_ONE);
             ImageService imgServ = new ImageService(imageServiceUrl, ImageApiProfile.LEVEL_ZERO);
             ImageContent img = new ImageContent(imgServ);
             img.setWidth(imageInfo.width);
@@ -112,7 +112,7 @@ public class ManifestService {
         String workLocalId = vi.workId.substring(BDR_len);
         logger.info("building manifest for ID {}", id.getId());
         List<ImageInfo> imageInfoList = ImageInfoListService.getImageInfoList(workLocalId, vi.imageGroup);
-        final Manifest manifest = new Manifest(IIIFPresPrefix+id.getId()+"/manifest", "BUDA Manifest");
+        final Manifest manifest = new Manifest(IIIFPresPrefix + id.getId() + "/manifest", "BUDA Manifest");
         manifest.setAttribution(attribution);
         manifest.addLicense("https://creativecommons.org/publicdomain/mark/1.0/");
         manifest.addLogo("https://eroux.fr/logo.png");

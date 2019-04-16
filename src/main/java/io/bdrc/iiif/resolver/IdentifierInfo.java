@@ -46,7 +46,7 @@ public class IdentifierInfo {
         long deb = System.currentTimeMillis();
         Application.perf.debug("Creating ldspdi connexion " + identifier + " at " + System.currentTimeMillis());
         HttpClient httpClient = HttpClientBuilder.create().build();
-        HttpPost request = new HttpPost("http://purl.bdrc.io/query/IIIFPres_volumeInfo");
+        HttpPost request = new HttpPost("http://purl.bdrc.io/query/table/IIIFPres_volumeInfo");
         JSONObject object = new JSONObject();
         this.volumeId = identifier.split("::")[0];
         if (identifier.split("::").length > 1) {

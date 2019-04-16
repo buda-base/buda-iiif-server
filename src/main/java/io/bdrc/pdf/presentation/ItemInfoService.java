@@ -27,7 +27,7 @@ import io.bdrc.pdf.presentation.models.ItemInfo;
 public class ItemInfoService {
     private static final Logger logger = LoggerFactory.getLogger(ItemInfoService.class);
 
-    private static CacheAccess<Object,Object> cache = null;
+    private static CacheAccess<Object, Object> cache = null;
 
     static {
         try {
@@ -39,20 +39,21 @@ public class ItemInfoService {
 
     public static ItemInfo fetchLdsVolumeInfo(final String itemId) throws BDRCAPIException {
         logger.debug("fetch itemInfo on LDS for {}", itemId);
-        final HttpClient httpClient = HttpClientBuilder.create().build(); //Use this instead
+        final HttpClient httpClient = HttpClientBuilder.create().build(); // Use this instead
         final ItemInfo resItemInfo;
-        final String queryUrl = "http://buda1.bdrc.io/graph/IIIFPres_itemGraph";
+        final String queryUrl = "http://buda1.bdrc.io/query/graph/IIIFPres_itemGraph";
         logger.debug("query {} with argument R_RES={}", queryUrl, itemId);
         try {
             final HttpPost request = new HttpPost(queryUrl);
-            // we suppose that the volumeId is well formed, which is checked by the Identifier constructor
-            final StringEntity params = new StringEntity("{\"R_RES\":\""+itemId+"\"}", ContentType.APPLICATION_JSON);
+            // we suppose that the volumeId is well formed, which is checked by the
+            // Identifier constructor
+            final StringEntity params = new StringEntity("{\"R_RES\":\"" + itemId + "\"}", ContentType.APPLICATION_JSON);
             request.addHeader(HttpHeaders.ACCEPT, "text/turtle");
             request.setEntity(params);
             final HttpResponse response = httpClient.execute(request);
             int code = response.getStatusLine().getStatusCode();
             if (code != 200) {
-                throw new BDRCAPIException(500, GENERIC_LDS_ERROR, "LDS lookup returned an error", "request:\n"+request.toString()+"\nresponse:\n"+response.toString(), "");
+                throw new BDRCAPIException(500, GENERIC_LDS_ERROR, "LDS lookup returned an error", "request:\n" + request.toString() + "\nresponse:\n" + response.toString(), "");
             }
             final InputStream body = response.getEntity().getContent();
             Model m = ModelFactory.createDefaultModel();
@@ -67,9 +68,9 @@ public class ItemInfoService {
     }
 
     public static ItemInfo getItemInfo(final String itemId) throws BDRCAPIException {
-        ItemInfo resItemInfo = (ItemInfo)cache.get(itemId);
+        ItemInfo resItemInfo = (ItemInfo) cache.get(itemId);
         if (resItemInfo != null) {
-            logger.debug("found itemInfo in cache for "+itemId);
+            logger.debug("found itemInfo in cache for " + itemId);
             return resItemInfo;
         }
         resItemInfo = fetchLdsVolumeInfo(itemId);

@@ -1,6 +1,5 @@
 package io.bdrc.pdf.presentation;
 
-
 import static io.bdrc.pdf.presentation.AppConstants.CANNOT_FIND_VOLUME_ERROR_CODE;
 import static io.bdrc.pdf.presentation.AppConstants.GENERIC_APP_ERROR_CODE;
 import static io.bdrc.pdf.presentation.AppConstants.GENERIC_LDS_ERROR;
@@ -43,13 +42,14 @@ public class VolumeInfoService {
 
     private static VolumeInfo fetchLdsVolumeInfo(final String volumeId) throws BDRCAPIException {
         logger.debug("fetch volume info on LDS for {}", volumeId);
-        final HttpClient httpClient = HttpClientBuilder.create().build(); //Use this instead
+        final HttpClient httpClient = HttpClientBuilder.create().build(); // Use this instead
         final VolumeInfo resVolumeInfo;
         try {
-            final HttpPost request = new HttpPost("http://buda1.bdrc.io/query/IIIFPres_volumeInfo");
-            // we suppose that the volumeId is well formed, which is checked by the Identifier constructor
-            final StringEntity params = new StringEntity("{\"R_RES\":\""+volumeId+"\"}", ContentType.APPLICATION_JSON);
-            //request.addHeader(HttpHeaders.ACCEPT, "application/json");
+            final HttpPost request = new HttpPost("http://buda1.bdrc.io/query/table/IIIFPres_volumeInfo");
+            // we suppose that the volumeId is well formed, which is checked by the
+            // Identifier constructor
+            final StringEntity params = new StringEntity("{\"R_RES\":\"" + volumeId + "\"}", ContentType.APPLICATION_JSON);
+            // request.addHeader(HttpHeaders.ACCEPT, "application/json");
             request.setEntity(params);
             final HttpResponse response = httpClient.execute(request);
             int code = response.getStatusLine().getStatusCode();
@@ -74,10 +74,10 @@ public class VolumeInfoService {
     }
 
     public static VolumeInfo getVolumeInfo(final String volumeId) throws BDRCAPIException {
-        VolumeInfo resVolumeInfo = (VolumeInfo)cache.get(volumeId);
+        VolumeInfo resVolumeInfo = (VolumeInfo) cache.get(volumeId);
 
         if (resVolumeInfo != null) {
-            logger.debug("found volumeInfo in cache for "+volumeId);
+            logger.debug("found volumeInfo in cache for " + volumeId);
             return resVolumeInfo;
         }
         resVolumeInfo = fetchLdsVolumeInfo(volumeId);
