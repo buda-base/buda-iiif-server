@@ -8,8 +8,8 @@ import de.digitalcollections.iiif.model.image.ImageService;
 
 public class BDRCImageService extends ImageService {
 
-    @JsonProperty("formatHints")
-    private PropertyValue formatHints;  
+    @JsonProperty("preferredFormats")
+    private PropertyValue preferredFormats;  
     
     public BDRCImageService(String identifier, ImageApiProfile profile) {
         super(identifier, profile);
@@ -19,8 +19,8 @@ public class BDRCImageService extends ImageService {
         super(identifier);
     }
 
-    public void setFormatHints(PropertyValue formatHints) {
-        this.formatHints = formatHints;
+    public void setPreferredFormats(PropertyValue preferredFormats) {
+        this.preferredFormats = preferredFormats;
     }
 
 }

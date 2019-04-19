@@ -248,7 +248,7 @@ public class IIIFImageApiController {
             info.addService(serviceInfo);
         }
         if (pngOutput(identifier)) {
-            info.setFormatHints(pngHint);
+            info.setPreferredFormats(pngHint);
         }
         Application.perf.debug("getInfo read ImageInfo for {}", identifier);
         imageService.readImageInfo(identifier, info, null);
