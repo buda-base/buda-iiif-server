@@ -408,11 +408,23 @@ public class BDRCImageServiceImpl implements ImageService {
             break;
 
         case JPG:
+            Quality q = selector.getQuality();
             Iterator<ImageWriter> it1 = ImageIO.getImageWritersByMIMEType("image/jpeg");
+            ImageWriter w = null;
             while (it1.hasNext()) {
-                Application.perf.debug("WRITERS---> in list {}", it1.next());
+                ImageWriter wt = it1.next();
+                if (wt.getClass().getName().equals("com.twelvemonkeys.imageio.plugins.jpeg.JPEGImageWriter")) {
+                    w = wt;
+                }
+
+                Application.perf.debug("WRITERS---> in list {}", w.getClass().getName());
             }
-            ImageWriter wtr = ImageIO.getImageWritersByMIMEType("image/jpeg").next();
+            ImageWriter wtr = null;
+            if (q == Quality.GRAY) {
+                wtr = w;
+            } else {
+                wtr = ImageIO.getImageWritersByMIMEType("image/jpeg").next();
+            }
             Application.perf.debug("USING JPEG WRITER {} for {}", wtr, identifier);
             // This setting, using 0.75f as compression quality produces the same
             // as the default setting, with no writeParam --> writer.write(outImg)
