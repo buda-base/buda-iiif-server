@@ -408,9 +408,7 @@ public class BDRCImageServiceImpl implements ImageService {
             break;
 
         case JPG:
-            /*
-             * Quality q = selector.getQuality();
-             */
+
             Iterator<ImageWriter> it1 = ImageIO.getImageWritersByMIMEType("image/jpeg");
             ImageWriter wtr = null;
             while (it1.hasNext()) {
@@ -418,14 +416,13 @@ public class BDRCImageServiceImpl implements ImageService {
                 if (w.getClass().getName().equals("com.twelvemonkeys.imageio.plugins.jpeg.JPEGImageWriter")) {
                     wtr = w;
                 }
-                System.out.println("Should use WRITERS for JPEG >>" + wtr);
-                Application.perf.debug("Should use WRITERS for JPEG >> {}", wtr);
+                System.out.println("Should use WRITERS for JPEG >>" + wtr + " with quality >>" + outImg.getType());
+                Application.perf.debug("Should use WRITERS for JPEG >> {} with quality {}", wtr, outImg.getType());
                 Application.perf.debug("WRITERS---> in list {}", w.getClass().getName());
             }
-            /*
-             * if (q != Quality.GRAY) {
-             */
-            wtr = ImageIO.getImageWritersByMIMEType("image/jpeg").next();
+            if (outImg.getType() != BufferedImage.TYPE_BYTE_GRAY) {
+                wtr = ImageIO.getImageWritersByMIMEType("image/jpeg").next();
+            }
             System.out.println("Using WRITERS for JPEG >>" + wtr);
             // }
             Application.perf.debug("USING JPEG WRITER {} for {}", wtr, identifier);
