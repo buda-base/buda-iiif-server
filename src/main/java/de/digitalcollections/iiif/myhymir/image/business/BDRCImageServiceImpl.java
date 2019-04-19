@@ -409,17 +409,24 @@ public class BDRCImageServiceImpl implements ImageService {
 
         case JPG:
             /*
-             * Quality q = selector.getQuality(); Iterator<ImageWriter> it1 =
-             * ImageIO.getImageWritersByMIMEType("image/jpeg"); ImageWriter wtr = null;
-             * while (it1.hasNext()) { ImageWriter w = it1.next(); if
-             * (w.getClass().getName().equals(
-             * "com.twelvemonkeys.imageio.plugins.jpeg.JPEGImageWriter")) { wtr = w; }
-             * System.out.println("WRITERS for JPEG >>" + wtr);
-             * Application.perf.debug("WRITERS---> in list {}", wtr.getClass().getName()); }
-             * 
+             * Quality q = selector.getQuality();
+             */
+            Iterator<ImageWriter> it1 = ImageIO.getImageWritersByMIMEType("image/jpeg");
+            ImageWriter wtr = null;
+            while (it1.hasNext()) {
+                ImageWriter w = it1.next();
+                if (w.getClass().getName().equals("com.twelvemonkeys.imageio.plugins.jpeg.JPEGImageWriter")) {
+                    wtr = w;
+                }
+                System.out.println("Should use WRITERS for JPEG >>" + wtr);
+                Application.perf.debug("Should use WRITERS for JPEG >> {}", wtr);
+                Application.perf.debug("WRITERS---> in list {}", w.getClass().getName());
+            }
+            /*
              * if (q != Quality.GRAY) {
              */
-            ImageWriter wtr = ImageIO.getImageWritersByMIMEType("image/jpeg").next();
+            wtr = ImageIO.getImageWritersByMIMEType("image/jpeg").next();
+            System.out.println("Using WRITERS for JPEG >>" + wtr);
             // }
             Application.perf.debug("USING JPEG WRITER {} for {}", wtr, identifier);
             // This setting, using 0.75f as compression quality produces the same
