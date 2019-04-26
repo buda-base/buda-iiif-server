@@ -290,8 +290,9 @@ public class BDRCImageServiceImpl implements ImageService {
     }
 
     /** Apply transformations to an decoded image **/
-    private BufferedImage transformImage(BufferedImage inputImage, Dimension targetSize, int rotation, boolean mirror, ImageApiProfile.Quality quality) {
+    private BufferedImage transformImage(Format format, BufferedImage inputImage, Dimension targetSize, int rotation, boolean mirror, ImageApiProfile.Quality quality) {
         BufferedImage img = inputImage;
+        System.out.println("Transform image called with quality >>" + quality + " and format=" + format);
         int inType = img.getType();
         boolean needsAdditionalScaling = !new Dimension(img.getWidth(), img.getHeight()).equals(targetSize);
         if (needsAdditionalScaling) {
@@ -321,15 +322,23 @@ public class BDRCImageServiceImpl implements ImageService {
         switch (quality) {
         case GRAY:
             outType = BufferedImage.TYPE_BYTE_GRAY;
+            System.out.println("Transform image GRAY quality >>" + outType);
             break;
         case BITONAL:
             outType = BufferedImage.TYPE_BYTE_BINARY;
+            System.out.println("Transform image BITONAL quality >>" + outType);
             break;
         case COLOR:
             outType = BufferedImage.TYPE_3BYTE_BGR;
+            System.out.println("Transform image COLOR quality >>" + outType);
             break;
         default:
-            outType = inType;
+            if (format.equals(format.WEBP)) {
+                outType = 6;
+            } else {
+                outType = inType;
+            }
+            System.out.println("Transform image DEFAULT quality >>" + outType);
         }
         if (outType != img.getType()) {
             BufferedImage newImg = new BufferedImage(img.getWidth(), img.getHeight(), outType);
@@ -387,7 +396,7 @@ public class BDRCImageServiceImpl implements ImageService {
         Application.perf.debug("Entering Processimage.... with reader {} ", imgReader);
         DecodedImage img = readImage(identifier, selector, profile, imgReader);
         Application.perf.debug("Done readingImage DecodedImage created");
-        BufferedImage outImg = transformImage(img.img, img.targetSize, img.rotation, selector.getRotation().isMirror(), selector.getQuality());
+        BufferedImage outImg = transformImage(selector.getFormat(), img.img, img.targetSize, img.rotation, selector.getRotation().isMirror(), selector.getQuality());
         ImageWriter writer = null;
         Iterator<ImageWriter> writers = ImageIO.getImageWritersByMIMEType(selector.getFormat().getMimeType().getTypeName());
         while (writers.hasNext()) {
@@ -399,19 +408,6 @@ public class BDRCImageServiceImpl implements ImageService {
             throw new UnsupportedFormatException(selector.getFormat().getMimeType().getTypeName());
         }
         switch (selector.getFormat()) {
-        case WEBP:
-            writer = ImageIO.getImageWritersByMIMEType("image/webp").next();
-            System.out.println("Should use WRITERS for WEBP >>" + writer);
-            ImageWriteParam pr = writer.getDefaultWriteParam();
-            WebPWriteParam writeParam = (WebPWriteParam) pr;
-            writeParam.setCompressionMode(WebPWriteParam.MODE_DEFAULT);
-            ImageOutputStream iss = ImageIO.createImageOutputStream(os);
-            writer.setOutput(iss);
-            // writer.write(outImg);
-            writer.write(null, new IIOImage(outImg, null, null), writeParam);
-            writer.dispose();
-            iss.flush();
-            break;
 
         case PNG:
             Application.perf.debug("USING JAI PNG for {} ", identifier);
@@ -450,10 +446,27 @@ public class BDRCImageServiceImpl implements ImageService {
 
             ImageOutputStream is = ImageIO.createImageOutputStream(os);
             wtr.setOutput(is);
-            // writer.write(outImg);
             wtr.write(null, new IIOImage(outImg, null, null), jpgWriteParam);
             wtr.dispose();
             is.flush();
+            break;
+
+        case WEBP:
+            writer = ImageIO.getImageWritersByMIMEType("image/webp").next();
+            System.out.println("Should use WRITERS for WEBP >>" + writer);
+            ImageWriteParam pr = writer.getDefaultWriteParam();
+            WebPWriteParam writeParam = (WebPWriteParam) pr;
+            writeParam.setCompressionMode(WebPWriteParam.MODE_DEFAULT);
+            System.out.println("WRITER PARAM >>" + writeParam);
+            ImageOutputStream iss = ImageIO.createImageOutputStream(os);
+            writer.setOutput(iss);
+            System.out.println("WRITER OS >>" + os);
+            System.out.println("WRITER ISS >>" + iss);
+            writer.write(outImg);
+            System.out.println("WRITEN ISS >>" + iss);
+            // writer.write(null, new IIOImage(outImg, null, null), writeParam);
+            writer.dispose();
+            iss.flush();
             break;
 
         default:
