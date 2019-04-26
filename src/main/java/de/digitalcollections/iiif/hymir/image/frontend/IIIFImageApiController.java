@@ -316,6 +316,7 @@ public class IIIFImageApiController {
             }
             selector.setQuality(ImageApiProfile.Quality.valueOf(quality.toUpperCase()));
             selector.setFormat(ImageApiProfile.Format.valueOf(format.toUpperCase()));
+            System.out.println("FORMAT >> " + selector.getFormat());
         } catch (ResolvingException e) {
             throw new InvalidParametersException(e);
         }

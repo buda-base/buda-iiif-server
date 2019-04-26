@@ -28,6 +28,7 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
 import com.google.common.collect.Streams;
+import com.luciad.imageio.webp.WebPWriteParam;
 import com.sun.media.jai.codec.ImageCodec;
 import com.sun.media.jai.codec.ImageEncodeParam;
 import com.sun.media.jai.codec.ImageEncoder;
@@ -398,6 +399,20 @@ public class BDRCImageServiceImpl implements ImageService {
             throw new UnsupportedFormatException(selector.getFormat().getMimeType().getTypeName());
         }
         switch (selector.getFormat()) {
+        case WEBP:
+            writer = ImageIO.getImageWritersByMIMEType("image/webp").next();
+            System.out.println("Should use WRITERS for WEBP >>" + writer);
+            ImageWriteParam pr = writer.getDefaultWriteParam();
+            WebPWriteParam writeParam = (WebPWriteParam) pr;
+            writeParam.setCompressionMode(WebPWriteParam.MODE_DEFAULT);
+            ImageOutputStream iss = ImageIO.createImageOutputStream(os);
+            writer.setOutput(iss);
+            // writer.write(outImg);
+            writer.write(null, new IIOImage(outImg, null, null), writeParam);
+            writer.dispose();
+            iss.flush();
+            break;
+
         case PNG:
             Application.perf.debug("USING JAI PNG for {} ", identifier);
             ImageEncodeParam param = PNGEncodeParam.getDefaultEncodeParam(outImg);
