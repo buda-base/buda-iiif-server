@@ -28,7 +28,6 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
 import com.google.common.collect.Streams;
-import com.luciad.imageio.webp.WebPWriteParam;
 import com.sun.media.jai.codec.ImageCodec;
 import com.sun.media.jai.codec.ImageEncodeParam;
 import com.sun.media.jai.codec.ImageEncoder;
@@ -59,6 +58,7 @@ import de.digitalcollections.iiif.myhymir.ServerCache;
 import de.digitalcollections.turbojpeg.imageio.TurboJpegImageReadParam;
 import de.digitalcollections.turbojpeg.imageio.TurboJpegImageReader;
 import io.bdrc.pdf.presentation.exceptions.BDRCAPIException;
+import io.bdrc.webp.WebPWriteParam;
 
 @Service
 @Primary
