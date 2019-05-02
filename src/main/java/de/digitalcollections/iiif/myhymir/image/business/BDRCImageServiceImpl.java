@@ -322,15 +322,12 @@ public class BDRCImageServiceImpl implements ImageService {
         switch (quality) {
         case GRAY:
             outType = BufferedImage.TYPE_BYTE_GRAY;
-            System.out.println("Transform image GRAY quality >>" + outType);
             break;
         case BITONAL:
             outType = BufferedImage.TYPE_BYTE_BINARY;
-            System.out.println("Transform image BITONAL quality >>" + outType);
             break;
         case COLOR:
             outType = BufferedImage.TYPE_3BYTE_BGR;
-            System.out.println("Transform image COLOR quality >>" + outType);
             break;
         default:
             if (format.equals(format.WEBP)) {
@@ -338,7 +335,7 @@ public class BDRCImageServiceImpl implements ImageService {
             } else {
                 outType = inType;
             }
-            System.out.println("Transform image DEFAULT quality >>" + outType);
+            System.out.println("Transform image DEFAULT quality >>" + outType + " format " + format);
         }
         if (outType != img.getType()) {
             BufferedImage newImg = new BufferedImage(img.getWidth(), img.getHeight(), outType);
@@ -453,18 +450,14 @@ public class BDRCImageServiceImpl implements ImageService {
 
         case WEBP:
             writer = ImageIO.getImageWritersByMIMEType("image/webp").next();
-            System.out.println("Should use WRITERS for WEBP >>" + writer);
+            System.out.println("Using WRITER for WEBP >>" + writer);
             ImageWriteParam pr = writer.getDefaultWriteParam();
             WebPWriteParam writeParam = (WebPWriteParam) pr;
             writeParam.setCompressionMode(WebPWriteParam.MODE_DEFAULT);
-            System.out.println("WRITER PARAM >>" + writeParam);
             ImageOutputStream iss = ImageIO.createImageOutputStream(os);
             writer.setOutput(iss);
-            System.out.println("WRITER OS >>" + os);
-            System.out.println("WRITER ISS >>" + iss);
-            writer.write(outImg);
-            System.out.println("WRITEN ISS >>" + iss);
-            // writer.write(null, new IIOImage(outImg, null, null), writeParam);
+            // writer.write(outImg);
+            writer.write(null, new IIOImage(outImg, null, null), writeParam);
             writer.dispose();
             iss.flush();
             break;
