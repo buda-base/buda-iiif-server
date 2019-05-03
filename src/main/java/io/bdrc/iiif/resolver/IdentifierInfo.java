@@ -75,7 +75,7 @@ public class IdentifierInfo {
         } else {
             throw new ResourceNotFoundException();
         }
-        if (getAccessShortName().equals(RdfConstants.FAIR_USE)) {
+        if (getAccessShortName().equals(RdfConstants.FAIR_USE) || getAccessShortName().equals(RdfConstants.RESTRICTED_CHINA)) {
             initFairUse();
         }
     }

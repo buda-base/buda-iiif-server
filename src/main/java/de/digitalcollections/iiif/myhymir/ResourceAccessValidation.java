@@ -24,7 +24,7 @@ public class ResourceAccessValidation {
         super();
         this.access = access;
         accessType = idInfo.getAccessShortName();
-        fairUse = RdfConstants.FAIR_USE.equals(accessType);
+        fairUse = RdfConstants.FAIR_USE.equals(accessType) || RdfConstants.RESTRICTED_CHINA.equals(accessType);
         if (fairUse) {
             fairUse = idInfo.isFairUsePublicImage(img);
         }
@@ -34,7 +34,7 @@ public class ResourceAccessValidation {
         super();
         this.access = access;
         this.accessType = accessType;
-        fairUse = RdfConstants.FAIR_USE.equals(accessType);
+        fairUse = RdfConstants.FAIR_USE.equals(accessType) || RdfConstants.RESTRICTED_CHINA.equals(accessType);
     }
 
     public boolean isFairUse() {
