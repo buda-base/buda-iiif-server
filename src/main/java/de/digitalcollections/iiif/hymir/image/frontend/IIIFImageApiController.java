@@ -150,7 +150,6 @@ public class IIIFImageApiController {
     public ResponseEntity<byte[]> getImageRepresentation(@PathVariable String identifier, @PathVariable String region, @PathVariable String size, @PathVariable String rotation, @PathVariable String quality, @PathVariable String format,
             HttpServletRequest request, HttpServletResponse response, WebRequest webRequest) throws UnsupportedFormatException, UnsupportedOperationException, IOException, InvalidParametersException, ResourceNotFoundException, BDRCAPIException {
         long deb = System.currentTimeMillis();
-        System.out.println("IDENTIFIER >>>" + identifier);
         boolean staticImg = false;
         String img = "";
         if (identifier.split("::").length > 1) {
@@ -231,14 +230,6 @@ public class IIIFImageApiController {
         return new ResponseEntity<>(os.toByteArray(), headers, HttpStatus.OK);
     }
 
-    @RequestMapping(value = "/static/{identifier}")
-    public ResponseEntity<byte[]> getStaticImage(@PathVariable String identifier, HttpServletRequest request, HttpServletResponse response, WebRequest webRequest)
-            throws UnsupportedFormatException, UnsupportedOperationException, IOException, InvalidParametersException, ResourceNotFoundException, BDRCAPIException {
-        imageService.getS3StaticImage(identifier);
-        return null;
-
-    }
-
     public static boolean pngOutput(final String filename) {
         final String ext = filename.substring(filename.length() - 4).toLowerCase();
         return (ext.equals(".tif") || ext.equals("tiff"));
@@ -250,12 +241,17 @@ public class IIIFImageApiController {
     public ResponseEntity<String> getInfo(@PathVariable String identifier, HttpServletRequest req, HttpServletResponse res, WebRequest webRequest) throws Exception {
         long deb = System.currentTimeMillis();
         String img = "";
+        boolean staticImg = false;
         if (identifier.split("::").length > 1) {
             img = identifier.split("::")[1];
+            staticImg = identifier.split("::")[0].trim().equals("static");
         }
         Application.perf.debug("Entering endpoint getInfo for {}", identifier);
-        ResourceAccessValidation accValidation = new ResourceAccessValidation((Access) req.getAttribute("access"), IdentifierInfo.getIndentifierInfo(identifier), img);
-        boolean unAuthorized = !accValidation.isAccessible(req);
+        boolean unAuthorized = false;
+        if (!staticImg) {
+            ResourceAccessValidation accValidation = new ResourceAccessValidation((Access) req.getAttribute("access"), IdentifierInfo.getIndentifierInfo(identifier), img);
+            unAuthorized = !accValidation.isAccessible(req);
+        }
         webRequest.checkNotModified(imageService.getImageModificationDate(identifier).toEpochMilli());
         String path = req.getServletPath();
         ;

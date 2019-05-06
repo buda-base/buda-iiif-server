@@ -206,19 +206,6 @@ public class BDRCImageServiceImpl implements ImageService {
         return reader;
     }
 
-    public InputStream getS3StaticImage(String identifier) throws ResourceNotFoundException {
-        S3Resource res;
-        try {
-            res = (S3Resource) resourceService.get(identifier, ResourcePersistenceType.RESOLVED, MimeType.MIME_IMAGE);
-            System.out.println("RES= " + res);
-            res.setStatic(true);
-            InputStream input = resourceService.getInputStream(res);
-        } catch (ResourceIOException e) {
-            throw new ResourceNotFoundException();
-        }
-        return null;
-    }
-
     @Override
     public void readImageInfo(String identifier, de.digitalcollections.iiif.model.image.ImageService info) throws UnsupportedFormatException, UnsupportedOperationException, ResourceNotFoundException, IOException {
         enrichInfo(getReader(identifier), info);
@@ -309,7 +296,6 @@ public class BDRCImageServiceImpl implements ImageService {
     /** Apply transformations to an decoded image **/
     private BufferedImage transformImage(Format format, BufferedImage inputImage, Dimension targetSize, int rotation, boolean mirror, ImageApiProfile.Quality quality) {
         BufferedImage img = inputImage;
-        System.out.println("Transform image called with quality >>" + quality + " and format=" + format);
         int inType = img.getType();
         boolean needsAdditionalScaling = !new Dimension(img.getWidth(), img.getHeight()).equals(targetSize);
         if (needsAdditionalScaling) {
@@ -351,12 +337,7 @@ public class BDRCImageServiceImpl implements ImageService {
             System.out.println("Transform image DEFAULT quality >>" + quality + " OutType: " + outType + " format " + format);
             break;
         default:
-            /*
-             * if (format.equals(format.WEBP)) { outType = 6; } else {
-             */
             outType = inType;
-            // }
-            System.out.println("Transform image DEFAULT quality >>" + outType + " format " + format);
         }
         if (outType != img.getType()) {
             BufferedImage newImg = new BufferedImage(img.getWidth(), img.getHeight(), outType);

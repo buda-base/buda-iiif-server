@@ -99,10 +99,8 @@ public class S3ResourceRepositoryImpl implements ResourceRepository<Resource> {
         if (r.isStatic()) {
             bucket = S3_STATIC_BUCKET;
         }
-        System.out.println("BUCKET >>" + bucket);
         try {
             final GetObjectRequest request = new GetObjectRequest(bucket, r.getIdentifier());
-            System.out.println("IDENTIFIER >>" + r.getIdentifier());
             obj = s3.getObject(request);
             Application.perf.debug("S3 object size is " + obj.getObjectMetadata().getContentLength());
         } catch (AmazonS3Exception e) {
