@@ -170,6 +170,7 @@ public class BDRCImageServiceImpl implements ImageService {
      **/
     private ImageReader getReader(String identifier) throws ResourceNotFoundException, UnsupportedFormatException, IOException {
         long deb = System.currentTimeMillis();
+
         byte[] bytes = (byte[]) ServerCache.getObjectFromCache(IIIF_IMG, identifier);
         if (bytes != null) {
             Application.perf.debug("Image service image was cached {}", identifier);
@@ -178,9 +179,12 @@ public class BDRCImageServiceImpl implements ImageService {
             if (imageSecurityService != null && !imageSecurityService.isAccessAllowed(identifier)) {
                 throw new ResourceNotFoundException();
             }
-            Resource res;
+            S3Resource res;
             try {
-                res = resourceService.get(identifier, ResourcePersistenceType.RESOLVED, MimeType.MIME_IMAGE);
+                res = (S3Resource) resourceService.get(identifier, ResourcePersistenceType.RESOLVED, MimeType.MIME_IMAGE);
+                if (identifier.startsWith("static::")) {
+                    res.setStatic(true);
+                }
             } catch (ResourceIOException e) {
                 throw new ResourceNotFoundException();
             }
@@ -200,6 +204,19 @@ public class BDRCImageServiceImpl implements ImageService {
         Application.perf.debug("S3 object IIIS READER >> {}", reader);
         Application.perf.debug("Image service return reader at " + (System.currentTimeMillis() - deb) + " ms " + identifier);
         return reader;
+    }
+
+    public InputStream getS3StaticImage(String identifier) throws ResourceNotFoundException {
+        S3Resource res;
+        try {
+            res = (S3Resource) resourceService.get(identifier, ResourcePersistenceType.RESOLVED, MimeType.MIME_IMAGE);
+            System.out.println("RES= " + res);
+            res.setStatic(true);
+            InputStream input = resourceService.getInputStream(res);
+        } catch (ResourceIOException e) {
+            throw new ResourceNotFoundException();
+        }
+        return null;
     }
 
     @Override
@@ -329,12 +346,16 @@ public class BDRCImageServiceImpl implements ImageService {
         case COLOR:
             outType = BufferedImage.TYPE_3BYTE_BGR;
             break;
+        case DEFAULT:
+            outType = BufferedImage.TYPE_3BYTE_BGR;
+            System.out.println("Transform image DEFAULT quality >>" + quality + " OutType: " + outType + " format " + format);
+            break;
         default:
-            if (format.equals(format.WEBP)) {
-                outType = 6;
-            } else {
-                outType = inType;
-            }
+            /*
+             * if (format.equals(format.WEBP)) { outType = 6; } else {
+             */
+            outType = inType;
+            // }
             System.out.println("Transform image DEFAULT quality >>" + outType + " format " + format);
         }
         if (outType != img.getType()) {

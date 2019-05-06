@@ -35,8 +35,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 
 import de.digitalcollections.core.business.api.ResourceService;
 import de.digitalcollections.core.model.api.MimeType;
-import de.digitalcollections.core.model.api.resource.Resource;
 import de.digitalcollections.core.model.api.resource.enums.ResourcePersistenceType;
+import de.digitalcollections.core.model.impl.resource.S3Resource;
 import de.digitalcollections.iiif.hymir.model.exception.InvalidParametersException;
 import de.digitalcollections.iiif.hymir.model.exception.ResourceNotFoundException;
 import de.digitalcollections.iiif.hymir.model.exception.UnsupportedFormatException;
@@ -150,19 +150,25 @@ public class IIIFImageApiController {
     public ResponseEntity<byte[]> getImageRepresentation(@PathVariable String identifier, @PathVariable String region, @PathVariable String size, @PathVariable String rotation, @PathVariable String quality, @PathVariable String format,
             HttpServletRequest request, HttpServletResponse response, WebRequest webRequest) throws UnsupportedFormatException, UnsupportedOperationException, IOException, InvalidParametersException, ResourceNotFoundException, BDRCAPIException {
         long deb = System.currentTimeMillis();
+        System.out.println("IDENTIFIER >>>" + identifier);
+        boolean staticImg = false;
         String img = "";
         if (identifier.split("::").length > 1) {
             img = identifier.split("::")[1];
+            staticImg = identifier.split("::")[0].trim().equals("static");
         }
-        ResourceAccessValidation accValidation = new ResourceAccessValidation((Access) request.getAttribute("access"), IdentifierInfo.getIndentifierInfo(identifier), img);
-        identifier = URLDecoder.decode(identifier, "UTF-8");
-        if (!accValidation.isAccessible(request)) {
-            HttpHeaders headers1 = new HttpHeaders();
-            headers1.setCacheControl(CacheControl.noCache());
-            if (serviceInfo.authEnabled() && serviceInfo.hasValidProperties()) {
-                return new ResponseEntity<>("You must be authenticated before accessing this resource".getBytes(), headers1, HttpStatus.UNAUTHORIZED);
-            } else {
-                return new ResponseEntity<>("Insufficient rights".getBytes(), headers1, HttpStatus.FORBIDDEN);
+        ResourceAccessValidation accValidation = null;
+        if (!staticImg) {
+            accValidation = new ResourceAccessValidation((Access) request.getAttribute("access"), IdentifierInfo.getIndentifierInfo(identifier), img);
+            identifier = URLDecoder.decode(identifier, "UTF-8");
+            if (!accValidation.isAccessible(request)) {
+                HttpHeaders headers1 = new HttpHeaders();
+                headers1.setCacheControl(CacheControl.noCache());
+                if (serviceInfo.authEnabled() && serviceInfo.hasValidProperties()) {
+                    return new ResponseEntity<>("You must be authenticated before accessing this resource".getBytes(), headers1, HttpStatus.UNAUTHORIZED);
+                } else {
+                    return new ResponseEntity<>("Insufficient rights".getBytes(), headers1, HttpStatus.FORBIDDEN);
+                }
             }
         }
         HttpHeaders headers = new HttpHeaders();
@@ -170,10 +176,12 @@ public class IIIFImageApiController {
         if (request.getPathInfo() != null) {
             path = request.getPathInfo();
         }
-        if (accValidation.isOpenAccess()) {
-            headers.setCacheControl(CacheControl.maxAge(maxAge, TimeUnit.MILLISECONDS).cachePublic());
-        } else {
-            headers.setCacheControl(CacheControl.maxAge(maxAge, TimeUnit.MILLISECONDS).cachePrivate());
+        if (!staticImg) {
+            if (accValidation.isOpenAccess()) {
+                headers.setCacheControl(CacheControl.maxAge(maxAge, TimeUnit.MILLISECONDS).cachePublic());
+            } else {
+                headers.setCacheControl(CacheControl.maxAge(maxAge, TimeUnit.MILLISECONDS).cachePrivate());
+            }
         }
         webRequest.checkNotModified(imageService.getImageModificationDate(identifier).toEpochMilli());
         headers.setDate("Last-Modified", imageService.getImageModificationDate(identifier).toEpochMilli());
@@ -188,7 +196,10 @@ public class IIIFImageApiController {
         // Now a shortcut:
         if (!BDRCImageServiceImpl.requestDiffersFromOriginal(identifier, selector)) {
             // let's get our hands dirty
-            final Resource res = resourceService.get(identifier, ResourcePersistenceType.RESOLVED, MimeType.MIME_IMAGE);
+            final S3Resource res = (S3Resource) resourceService.get(identifier, ResourcePersistenceType.RESOLVED, MimeType.MIME_IMAGE);
+            if (staticImg) {
+                res.setStatic(true);
+            }
             byte[] osbytes = (byte[]) ServerCache.getObjectFromCache(IIIF_IMG, identifier);
             if (osbytes == null) {
                 final InputStream input = resourceService.getInputStream(res);
@@ -218,6 +229,14 @@ public class IIIFImageApiController {
         Application.perf.debug("Total request time {} ms ", (System.currentTimeMillis() - deb), identifier);
         imgReader.dispose();
         return new ResponseEntity<>(os.toByteArray(), headers, HttpStatus.OK);
+    }
+
+    @RequestMapping(value = "/static/{identifier}")
+    public ResponseEntity<byte[]> getStaticImage(@PathVariable String identifier, HttpServletRequest request, HttpServletResponse response, WebRequest webRequest)
+            throws UnsupportedFormatException, UnsupportedOperationException, IOException, InvalidParametersException, ResourceNotFoundException, BDRCAPIException {
+        imageService.getS3StaticImage(identifier);
+        return null;
+
     }
 
     public static boolean pngOutput(final String filename) {

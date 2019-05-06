@@ -48,10 +48,12 @@ public class S3ResourceRepositoryImpl implements ResourceRepository<Resource> {
 
     private static final ClientConfiguration config = new ClientConfiguration().withConnectionTimeout(300000).withMaxConnections(50).withMaxErrorRetry(100).withSocketTimeout(300000);
     private static String S3_BUCKET;
+    private static String S3_STATIC_BUCKET;
     private static AmazonS3ClientBuilder clientBuilder;
 
     public static void initWithProps(Properties p) {
         S3_BUCKET = p.getProperty("s3bucket");
+        S3_STATIC_BUCKET = p.getProperty("s3static");
         clientBuilder = AmazonS3ClientBuilder.standard().withRegion(p.getProperty("awsRegion")).withClientConfiguration(config);
     }
 
@@ -93,8 +95,13 @@ public class S3ResourceRepositoryImpl implements ResourceRepository<Resource> {
         String identifier = r.getId();
         S3Object obj = null;
         final AmazonS3 s3 = S3ResourceRepositoryImpl.getClientInstance();
+        String bucket = S3_BUCKET;
+        if (r.isStatic()) {
+            bucket = S3_STATIC_BUCKET;
+        }
+        System.out.println("BUCKET >>" + bucket);
         try {
-            final GetObjectRequest request = new GetObjectRequest(S3_BUCKET, r.getIdentifier());
+            final GetObjectRequest request = new GetObjectRequest(bucket, r.getIdentifier());
             System.out.println("IDENTIFIER >>" + r.getIdentifier());
             obj = s3.getObject(request);
             Application.perf.debug("S3 object size is " + obj.getObjectMetadata().getContentLength());
