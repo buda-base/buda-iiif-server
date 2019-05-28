@@ -19,11 +19,13 @@ public class ResourceAccessValidation {
     Access access;
     String accessType;
     boolean fairUse;
+    boolean isRestrictedInChina;
 
     public ResourceAccessValidation(Access access, IdentifierInfo idInfo, String img) throws ClientProtocolException, IOException, ResourceNotFoundException {
         super();
         this.access = access;
         accessType = idInfo.getAccessShortName();
+        this.isRestrictedInChina = idInfo.isChinaRestricted();
         fairUse = RdfConstants.FAIR_USE.equals(accessType) || RdfConstants.RESTRICTED_CHINA.equals(accessType);
         if (fairUse) {
             fairUse = idInfo.isFairUsePublicImage(img);
@@ -46,7 +48,7 @@ public class ResourceAccessValidation {
             access = new Access();
         }
         boolean accessible = true;
-        if (accessType.equals(RdfConstants.RESTRICTED_CHINA)) {
+        if (isRestrictedInChina) {
             if (CHINA.equalsIgnoreCase(GeoLocation.getCountryName(request.getRemoteAddr()))) {
                 // if Geolocation country name is null (i.e throws -for instance- an IP parsing
                 // exception)

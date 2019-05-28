@@ -3,18 +3,12 @@ package io.bdrc.iiif.resolver;
 import java.io.IOException;
 import java.util.HashMap;
 
-import org.apache.commons.text.StringSubstitutor;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.jena.query.QueryExecution;
-import org.apache.jena.query.QueryExecutionFactory;
-import org.apache.jena.query.QueryFactory;
-import org.apache.jena.query.QuerySolution;
-import org.apache.jena.query.ResultSet;
 import org.json.simple.JSONObject;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -37,6 +31,7 @@ public class IdentifierInfo {
     public String imageList = "";
     public String imageId = "";
     public String imageGroup;
+    public boolean isChinaRestricted = false;
     public int totalPages = 0;
     private HashMap<String, Class<Void>> fair_use;
 
@@ -46,12 +41,14 @@ public class IdentifierInfo {
         long deb = System.currentTimeMillis();
         Application.perf.debug("Creating ldspdi connexion " + identifier + " at " + System.currentTimeMillis());
         HttpClient httpClient = HttpClientBuilder.create().build();
-        HttpPost request = new HttpPost("http://purl.bdrc.io/query/table/IIIFPres_volumeInfo");
+
         JSONObject object = new JSONObject();
         this.volumeId = identifier.split("::")[0];
         if (identifier.split("::").length > 1) {
             this.imageId = identifier.split("::")[1];
         }
+        String fusekiUrl = Application.getProperty("fusekiUrl");
+        HttpPost request = new HttpPost("http://purl.bdrc.io/query/table/IIIFPres_volumeInfo");
         object.put("R_RES", volumeId);
         String message = object.toString();
         request.setEntity(new StringEntity(message, "UTF8"));
@@ -75,8 +72,11 @@ public class IdentifierInfo {
         } else {
             throw new ResourceNotFoundException();
         }
-        if (getAccessShortName().equals(RdfConstants.FAIR_USE) || getAccessShortName().equals(RdfConstants.RESTRICTED_CHINA)) {
+        if (getAccessShortName().equals(RdfConstants.FAIR_USE)) {
             initFairUse();
+        }
+        if (getAccessShortName().equals(RdfConstants.RESTRICTED_CHINA)) {
+            this.isChinaRestricted = true;
         }
     }
 
@@ -84,47 +84,13 @@ public class IdentifierInfo {
         String volumeId = identifier.split("::")[0];
         IdentifierInfo info = (IdentifierInfo) ServerCache.getObjectFromCache("identifier", "ID_" + volumeId);
         if (info != null) {
+            System.out.println("ID INFO >>" + info);
             return info;
         } else {
             info = new IdentifierInfo(identifier);
             ServerCache.addToCache("identifier", "ID_" + volumeId, info);
+            System.out.println("ID INFO >>" + info);
             return info;
-        }
-    }
-
-    // unused and unefficient direct connection to fuseki
-    public IdentifierInfo(String identifier, String s) {
-        long deb = System.currentTimeMillis();
-        Application.perf.debug("Creating fuseki connexion " + identifier + " at " + deb);
-        this.identifier = identifier;
-        this.volumeId = identifier.split("::")[0];
-        if (identifier.split("::").length > 1) {
-            this.imageId = identifier.split("::")[1];
-        }
-        String request = "prefix skos:  <http://www.w3.org/2004/02/skos/core#>\n" + "  prefix adm:   <http://purl.bdrc.io/ontology/admin/>\n" + "  prefix :      <http://purl.bdrc.io/ontology/core/>\n"
-                + "  prefix bdo:   <http://purl.bdrc.io/ontology/core/>\n" + "  prefix bdr:   <http://purl.bdrc.io/resource/>\n"
-                + " select distinct ?workId ?itemId ?access ?license ?imageGroup ?imageList ?totalPages ?pagesText ?pagesIntroTbrc ?pagesIntro ?volumeNumber ?volumeLabel ?iiifManifest where {\n" + "  ${res} a :VolumeImageAsset .\n"
-                + "  optional { ${res} adm:legacyImageGroupRID ?imageGroup . }\n" + "  optional { ${res} :volumeNumber ?volumeNumber . }\n" + "  optional { ${res} bdo:imageList ?imageList . }\n"
-                + "  optional { ${res} bdo:volumePagesTotal ?totalPages . }\n" + "  optional { ${res} bdo:volumePagesText ?pagesText . }\n" + "  optional { ${res} bdo:volumePagesTbrcIntro ?pagesIntroTbrc . }\n"
-                + "  optional { ${res} bdo:volumePagesIntro ?pagesIntro . }\n" + "  optional { ${res} skos:prefLabel ?volumeLabel . }\n" + "  optional { ${res} :hasIIIFManifest ?iiifManifest . }\n" + "  ?itemId :itemForWork ?workId ;\n"
-                + "      :itemHasVolume ${res} .\n" + "  ?workId adm:access ?access ;\n" + "    adm:license ?license .\n" + "}";
-
-        HashMap<String, String> substitutes = new HashMap<>();
-        substitutes.put("res", this.volumeId);
-        StringSubstitutor sub = new StringSubstitutor(substitutes);
-        QueryExecution qe = QueryExecutionFactory.sparqlService(Application.getProperty("fusekiUrl"), QueryFactory.create(sub.replace(request)));
-        ResultSet rs = qe.execSelect();
-        QuerySolution qs = rs.next();
-        this.work = qs.get("?workId").toString();
-        this.asset = qs.get("?itemId").toString();
-        this.access = qs.get("?access").toString();
-        this.imageList = qs.get("?imageList").toString();
-        this.imageGroup = qs.get("?imageGroup").toString();
-        this.totalPages = qs.get("?totalPages").asLiteral().getInt();
-        qe.close();
-        Application.perf.debug("getting fuseki response after " + (System.currentTimeMillis() - deb) + " ms " + identifier);
-        if (getAccessShortName().equals(RdfConstants.FAIR_USE)) {
-            initFairUse();
         }
     }
 
@@ -144,6 +110,10 @@ public class IdentifierInfo {
         this.fair_use = fair_use;
     }
 
+    public boolean isChinaRestricted() {
+        return isChinaRestricted;
+    }
+
     private void initFairUse() {
         fair_use = new HashMap<>();
         ImageListIterator it1 = new ImageListIterator(imageList, 1, 20);
@@ -154,7 +124,6 @@ public class IdentifierInfo {
         while (it2.hasNext()) {
             fair_use.put(it2.next(), Void.TYPE);
         }
-        System.out.println("FAIR USE IMAGES>>" + fair_use);
     }
 
     public boolean isFairUsePublicImage(String img) {
@@ -165,8 +134,6 @@ public class IdentifierInfo {
     }
 
     public boolean isValidJson(JsonNode node) {
-        // return (node.findValue("work")!=null && node.findValue("asset")!= null &&
-        // node.findValue("access")!=null);
         return (node.findValue("workId") != null && node.findValue("itemId") != null && node.findValue("access") != null);
     }
 
@@ -240,13 +207,12 @@ public class IdentifierInfo {
 
     @Override
     public String toString() {
-        return "IdentifierInfo [identifier=" + identifier + ", work=" + work + ", asset=" + asset + ", access=" + access + ", volumeId=" + volumeId + ", imageList=" + imageList + ", imageId=" + imageId + ", imageGroup=" + imageGroup + ", totalPages="
-                + totalPages + ", fair_use=" + fair_use + "]";
+        return "IdentifierInfo [identifier=" + identifier + ", work=" + work + ", asset=" + asset + ", access=" + access + ", volumeId=" + volumeId + ", imageList=" + imageList + ", imageId=" + imageId + ", imageGroup=" + imageGroup
+                + ", isChinaRestricted=" + isChinaRestricted + ", totalPages=" + totalPages + ", fair_use=" + fair_use + "]";
     }
 
     public static void main(String[] args) throws ClientProtocolException, IOException, ResourceNotFoundException {
         Application.initForTests();
         System.out.println(new IdentifierInfo("bdr:V1NLM7_I1NLM7_001::I1NLM7_0010003.jpg"));
-        // System.out.println(new IdentifierInfo("bdr:V22084_I0888::08880587.tif", ""));
     }
 }
