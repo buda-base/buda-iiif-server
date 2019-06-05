@@ -17,7 +17,7 @@
         <pattern>[%d{ISO8601} %5p] %40.40c:%4L [%-8t] - %m%n</pattern>
       </encoder>
     </appender>
-    <appender name="PROD_PERF" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <!-- appender name="PROD_PERF" class="ch.qos.logback.core.rolling.RollingFileAppender">
       <file>./log/perfProd.log</file>
       <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
         <fileNamePattern>./log/perfProd.%d{yyyy-MM-dd}.log</fileNamePattern>
@@ -31,10 +31,13 @@
       <encoder>
         <pattern>[%d{ISO8601} %5p] %40.40c:%4L [%-8t] - %m%n</pattern>
       </encoder>
-    </appender>
-    <logger name="performance" level="debug" additivity="false">
+    </appender-->
+    <logger name="performance" level="debug" additivity="true">
 		<appender-ref ref="PROD_PERF" />
-	</logger>    
+	</logger>  
+    <logger name="prod" level="info" additivity="true">
+        <appender-ref ref="PROD" />
+    </logger>  
   </springProfile>  
   <springProfile name="local">
     <appender name="default" class="ch.qos.logback.core.ConsoleAppender">
