@@ -32,9 +32,20 @@
         <pattern>[%d{ISO8601} %5p] %40.40c:%4L [%-8t] - %m%n</pattern>
       </encoder>
     </appender>
+    <appender name="default1" class="ch.qos.logback.core.ConsoleAppender">
+      <encoder>
+        <pattern>[%d{ISO8601} %5p] %40.40c:%4L [%-8t] - %m%n</pattern>
+      </encoder>
+    </appender> 
     <logger name="performance" level="debug" additivity="true">
         <appender-ref ref="PROD_PERF" />
-    </logger>    
+    </logger>
+    <logger name="custom" level="info" additivity="true">
+        <appender-ref ref="default" />
+    </logger>  
+    <logger name="custom1" level="info" additivity="true">
+        <appender-ref ref="default1" />
+    </logger>     
   </springProfile>  
   <springProfile name="local">
     <appender name="default" class="ch.qos.logback.core.ConsoleAppender">

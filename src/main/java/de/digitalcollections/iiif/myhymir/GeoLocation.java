@@ -19,7 +19,7 @@ public class GeoLocation {
     private static final String DBLocation = AuthProps.getProperty("geolite_countryDB");
     private static DatabaseReader dbReader;
     public static final String GEO_CACHE_KEY = "GeoDB";
-    private static final Logger log = LoggerFactory.getLogger(GeoLocation.class);
+    public static final Logger custom = LoggerFactory.getLogger("custom");
 
     public static String getCountryName(String ip) {
         try {
@@ -30,11 +30,11 @@ public class GeoLocation {
                 ServerCache.addToCache("info", GEO_CACHE_KEY, dbReader);
             }
             InetAddress ipAddress = InetAddress.getByName(ip);
-            log.info("IP = {}", ipAddress);
+            custom.info("IP = {}", ipAddress);
             CountryResponse response = dbReader.country(ipAddress);
             return response.getCountry().getName();
         } catch (IOException | BDRCAPIException | GeoIp2Exception e) {
-            log.info("GeoLocation exception {}", e.getMessage());
+            custom.info("GeoLocation exception {}", e.getMessage());
             e.printStackTrace();
             return null;
         }
