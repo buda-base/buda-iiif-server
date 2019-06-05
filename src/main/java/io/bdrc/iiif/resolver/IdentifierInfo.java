@@ -47,7 +47,6 @@ public class IdentifierInfo {
         if (identifier.split("::").length > 1) {
             this.imageId = identifier.split("::")[1];
         }
-        String fusekiUrl = Application.getProperty("fusekiUrl");
         HttpPost request = new HttpPost("http://purl.bdrc.io/query/table/IIIFPres_volumeInfo");
         object.put("R_RES", volumeId);
         String message = object.toString();
@@ -66,6 +65,7 @@ public class IdentifierInfo {
                 this.imageList = node.findValue("imageList").findValue("value").toString().replaceAll("\"", "");
                 this.imageGroup = node.findValue("imageGroup").findValue("value").toString().replaceAll("\"", "");
                 this.totalPages = Integer.parseInt(node.findValue("totalPages").findValue("value").toString().replaceAll("\"", ""));
+                this.isChinaRestricted = Boolean.parseBoolean(node.findValue("ric").findValue("value").toString().replaceAll("\"", ""));
             } else {
                 throw new ResourceNotFoundException();
             }
@@ -74,9 +74,6 @@ public class IdentifierInfo {
         }
         if (getAccessShortName().equals(RdfConstants.FAIR_USE)) {
             initFairUse();
-        }
-        if (getAccessShortName().equals(RdfConstants.RESTRICTED_CHINA)) {
-            this.isChinaRestricted = true;
         }
     }
 

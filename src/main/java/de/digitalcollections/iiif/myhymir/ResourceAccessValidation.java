@@ -26,7 +26,7 @@ public class ResourceAccessValidation {
         this.access = access;
         accessType = idInfo.getAccessShortName();
         this.isRestrictedInChina = idInfo.isChinaRestricted();
-        fairUse = RdfConstants.FAIR_USE.equals(accessType) || RdfConstants.RESTRICTED_CHINA.equals(accessType);
+        fairUse = RdfConstants.FAIR_USE.equals(accessType);
         if (fairUse) {
             fairUse = idInfo.isFairUsePublicImage(img);
         }
@@ -36,7 +36,7 @@ public class ResourceAccessValidation {
         super();
         this.access = access;
         this.accessType = accessType;
-        fairUse = RdfConstants.FAIR_USE.equals(accessType) || RdfConstants.RESTRICTED_CHINA.equals(accessType);
+        fairUse = RdfConstants.FAIR_USE.equals(accessType);
     }
 
     public boolean isFairUse() {
@@ -49,7 +49,8 @@ public class ResourceAccessValidation {
         }
         boolean accessible = true;
         if (isRestrictedInChina) {
-            if (CHINA.equalsIgnoreCase(GeoLocation.getCountryName(request.getRemoteAddr()))) {
+            String test = GeoLocation.getCountryName(request.getRemoteAddr());
+            if (test == null || CHINA.equalsIgnoreCase(test)) {
                 // if Geolocation country name is null (i.e throws -for instance- an IP parsing
                 // exception)
                 // then access is denied
@@ -61,6 +62,11 @@ public class ResourceAccessValidation {
 
     public boolean isOpenAccess() {
         return accessType.equals(RdfConstants.OPEN);
+    }
+
+    @Override
+    public String toString() {
+        return "ResourceAccessValidation [access=" + access + ", accessType=" + accessType + ", fairUse=" + fairUse + ", isRestrictedInChina=" + isRestrictedInChina + "]";
     }
 
 }
