@@ -59,13 +59,13 @@ public class IdentifierInfo {
         node = node.findPath("results").findPath("bindings");
         if (node != null) {
             if (isValidJson(node)) {
-                this.work = node.findValue("workId").findValue("value").toString().replaceAll("\"", "");
-                this.asset = node.findValue("itemId").findValue("value").toString().replaceAll("\"", "");
-                this.access = node.findValue("access").findValue("value").toString().replaceAll("\"", "");
-                this.imageList = node.findValue("imageList").findValue("value").toString().replaceAll("\"", "");
-                this.imageGroup = node.findValue("imageGroup").findValue("value").toString().replaceAll("\"", "");
-                this.totalPages = Integer.parseInt(node.findValue("totalPages").findValue("value").toString().replaceAll("\"", ""));
-                this.isChinaRestricted = Boolean.parseBoolean(node.findValue("ric").findValue("value").toString().replaceAll("\"", ""));
+                this.work = parseValue(node.findValue("workId"));
+                this.asset = parseValue(node.findValue("itemId"));
+                this.access = parseValue(node.findValue("access"));
+                this.imageList = parseValue(node.findValue("imageList"));
+                this.imageGroup = parseValue(node.findValue("imageGroup"));
+                this.totalPages = Integer.parseInt(parseValue(node.findValue("totalPages")));
+                this.isChinaRestricted = Boolean.parseBoolean(parseValue(node.findValue("ric")));
             } else {
                 throw new ResourceNotFoundException();
             }
@@ -75,6 +75,10 @@ public class IdentifierInfo {
         if (getAccessShortName().equals(RdfConstants.FAIR_USE)) {
             initFairUse();
         }
+    }
+
+    private String parseValue(JsonNode n) {
+        return n.findValue("value").textValue();
     }
 
     public static IdentifierInfo getIndentifierInfo(String identifier) throws ClientProtocolException, IOException, ResourceNotFoundException, BDRCAPIException {
