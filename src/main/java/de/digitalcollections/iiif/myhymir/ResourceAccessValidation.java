@@ -53,7 +53,7 @@ public class ResourceAccessValidation {
         }
         boolean accessible = true;
         if (isRestrictedInChina) {
-            String test = GeoLocation.getCountryName(request.getRemoteAddr());
+            String test = GeoLocation.getCountryName(request.getHeader("X-Real-IP"));
             if (test == null || CHINA.equalsIgnoreCase(test)) {
                 // if Geolocation country name is null (i.e throws -for instance- an IP parsing
                 // exception)
