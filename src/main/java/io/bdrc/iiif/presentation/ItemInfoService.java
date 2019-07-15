@@ -1,7 +1,7 @@
-package io.bdrc.pdf.presentation;
+package io.bdrc.iiif.presentation;
 
-import static io.bdrc.pdf.presentation.AppConstants.GENERIC_APP_ERROR_CODE;
-import static io.bdrc.pdf.presentation.AppConstants.GENERIC_LDS_ERROR;
+import static io.bdrc.iiif.presentation.AppConstants.GENERIC_APP_ERROR_CODE;
+import static io.bdrc.iiif.presentation.AppConstants.GENERIC_LDS_ERROR;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -20,28 +20,27 @@ import org.apache.jena.rdf.model.ModelFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.digitalcollections.iiif.myhymir.ServerCache;
-import io.bdrc.pdf.presentation.exceptions.BDRCAPIException;
-import io.bdrc.pdf.presentation.models.ItemInfo;
+import io.bdrc.iiif.presentation.exceptions.BDRCAPIException;
+import io.bdrc.iiif.presentation.models.ItemInfo;
 
 public class ItemInfoService {
     private static final Logger logger = LoggerFactory.getLogger(ItemInfoService.class);
 
-    private static CacheAccess<Object, Object> cache = null;
+    private static CacheAccess<String, Object> cache = null;
 
     static {
         try {
-            cache = ServerCache.getCacheAccess("info");
+            cache = ServiceCache.CACHE;
         } catch (CacheException e) {
             logger.error("cache initialization error, this shouldn't happen!", e);
         }
     }
 
-    public static ItemInfo fetchLdsVolumeInfo(final String itemId) throws BDRCAPIException {
+    private static ItemInfo fetchLdsVolumeInfo(final String itemId) throws BDRCAPIException {
         logger.debug("fetch itemInfo on LDS for {}", itemId);
         final HttpClient httpClient = HttpClientBuilder.create().build(); // Use this instead
         final ItemInfo resItemInfo;
-        final String queryUrl = "http://buda1.bdrc.io/query/graph/IIIFPres_itemGraph";
+        final String queryUrl = AppConstants.LDS_ITEMGRAPH_QUERY;
         logger.debug("query {} with argument R_RES={}", queryUrl, itemId);
         try {
             final HttpPost request = new HttpPost(queryUrl);
@@ -56,14 +55,14 @@ public class ItemInfoService {
                 throw new BDRCAPIException(500, GENERIC_LDS_ERROR, "LDS lookup returned an error", "request:\n" + request.toString() + "\nresponse:\n" + response.toString(), "");
             }
             final InputStream body = response.getEntity().getContent();
-            Model m = ModelFactory.createDefaultModel();
+            final Model m = ModelFactory.createDefaultModel();
             // TODO: prefixes
             m.read(body, null, "TURTLE");
             resItemInfo = new ItemInfo(m, itemId);
         } catch (IOException ex) {
             throw new BDRCAPIException(500, GENERIC_APP_ERROR_CODE, ex);
         }
-        logger.debug("found itemInfo: {}", resItemInfo.toString());
+        logger.debug("found itemInfo: {}", resItemInfo);
         return resItemInfo;
     }
 

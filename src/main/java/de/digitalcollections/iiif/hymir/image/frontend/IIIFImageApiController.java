@@ -54,8 +54,8 @@ import io.bdrc.auth.Access;
 import io.bdrc.auth.AuthProps;
 import io.bdrc.auth.TokenValidation;
 import io.bdrc.iiif.auth.AuthServiceInfo;
+import io.bdrc.iiif.presentation.exceptions.BDRCAPIException;
 import io.bdrc.iiif.resolver.IdentifierInfo;
-import io.bdrc.pdf.presentation.exceptions.BDRCAPIException;
 
 @Controller
 // @RequestMapping("/image/v2/")

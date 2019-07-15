@@ -1,20 +1,24 @@
-package io.bdrc.pdf.presentation.models;
+package io.bdrc.iiif.presentation.models;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import static io.bdrc.pdf.presentation.AppConstants.*;
+import static io.bdrc.iiif.presentation.AppConstants.*;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.Property;
+import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.Resource;
+import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.rdf.model.StmtIterator;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import io.bdrc.pdf.presentation.CollectionService;
-import io.bdrc.pdf.presentation.exceptions.BDRCAPIException;
+import de.digitalcollections.iiif.model.PropertyValue;
+import io.bdrc.iiif.presentation.CollectionService;
+import io.bdrc.iiif.presentation.ManifestService;
+import io.bdrc.iiif.presentation.exceptions.BDRCAPIException;
 
 
 public class ItemInfo {
@@ -43,29 +47,15 @@ public class ItemInfo {
             return prefixedId;
         }
         
-        public String toDisplay() {
-            if (volumeNumber == null)
-                return getPrefixedUri();
-            else
-                return "Volume "+volumeNumber;
-        }
-
-        public Integer getVolumeNumber() {
-            return volumeNumber;
-        }
-
-        public String getVolumeId() {
-            return volumeId;
-        }
-
-        public String getPrefixedId() {
-            return prefixedId;
-        }
-
-        @Override
-        public String toString() {
-            return "VolumeInfoSmall [volumeNumber=" + volumeNumber + ", volumeId=" + volumeId + ", iiifManifest="
-                    + iiifManifest + ", prefixedId=" + prefixedId + "]";
+        public PropertyValue getLabel() {
+            final PropertyValue label = new PropertyValue();
+            if (volumeNumber == null) {
+                label.addValue(prefixedId);
+            } else {
+                label.addValue(ManifestService.getLocaleFor("en"), "volume "+volumeNumber);
+                label.addValue(ManifestService.getLocaleFor("bo-x-ewts"), "pod"+volumeNumber+"/");
+            }
+            return label;
         }
 
         @Override
@@ -80,6 +70,10 @@ public class ItemInfo {
     public String workId;
     @JsonProperty("access")
     public AccessType access;
+    @JsonProperty("restrictedInChina")
+    public Boolean restrictedInChina;
+    @JsonProperty("statusUri")
+    public String statusUri;
     @JsonProperty("license")
     public LicenseType license;
     @JsonProperty("volumes")
@@ -87,22 +81,48 @@ public class ItemInfo {
     
     public ItemInfo() {}
     
+    public static final Property adminAbout = ResourceFactory.createProperty(ADM+"adminAbout");
+    
+    public static Resource getAdminForResource(final Model m, final Resource r) {
+        final StmtIterator si = m.listStatements(null, adminAbout, r);
+        while (si.hasNext()) {
+            Statement st = si.next();
+            return st.getSubject();
+        }
+        return null;
+    }
+    
     public ItemInfo(final Model m, String itemId) throws BDRCAPIException {
-        // the model is supposed to come from the IIIFPres_itemInfo graph query
+        // the model is supposed to come from the IIIFPres_itemGraph graph query
         if (itemId.startsWith("bdr:"))
             itemId = BDR+itemId.substring(4);
         final Resource item = m.getResource(itemId);
-        if (item == null)
-            throw new BDRCAPIException(500, GENERIC_APP_ERROR_CODE, "invalid model: missing item");
-        final Resource work = item.getPropertyResourceValue(m.getProperty(BDO, "itemForWork"));
-        if (work == null)
-            throw new BDRCAPIException(500, GENERIC_APP_ERROR_CODE, "invalid model: missing work");
-        this.workId = work.getURI();
-        final Resource workAccess = work.getPropertyResourceValue(m.getProperty(ADM, "access"));
-        final Resource workLicense = work.getPropertyResourceValue(m.getProperty(ADM, "license"));
-        if (workAccess == null || workLicense == null)
+        this.workId = item.getPropertyResourceValue(m.getProperty(BDO, "itemForWork")).getURI();
+        final Resource itemAdmin =  getAdminForResource(m, item);
+        if (itemAdmin == null) {
+            throw new BDRCAPIException(500, GENERIC_APP_ERROR_CODE, "invalid model: no admin data for item");
+        }
+        final Resource itemStatus = itemAdmin.getPropertyResourceValue(m.getProperty(ADM, "status"));
+        if (itemStatus == null) {
+            this.statusUri = null;
+        } else {
+            this.statusUri = itemStatus.getURI();
+        }
+        final Resource itemAccess = itemAdmin.getPropertyResourceValue(m.getProperty(ADM, "access"));
+        final Statement restrictedInChinaS = itemAdmin.getProperty(m.getProperty(ADM, "restrictedInChina"));
+        if (restrictedInChinaS == null) {
+            this.restrictedInChina = true;
+        } else {
+            this.restrictedInChina = restrictedInChinaS.getBoolean();
+        }
+        final Resource legalData = itemAdmin.getPropertyResourceValue(m.getProperty(ADM, "contentLegal"));
+        if (legalData == null) {
+            throw new BDRCAPIException(500, GENERIC_APP_ERROR_CODE, "invalid model: no legal data for item admin data");
+        }
+        final Resource workLicense = legalData.getPropertyResourceValue(m.getProperty(ADM, "license"));
+        if (itemAccess == null || workLicense == null)
             throw new BDRCAPIException(500, GENERIC_APP_ERROR_CODE, "invalid model: no access or license");
-        this.access = AccessType.fromString(workAccess.getURI());
+        this.access = AccessType.fromString(itemAccess.getURI());
         this.license = LicenseType.fromString(workLicense.getURI());
         final StmtIterator volumesItr = item.listProperties(m.getProperty(BDO, "itemHasVolume"));
         if (!volumesItr.hasNext())
@@ -138,28 +158,4 @@ public class ItemInfo {
         }
         return null;
     }
-    
-    public String getWorkId() {
-        return workId;
-    }
-
-    public AccessType getAccess() {
-        return access;
-    }
-
-    public LicenseType getLicense() {
-        return license;
-    }
-
-    public List<VolumeInfoSmall> getVolumes() {
-        return volumes;
-    }
-
-    @Override
-    public String toString() {
-        return "ItemInfo [workId=" + workId + ", access=" + access + ", license=" + license + ", volumes=" + volumes
-                + "]";
-    }
-    
-    
 }

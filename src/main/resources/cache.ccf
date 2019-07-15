@@ -125,3 +125,10 @@ jcs.auxiliary.IIIFtestspace.attributes.MaxPurgatorySize=0
             ##  10 Meg size limit 
 jcs.auxiliary.IIIFtestspace.attributes.MaxKeySize=1000
 jcs.auxiliary.IIIFtestspace.attributes.DiskLimitType=SIZE
+
+# DEFAULT CACHE REGION
+
+jcs.region.iiifpres=
+jcs.region.iiifpres.cacheattributes=org.apache.commons.jcs.engine.CompositeCacheAttributes
+jcs.region.iiifpres.cacheattributes.MaxObjects=1000
+jcs.region.iiifpres.cacheattributes.MemoryCacheName=org.apache.commons.jcs.engine.memory.lru.LRUMemoryCache

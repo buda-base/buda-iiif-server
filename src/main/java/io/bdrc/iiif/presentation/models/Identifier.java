@@ -1,22 +1,25 @@
-package io.bdrc.pdf.presentation.models;
+package io.bdrc.iiif.presentation.models;
 
-import io.bdrc.pdf.presentation.exceptions.BDRCAPIException;
-import static io.bdrc.pdf.presentation.AppConstants.*;
+import static io.bdrc.iiif.presentation.AppConstants.INVALID_IDENTIFIER_ERROR_CODE;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+
+import io.bdrc.iiif.presentation.exceptions.BDRCAPIException;
 
 public class Identifier {
     public static final int MANIFEST_ID = 0;
     public static final int COLLECTION_ID = 1;
-    
+
     public static final int COLLECTION_ID_ITEM = 2;
     public static final int COLLECTION_ID_WORK_IN_ITEM = 3;
     public static final int COLLECTION_ID_WORK_OUTLINE = 7;
-    
+    public static final int COLLECTION_ID_ITEM_VOLUME_OUTLINE = 9;
+
     public static final int MANIFEST_ID_WORK_IN_ITEM = 4;
     public static final int MANIFEST_ID_VOLUMEID = 5;
     public static final int MANIFEST_ID_WORK_IN_VOLUMEID = 6;
-    
+    public static final int MANIFEST_ID_VOLUMEID_OUTLINE = 8;
+
     @JsonProperty("id")
     String id = null;
     @JsonProperty("type")
@@ -33,7 +36,7 @@ public class Identifier {
     Integer bPageNum = null;
     @JsonProperty("ePageNum")
     Integer ePageNum = null;
-    
+
     public void setPageNumFromIdPart(final String idPart) throws BDRCAPIException {
         if (idPart == null || idPart.isEmpty())
             return;
@@ -41,13 +44,15 @@ public class Identifier {
         if (parts.length == 0 || parts.length > 3) {
             throw new BDRCAPIException(404, INVALID_IDENTIFIER_ERROR_CODE, "cannot parse page numbers in identifier");
         }
-        try {
-            this.bPageNum = Integer.parseInt(parts[0]);
-        } catch (NumberFormatException e) {
-            throw new BDRCAPIException(404, INVALID_IDENTIFIER_ERROR_CODE, "cannot parse page numbers in identifier");
+        if (!parts[0].isEmpty()) { // case of "-12"
+            try {
+                this.bPageNum = Integer.parseInt(parts[0]);
+            } catch (NumberFormatException e) {
+                throw new BDRCAPIException(404, INVALID_IDENTIFIER_ERROR_CODE, "cannot parse page numbers in identifier");
+            }
+            if (this.bPageNum < 1)
+                throw new BDRCAPIException(404, INVALID_IDENTIFIER_ERROR_CODE, "cannot parse page numbers in identifier");
         }
-        if (this.bPageNum < 1)
-            throw new BDRCAPIException(404, INVALID_IDENTIFIER_ERROR_CODE, "cannot parse page numbers in identifier");
         if (parts.length < 2)
             return;
         try {
@@ -58,7 +63,7 @@ public class Identifier {
         if (this.ePageNum < 1)
             throw new BDRCAPIException(404, INVALID_IDENTIFIER_ERROR_CODE, "cannot parse page numbers in identifier");
     }
-    
+
     public Identifier(final String iiifIdentifier, final int idType) throws BDRCAPIException {
         if (iiifIdentifier == null || iiifIdentifier.isEmpty())
             throw new BDRCAPIException(404, INVALID_IDENTIFIER_ERROR_CODE, "cannot parse identifier");
@@ -83,6 +88,11 @@ public class Identifier {
                 this.itemId = firstId;
                 nbMaxPartsExpected = 1;
                 this.subtype = COLLECTION_ID_ITEM;
+                break;
+            case "ivo":
+                this.itemId = firstId;
+                nbMaxPartsExpected = 1;
+                this.subtype = COLLECTION_ID_ITEM_VOLUME_OUTLINE;
                 break;
             case "wi":
                 this.workId = firstId;
@@ -115,6 +125,11 @@ public class Identifier {
             setPageNumFromIdPart(secondId);
             nbMaxPartsExpected = 2;
             this.subtype = MANIFEST_ID_VOLUMEID;
+            break;
+        case "vo":
+            this.volumeId = firstId;
+            nbMaxPartsExpected = 1;
+            this.subtype = MANIFEST_ID_VOLUMEID_OUTLINE;
             break;
         case "wv":
             this.workId = firstId;
@@ -151,7 +166,7 @@ public class Identifier {
     public String getWorkId() {
         return workId;
     }
-    
+
     public String getId() {
         return id;
     }
@@ -166,7 +181,7 @@ public class Identifier {
 
     // returns false if id is not well formed, returns true on null (for ease of use)
     private boolean isWellFormedId(String id) {
-        if (id == null) 
+        if (id == null)
             return true;
         if (id.indexOf('"') != -1 || id.indexOf('\\') != -1 || id.indexOf('\n') != -1)
             return false;
@@ -178,5 +193,7 @@ public class Identifier {
         return "Identifier [id=" + id + ", type=" + type + ", subtype=" + subtype + ", workId=" + workId + ", itemId="
                 + itemId + ", volumeId=" + volumeId + ", bPageNum=" + bPageNum + ", ePageNum=" + ePageNum + "]";
     }
-    
+
+
+
 }

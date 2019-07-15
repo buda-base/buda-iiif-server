@@ -1,7 +1,8 @@
-package io.bdrc.pdf.presentation;
+package io.bdrc.iiif.presentation;
 
-import static io.bdrc.pdf.presentation.AppConstants.GENERIC_APP_ERROR_CODE;
-import static io.bdrc.pdf.presentation.AppConstants.GENERIC_LDS_ERROR;
+import static io.bdrc.iiif.presentation.AppConstants.GENERIC_APP_ERROR_CODE;
+import static io.bdrc.iiif.presentation.AppConstants.GENERIC_LDS_ERROR;
+import static io.bdrc.iiif.presentation.AppConstants.LDS_WORKGRAPH_QUERY;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -20,63 +21,60 @@ import org.apache.jena.rdf.model.ModelFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.digitalcollections.iiif.myhymir.ServerCache;
-import io.bdrc.pdf.presentation.exceptions.BDRCAPIException;
-import io.bdrc.pdf.presentation.models.WorkInfo;
+import io.bdrc.iiif.presentation.exceptions.BDRCAPIException;
+import io.bdrc.iiif.presentation.models.WorkInfo;
 
 public class WorkInfoService {
     private static final Logger logger = LoggerFactory.getLogger(WorkInfoService.class);
 
-    private static CacheAccess<Object, Object> cache = null;
+    private static CacheAccess<String, Object> cache = null;
 
     static {
         try {
-            cache = ServerCache.getCacheAccess("info");
+            cache = ServiceCache.CACHE;
         } catch (CacheException e) {
             logger.error("cache initialization error, this shouldn't happen!", e);
         }
     }
-
-    private static WorkInfo fetchLdsWorkInfo(final String workId) throws BDRCAPIException {
+    
+    private static Model fetchLdsWorkInfoModel(final String workId) throws BDRCAPIException {
         logger.debug("fetch workInfo on LDS for {}", workId);
-        final HttpClient httpClient = HttpClientBuilder.create().build(); // Use this instead
-        final WorkInfo resWorkInfo;
-        final String queryUrl = "http://buda1.bdrc.io/query/graph/IIIFPres_workGraph_noItem";
+        final HttpClient httpClient = HttpClientBuilder.create().build(); //Use this instead
+        final Model resModel;
+        final String queryUrl = LDS_WORKGRAPH_QUERY;
         logger.debug("query {} with argument R_RES={}", queryUrl, workId);
         try {
             final HttpPost request = new HttpPost(queryUrl);
-            // we suppose that the volumeId is well formed, which is checked by the
-            // Identifier constructor
-            final StringEntity params = new StringEntity("{\"R_RES\":\"" + workId + "\"}", ContentType.APPLICATION_JSON);
+            // we suppose that the volumeId is well formed, which is checked by the Identifier constructor
+            final StringEntity params = new StringEntity("{\"R_RES\":\""+workId+"\"}", ContentType.APPLICATION_JSON);
             request.addHeader(HttpHeaders.ACCEPT, "text/turtle");
             request.setEntity(params);
             final HttpResponse response = httpClient.execute(request);
             int code = response.getStatusLine().getStatusCode();
             if (code != 200) {
-                throw new BDRCAPIException(500, GENERIC_LDS_ERROR, "LDS lookup returned an error", response.toString(), "");
+                throw new BDRCAPIException(500, GENERIC_LDS_ERROR, "LDS lookup returned http code "+code, response.toString(), "");
             }
             final InputStream body = response.getEntity().getContent();
-            Model m = ModelFactory.createDefaultModel();
+            resModel = ModelFactory.createDefaultModel();
             // TODO: prefixes
-            m.read(body, null, "TURTLE");
-            resWorkInfo = new WorkInfo(m, workId);
+            resModel.read(body, null, "TURTLE");
         } catch (IOException ex) {
             throw new BDRCAPIException(500, GENERIC_APP_ERROR_CODE, ex);
         }
-        logger.debug("found workInfo: {}", resWorkInfo.toString());
-        return resWorkInfo;
+        logger.debug("found workModel: {}", resModel);
+        return resModel;
     }
 
     public static WorkInfo getWorkInfo(final String workId) throws BDRCAPIException {
-        WorkInfo resWorkInfo = (WorkInfo) cache.get(workId);
+        WorkInfo resWorkInfo = (WorkInfo)cache.get(workId);
         if (resWorkInfo != null) {
-            logger.debug("found workInfo in cache for " + workId);
+            logger.debug("found workInfo in cache for "+workId);
             return resWorkInfo;
         }
-        resWorkInfo = fetchLdsWorkInfo(workId);
-        if (resWorkInfo == null)
-            return null;
+        final Model workInfoModel = fetchLdsWorkInfoModel(workId);
+        resWorkInfo = new WorkInfo(workInfoModel, workId);
         cache.put(workId, resWorkInfo);
         return resWorkInfo;
     }
+
 }

@@ -58,7 +58,7 @@ import de.digitalcollections.iiif.myhymir.Application;
 import de.digitalcollections.iiif.myhymir.ServerCache;
 import de.digitalcollections.turbojpeg.imageio.TurboJpegImageReadParam;
 import de.digitalcollections.turbojpeg.imageio.TurboJpegImageReader;
-import io.bdrc.pdf.presentation.exceptions.BDRCAPIException;
+import io.bdrc.iiif.presentation.exceptions.BDRCAPIException;
 
 @Service
 @Primary

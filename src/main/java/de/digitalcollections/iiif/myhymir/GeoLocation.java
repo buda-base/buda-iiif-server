@@ -12,7 +12,7 @@ import com.maxmind.geoip2.exception.GeoIp2Exception;
 import com.maxmind.geoip2.model.CountryResponse;
 
 import io.bdrc.auth.AuthProps;
-import io.bdrc.pdf.presentation.exceptions.BDRCAPIException;
+import io.bdrc.iiif.presentation.exceptions.BDRCAPIException;
 
 public class GeoLocation {
 

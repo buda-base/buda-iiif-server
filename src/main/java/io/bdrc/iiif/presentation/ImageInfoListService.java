@@ -1,6 +1,6 @@
-package io.bdrc.pdf.presentation;
+package io.bdrc.iiif.presentation;
 
-import static io.bdrc.pdf.presentation.AppConstants.GENERIC_APP_ERROR_CODE;
+import static io.bdrc.iiif.presentation.AppConstants.GENERIC_APP_ERROR_CODE;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,9 +25,9 @@ import com.amazonaws.services.s3.model.S3Object;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import de.digitalcollections.iiif.myhymir.ServerCache;
-import io.bdrc.pdf.presentation.exceptions.BDRCAPIException;
-import io.bdrc.pdf.presentation.models.ImageInfo;
+import io.bdrc.auth.AuthProps;
+import io.bdrc.iiif.presentation.exceptions.BDRCAPIException;
+import io.bdrc.iiif.presentation.models.ImageInfo;
 
 public class ImageInfoListService {
 
@@ -35,7 +35,7 @@ public class ImageInfoListService {
     final static String bucketName = "archive.tbrc.org";
     private static AmazonS3 s3Client = null;
     static MessageDigest md;
-    private static CacheAccess<Object, Object> cache = null;
+    private static CacheAccess<String, Object> cache = null;
     static private final ObjectMapper om;
     private static final Logger logger = LoggerFactory.getLogger(ImageInfoListService.class);
     private static final Charset utf8 = Charset.forName("UTF-8");
@@ -48,7 +48,7 @@ public class ImageInfoListService {
             logger.error("this shouldn't happen!", e);
         }
         try {
-            cache = ServerCache.getCacheAccess("default");
+            cache = ServiceCache.CACHE;
         } catch (CacheException e) {
             logger.error("cache initialization error, this shouldn't happen!", e);
         }
@@ -63,8 +63,10 @@ public class ImageInfoListService {
     }
 
     private static AmazonS3 getClient() {
-        if (s3Client == null)
-            s3Client = AmazonS3ClientBuilder.defaultClient();
+        if (s3Client == null) {
+            AmazonS3ClientBuilder clientBuilder = AmazonS3ClientBuilder.standard().withRegion(AuthProps.getProperty("awsRegion"));
+            s3Client=clientBuilder.build();
+        }
         return s3Client;
     }
 
@@ -81,7 +83,11 @@ public class ImageInfoListService {
         try {
             object = s3Client.getObject(new GetObjectRequest(bucketName, key));
         } catch (AmazonS3Exception e) {
-            throw new BDRCAPIException(500, GENERIC_APP_ERROR_CODE, e);
+            if (e.getErrorCode().equals("NoSuchKey")) {
+                throw new BDRCAPIException(404, GENERIC_APP_ERROR_CODE, "sorry, BDRC did not complete the data migration for this Work");
+            } else {
+                throw new BDRCAPIException(500, GENERIC_APP_ERROR_CODE, e);
+            }
         }
         final InputStream objectData = object.getObjectContent();
         try {
@@ -114,7 +120,7 @@ public class ImageInfoListService {
         }
         imageInfoList = getFromS3(workLocalId, imageGroupId);
         if (imageInfoList == null)
-            return null;
+            throw new BDRCAPIException(500, AppConstants.GENERIC_LDS_ERROR, "Cannot retrieve image list from s3");
         cache.put(cacheKey, imageInfoList);
         return imageInfoList;
     }

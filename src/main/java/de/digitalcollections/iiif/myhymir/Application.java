@@ -20,6 +20,7 @@ import org.springframework.context.annotation.Primary;
 import de.digitalcollections.iiif.myhymir.backend.impl.repository.S3ResourceRepositoryImpl;
 import io.bdrc.auth.AuthProps;
 import io.bdrc.auth.rdf.RdfAuthModel;
+import io.bdrc.iiif.presentation.ServiceCache;
 
 @SpringBootApplication
 @Configuration
@@ -46,11 +47,13 @@ public class Application extends SpringBootServletInitializer {
         } catch (Exception ex) {
             // do nothing, continue props initialization
         }
+        AuthProps.init(props);
         if ("true".equals(props.getProperty("authEnabled"))) {
-            AuthProps.init(props);
+
             RdfAuthModel.init();
         }
         S3ResourceRepositoryImpl.initWithProps(props);
+        ServiceCache.init();
         SpringApplication.run(Application.class, args);
         perf.debug("Application main", "Test PERF Log ");
     }

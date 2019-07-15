@@ -1,4 +1,4 @@
-package io.bdrc.pdf.presentation.models;
+package io.bdrc.iiif.presentation.models;
 
 import java.util.Iterator;
 

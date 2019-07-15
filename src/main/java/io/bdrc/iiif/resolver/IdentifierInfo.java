@@ -18,8 +18,8 @@ import de.digitalcollections.iiif.hymir.model.exception.ResourceNotFoundExceptio
 import de.digitalcollections.iiif.myhymir.Application;
 import de.digitalcollections.iiif.myhymir.ServerCache;
 import io.bdrc.auth.rdf.RdfConstants;
-import io.bdrc.pdf.presentation.exceptions.BDRCAPIException;
-import io.bdrc.pdf.presentation.models.ImageListIterator;
+import io.bdrc.iiif.presentation.exceptions.BDRCAPIException;
+import io.bdrc.iiif.presentation.models.ImageListIterator;
 
 public class IdentifierInfo {
 
