@@ -62,4 +62,37 @@ public class ServerCache {
         }
         return access;
     }
+
+    public static boolean clearCache() {
+        try {
+            if (IIIF != null) {
+                IIIF.clear();
+            }
+            if (IIIF_ZIP != null) {
+                IIIF_ZIP.clear();
+            }
+            if (IIIF_IMG != null) {
+                IIIF_IMG.clear();
+            }
+            if (INFO != null) {
+                INFO.clear();
+            }
+            if (DEFAULT != null) {
+                DEFAULT.clear();
+            }
+            ;
+            if (PDF_JOBS != null) {
+                PDF_JOBS.clear();
+            }
+            if (ZIP_JOBS != null) {
+                ZIP_JOBS.clear();
+            }
+            if (IDENTIFIER != null) {
+                IDENTIFIER.clear();
+            }
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
 }

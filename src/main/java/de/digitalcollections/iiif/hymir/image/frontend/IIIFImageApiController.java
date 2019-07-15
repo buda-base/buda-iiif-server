@@ -54,6 +54,7 @@ import io.bdrc.auth.Access;
 import io.bdrc.auth.AuthProps;
 import io.bdrc.auth.TokenValidation;
 import io.bdrc.iiif.auth.AuthServiceInfo;
+import io.bdrc.iiif.presentation.ServiceCache;
 import io.bdrc.iiif.presentation.exceptions.BDRCAPIException;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 
@@ -142,6 +143,17 @@ public class IIIFImageApiController {
             resp = new ResponseEntity<>("{\"success\":" + valid + "}", headers, HttpStatus.OK);
         } else {
             resp = new ResponseEntity<>("{\"success\":" + valid + "}", headers, HttpStatus.FORBIDDEN);
+        }
+        return resp;
+    }
+
+    @RequestMapping(value = "/clearcache")
+    ResponseEntity<String> clearCache(HttpServletRequest req, HttpServletResponse response) {
+        ResponseEntity<String> resp = null;
+        if (ServerCache.clearCache() && ServiceCache.clearCache()) {
+            resp = new ResponseEntity<>("OK", HttpStatus.OK);
+        } else {
+            resp = new ResponseEntity<>("ERROR", HttpStatus.OK);
         }
         return resp;
     }
