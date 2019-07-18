@@ -15,6 +15,7 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.http.client.ClientProtocolException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -147,7 +148,7 @@ public class IIIFImageApiController {
         return resp;
     }
 
-    @RequestMapping(value = "/clearcache")
+    @RequestMapping(value = "/clearcache", method = RequestMethod.POST)
     ResponseEntity<String> clearCache(HttpServletRequest req, HttpServletResponse response) {
         ResponseEntity<String> resp = null;
         if (ServerCache.clearCache() && ServiceCache.clearCache()) {
@@ -160,7 +161,8 @@ public class IIIFImageApiController {
 
     @RequestMapping(value = "{identifier}/{region}/{size}/{rotation}/{quality}.{format}")
     public ResponseEntity<byte[]> getImageRepresentation(@PathVariable String identifier, @PathVariable String region, @PathVariable String size, @PathVariable String rotation, @PathVariable String quality, @PathVariable String format,
-            HttpServletRequest request, HttpServletResponse response, WebRequest webRequest) throws UnsupportedFormatException, UnsupportedOperationException, IOException, InvalidParametersException, ResourceNotFoundException, BDRCAPIException {
+            HttpServletRequest request, HttpServletResponse response, WebRequest webRequest)
+            throws ClientProtocolException, IOException, ResourceNotFoundException, BDRCAPIException, InvalidParametersException, UnsupportedOperationException, UnsupportedFormatException {
         long deb = System.currentTimeMillis();
         boolean staticImg = false;
         String img = "";
