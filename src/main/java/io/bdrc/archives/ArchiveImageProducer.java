@@ -1,12 +1,17 @@
 package io.bdrc.archives;
 
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.util.concurrent.Callable;
+
+import javax.imageio.ImageIO;
 
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
@@ -14,8 +19,6 @@ import org.slf4j.LoggerFactory;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.GetObjectRequest;
-import com.itextpdf.text.BadElementException;
-import com.itextpdf.text.Image;
 
 import de.digitalcollections.core.model.api.resource.exceptions.ResourceIOException;
 import de.digitalcollections.iiif.myhymir.ServerCache;
@@ -33,8 +36,9 @@ public class ArchiveImageProducer implements Callable {
     AmazonS3 s3;
     String identifier;
     String id;
-    Image img;
     String archiveType;
+    Dimension d;
+    boolean isTiff = false;
 
     public ArchiveImageProducer(AmazonS3 s3, String id, String archiveType) throws BDRCAPIException {
         this.s3 = s3;
@@ -43,47 +47,57 @@ public class ArchiveImageProducer implements Callable {
         BdrcS3Resolver resolver = new BdrcS3Resolver();
         try {
             this.identifier = resolver.getS3Identifier(id);
+            System.out.println("IDENTIFIER " + identifier + "ID " + id);
+            if (identifier.endsWith(".tif") || identifier.endsWith(".tiff")) {
+                isTiff = true;
+            }
         } catch (ResourceIOException e) {
             throw new BDRCAPIException(500, AppConstants.GENERIC_APP_ERROR_CODE, e);
         }
     }
 
-    public Image getPdfImage() throws BadElementException, MalformedURLException, IOException, BDRCAPIException {
+    public BufferedImage getBufferedPdfImage() throws MalformedURLException, IOException, BDRCAPIException {
         byte[] imgbytes = (byte[]) ServerCache.getObjectFromCache(IIIF_IMG, id);
         if (imgbytes != null) {
+            InputStream in = new ByteArrayInputStream(imgbytes);
+            BufferedImage bImg = ImageIO.read(in);
             log.debug("Got " + id + " from cache ...");
-            return Image.getInstance(imgbytes);
+            in.close();
+            return bImg;
         }
         GetObjectRequest request = new GetObjectRequest(S3_BUCKET, identifier);
         imgbytes = IOUtils.toByteArray(s3.getObject(request).getObjectContent());
-        img = Image.getInstance(imgbytes);
+        InputStream in = new ByteArrayInputStream(imgbytes);
+        BufferedImage bImg = ImageIO.read(in);
         log.debug("Got " + id + " from S3 ...added to cache");
         ServerCache.addToCache(IIIF_IMG, id, imgbytes);
-        return img;
+        return bImg;
     }
 
-    public byte[] getImageAsBytes() throws BadElementException, MalformedURLException, IOException, BDRCAPIException {
+    public byte[] getImageAsBytes() throws MalformedURLException, IOException, BDRCAPIException {
         byte[] imgbytes = (byte[]) ServerCache.getObjectFromCache(IIIF_IMG, id);
         if (imgbytes != null) {
+            InputStream in = new ByteArrayInputStream(imgbytes);
+            BufferedImage bImg = ImageIO.read(in);
+            this.d = new Dimension(bImg.getWidth(), bImg.getHeight());
             log.debug("Zip Got " + id + " from cache ...");
             return imgbytes;
         }
         GetObjectRequest request = new GetObjectRequest(S3_BUCKET, identifier);
         imgbytes = IOUtils.toByteArray(s3.getObject(request).getObjectContent());
+        InputStream in = new ByteArrayInputStream(imgbytes);
+        BufferedImage bImg = ImageIO.read(in);
+        this.d = new Dimension(bImg.getWidth(), bImg.getHeight());
         log.debug("Zip Got " + id + " from S3 ...added to cache");
         ServerCache.addToCache(IIIF_IMG, id, imgbytes);
         return imgbytes;
-    }
-
-    public Image getImg() {
-        return img;
     }
 
     public String getIdentifier() {
         return identifier;
     }
 
-    public static Image getMissingImage(String text) throws BadElementException, IOException {
+    public static BufferedImage getBufferedMissingImage(String text) throws IOException {
         BufferedImage bufferedImage = new BufferedImage(800, 200, BufferedImage.TYPE_INT_RGB);
         Graphics graphics = bufferedImage.getGraphics();
         graphics.setColor(Color.LIGHT_GRAY);
@@ -91,20 +105,20 @@ public class ArchiveImageProducer implements Callable {
         graphics.setColor(Color.BLACK);
         graphics.setFont(new Font("Arial Black", Font.BOLD, 20));
         graphics.drawString(text, 300, 100);
-        return Image.getInstance(bufferedImage, null);
+        return bufferedImage;
     }
 
     @Override
     public Object call() throws BDRCAPIException {
         try {
             if (archiveType.equals(ArchiveBuilder.PDF_TYPE)) {
-                return getPdfImage();
+                return getBufferedPdfImage();
             }
             if (archiveType.equals(ArchiveBuilder.ZIP_TYPE)) {
                 return getImageAsBytes();
             }
             return null;
-        } catch (BadElementException | IOException e) {
+        } catch (IOException e) {
             throw new BDRCAPIException(500, AppConstants.GENERIC_APP_ERROR_CODE, e);
         }
     }

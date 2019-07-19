@@ -1,7 +1,11 @@
 package io.bdrc.archives;
 
+import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Iterator;
 import java.util.TreeMap;
 import java.util.concurrent.Callable;
@@ -12,16 +16,18 @@ import java.util.concurrent.Future;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import javax.imageio.ImageIO;
+
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
+import org.apache.pdfbox.pdmodel.graphics.image.LosslessFactory;
+import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.amazonaws.services.s3.AmazonS3;
-import com.itextpdf.text.BadElementException;
-import com.itextpdf.text.Document;
-import com.itextpdf.text.DocumentException;
-import com.itextpdf.text.Image;
-import com.itextpdf.text.Rectangle;
-import com.itextpdf.text.pdf.PdfWriter;
 
 import de.digitalcollections.iiif.myhymir.Application;
 import de.digitalcollections.iiif.myhymir.ServerCache;
@@ -40,7 +46,7 @@ public class ArchiveBuilder {
     public final static Logger log = LoggerFactory.getLogger(ArchiveBuilder.class.getName());
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
-    public static void buildPdf(Iterator<String> idList, IdentifierInfo inf, String output) throws BDRCAPIException {
+    public static void buildPdf(Iterator<String> idList, IdentifierInfo inf, String output) throws BDRCAPIException, IOException {
         long deb = System.currentTimeMillis();
         Application.perf.debug("Starting building pdf {}", inf.volumeId);
         ExecutorService service = Executors.newFixedThreadPool(50);
@@ -57,45 +63,39 @@ public class ArchiveBuilder {
             i += 1;
         }
         ServerCache.addToCache("pdfjobs", output, false);
-        Document document = new Document();
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        PdfWriter writer = null;
-        try {
-            writer = PdfWriter.getInstance(document, stream);
-        } catch (DocumentException e) {
-            throw new BDRCAPIException(500, AppConstants.GENERIC_APP_ERROR_CODE, e);
-        }
-        writer.open();
-        document.open();
+        PDDocument doc = new PDDocument();
         Application.perf.debug("building pdf writer and document opened {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
         for (int k = 1; k <= t_map.keySet().size(); k++) {
             Future<?> tmp = t_map.get(k);
-            Image img = null;
             try {
-                img = (Image) tmp.get();
-                if (img == null) {
+                BufferedImage bImg = (BufferedImage) tmp.get();
+                if (bImg == null) {
                     // Trying to insert image indicating that original image is missing
                     try {
-                        img = ArchiveImageProducer.getMissingImage("Page " + k + " couldn't be found");
-                        document.setPageSize(new Rectangle(img.getWidth(), img.getHeight()));
-                        document.newPage();
-                        document.add(img);
-                    } catch (BadElementException | IOException e) {
+                        bImg = ArchiveImageProducer.getBufferedMissingImage("Page " + k + " couldn't be found");
+
+                    } catch (IOException e) {
                         // We don't interrupt the pdf generation process
                         e.printStackTrace();
                     }
                 }
-                document.setPageSize(new Rectangle(img.getWidth(), img.getHeight()));
-                document.newPage();
-                document.add(img);
-            } catch (DocumentException | ExecutionException | InterruptedException e) {
+                PDPage page = new PDPage(new PDRectangle(bImg.getWidth(), bImg.getHeight()));
+                doc.addPage(page);
+                PDImageXObject pdImage = LosslessFactory.createFromImage(doc, bImg);
+                PDPageContentStream contents = new PDPageContentStream(doc, page);
+                contents.drawImage(pdImage, 0, 0);
+                contents.close();
+            } catch (ExecutionException | InterruptedException e) {
                 throw new BDRCAPIException(500, AppConstants.GENERIC_APP_ERROR_CODE, e);
             }
         }
-        document.close();
+        long t = System.currentTimeMillis();
+        String rd = Long.toString(t);
+        File tmp = new File(inf.identifier + rd + ".pdf");
+        doc.save(tmp);
         Application.perf.debug("pdf document finished and closed for {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
-        ServerCache.addToCache(IIIF, output.substring(4), stream.toByteArray());
-        writer.close();
+        ServerCache.addToCache(IIIF, output.substring(4), Files.readAllBytes(Paths.get(inf.identifier + rd + ".pdf")));
+        tmp.delete();
         ServerCache.addToCache("pdfjobs", output, true);
     }
 
@@ -131,8 +131,11 @@ public class ArchiveBuilder {
                 if (img == null) {
                     // Trying to insert image indicating that original image is missing
                     try {
-                        img = ArchiveImageProducer.getMissingImage("Page " + k + " couldn't be found").getRawData();
-                    } catch (BadElementException | IOException e) {
+                        BufferedImage bImg = ArchiveImageProducer.getBufferedMissingImage("Page " + k + " couldn't be found");
+                        ByteArrayOutputStream out = new ByteArrayOutputStream();
+                        ImageIO.write(bImg, "png", out);
+                        img = out.toByteArray();
+                    } catch (IOException e) {
                         // We don't interrupt the pdf generation process
                         e.printStackTrace();
                     }
