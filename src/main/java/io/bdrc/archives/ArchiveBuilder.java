@@ -2,10 +2,7 @@ package io.bdrc.archives;
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.Iterator;
 import java.util.TreeMap;
 import java.util.concurrent.Callable;
@@ -18,6 +15,7 @@ import java.util.zip.ZipOutputStream;
 
 import javax.imageio.ImageIO;
 
+import org.apache.pdfbox.pdfwriter.COSWriter;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
@@ -89,13 +87,13 @@ public class ArchiveBuilder {
                 throw new BDRCAPIException(500, AppConstants.GENERIC_APP_ERROR_CODE, e);
             }
         }
-        long t = System.currentTimeMillis();
-        String rd = Long.toString(t);
-        File tmp = new File(inf.identifier + rd + ".pdf");
-        doc.save(tmp);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        COSWriter cw = new COSWriter(baos);
+        cw.write(doc);
         Application.perf.debug("pdf document finished and closed for {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
-        ServerCache.addToCache(IIIF, output.substring(4), Files.readAllBytes(Paths.get(inf.identifier + rd + ".pdf")));
-        tmp.delete();
+        ServerCache.addToCache(IIIF, output.substring(4), baos.toByteArray());
+        cw.close();
+        doc.close();
         ServerCache.addToCache("pdfjobs", output, true);
     }
 
