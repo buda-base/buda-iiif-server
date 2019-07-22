@@ -14,6 +14,7 @@ import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
 
 import de.digitalcollections.iiif.hymir.model.exception.ResourceNotFoundException;
+import de.digitalcollections.iiif.myhymir.ServerCache;
 import io.bdrc.iiif.presentation.exceptions.BDRCAPIException;
 import io.bdrc.iiif.presentation.models.Identifier;
 import io.bdrc.iiif.resolver.IdentifierInfo;
@@ -25,13 +26,22 @@ public class ArchiveInfo {
     IdentifierInfo inf;
     static HashMap<String, Integer> langOrder;
 
-    public ArchiveInfo(IdentifierInfo inf) {
+    private ArchiveInfo(IdentifierInfo inf) {
         super();
         this.inf = inf;
         langOrder = new HashMap<>();
         langOrder.put("bo-x-ewts", 0);
         langOrder.put("bo", 1);
         langOrder.put("en", 2);
+    }
+
+    public static ArchiveInfo getInstance(IdentifierInfo inf) throws BDRCAPIException {
+        ArchiveInfo info = (ArchiveInfo) ServerCache.getObjectFromCache("default", inf.getIdentifier());
+        if (info == null) {
+            info = new ArchiveInfo(inf);
+            ServerCache.addToCache("default", inf.getIdentifier(), info);
+        }
+        return info;
     }
 
     private String getPrefLabel() throws ClientProtocolException, IOException {

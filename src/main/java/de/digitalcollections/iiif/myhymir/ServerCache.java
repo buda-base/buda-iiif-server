@@ -36,7 +36,7 @@ public class ServerCache {
 
     public static Object getObjectFromCache(String cacheName, String name) {
         CacheAccess<Object, Object> access = getCacheAccess(cacheName);
-        log.debug("Got " + access.get(name) + " with name :" + name + " from " + cacheName);
+        log.debug("Got " + access.get(name) + " with name : " + name + " from " + cacheName);
         return access.get(name);
     }
 
