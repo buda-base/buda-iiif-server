@@ -87,12 +87,10 @@ public class IdentifierInfo {
         String volumeId = identifier.split("::")[0];
         IdentifierInfo info = (IdentifierInfo) ServerCache.getObjectFromCache("identifier", "ID_" + volumeId);
         if (info != null) {
-            System.out.println("ID INFO FROM CACHE>>" + info);
             return info;
         } else {
             info = new IdentifierInfo(identifier);
             ServerCache.addToCache("identifier", "ID_" + volumeId, info);
-            System.out.println("ID INFO >>" + info);
             return info;
         }
     }
