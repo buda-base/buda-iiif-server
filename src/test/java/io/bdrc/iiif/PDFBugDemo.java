@@ -32,6 +32,9 @@ public class PDFBugDemo {
         PdfWriter writer = new PdfWriter("testPdfItext.pdf", new WriterProperties().setPdfVersion(PdfVersion.PDF_2_0));
         PdfDocument pdfDocument = new PdfDocument(writer);
         Document document = new Document(pdfDocument);
+        // This is the way to avoid image cropping (for some reasons default margins are
+        // not set to zero)
+        document.setMargins(0, 0, 0, 0);
         FileInputStream in = new FileInputStream("src/test/resources/test.tif");
         byte[] img = IOUtils.toByteArray(in);
         Image image = new Image(ImageDataFactory.create(img));
