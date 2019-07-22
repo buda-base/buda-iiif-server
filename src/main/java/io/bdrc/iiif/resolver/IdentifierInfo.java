@@ -30,6 +30,7 @@ public class IdentifierInfo {
     public String volumeId = "";
     public String imageList = "";
     public String imageId = "";
+    public String license = "";
     public String imageGroup;
     public boolean isChinaRestricted = false;
     public int totalPages = 0;
@@ -63,6 +64,7 @@ public class IdentifierInfo {
                 this.asset = parseValue(node.findValue("itemId"));
                 this.access = parseValue(node.findValue("access"));
                 this.imageList = parseValue(node.findValue("imageList"));
+                this.license = parseValue(node.findValue("license"));
                 this.imageGroup = parseValue(node.findValue("imageGroup"));
                 this.totalPages = Integer.parseInt(parseValue(node.findValue("totalPages")));
                 this.isChinaRestricted = Boolean.parseBoolean(parseValue(node.findValue("ric")));
@@ -113,6 +115,10 @@ public class IdentifierInfo {
 
     public boolean isChinaRestricted() {
         return isChinaRestricted;
+    }
+
+    public String getLicense() {
+        return license;
     }
 
     private void initFairUse() {

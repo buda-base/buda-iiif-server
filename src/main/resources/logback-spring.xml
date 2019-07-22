@@ -42,10 +42,7 @@
     </logger>
     <logger name="custom" level="info" additivity="true">
         <appender-ref ref="default" />
-    </logger>  
-    <logger name="custom1" level="info" additivity="true">
-        <appender-ref ref="default1" />
-    </logger>     
+    </logger>
   </springProfile>  
   <springProfile name="local">
     <appender name="default" class="ch.qos.logback.core.ConsoleAppender">

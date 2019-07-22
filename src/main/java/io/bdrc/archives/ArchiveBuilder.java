@@ -17,6 +17,7 @@ import javax.imageio.ImageIO;
 
 import org.apache.pdfbox.pdfwriter.COSWriter;
 import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDDocumentInformation;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
@@ -61,7 +62,8 @@ public class ArchiveBuilder {
             i += 1;
         }
         ServerCache.addToCache("pdfjobs", output, false);
-        PDDocument doc = new PDDocument();
+        PDDocument doc = preparePdfDocument(inf);
+        doc.setDocumentInformation(new ArchiveInfo(inf).getDocInformation());
         Application.perf.debug("building pdf writer and document opened {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
         for (int k = 1; k <= t_map.keySet().size(); k++) {
             Future<?> tmp = t_map.get(k);
@@ -150,6 +152,13 @@ public class ArchiveBuilder {
         Application.perf.debug("zip document finished and closed for {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
         ServerCache.addToCache(IIIF_ZIP, output.substring(3), baos.toByteArray());
         ServerCache.addToCache("zipjobs", output, true);
+    }
+
+    private static PDDocument preparePdfDocument(IdentifierInfo info) {
+        PDDocument doc = new PDDocument();
+        PDDocumentInformation docInf = new PDDocumentInformation();
+
+        return doc;
     }
 
     public static boolean isPdfDone(String id) {
