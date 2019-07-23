@@ -33,6 +33,7 @@ import de.digitalcollections.iiif.myhymir.ServerCache;
 import de.digitalcollections.iiif.myhymir.backend.impl.repository.S3ResourceRepositoryImpl;
 import io.bdrc.iiif.presentation.AppConstants;
 import io.bdrc.iiif.presentation.exceptions.BDRCAPIException;
+import io.bdrc.iiif.presentation.models.VolumeInfo;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 
 public class ArchiveBuilder {
@@ -45,7 +46,7 @@ public class ArchiveBuilder {
     public final static Logger log = LoggerFactory.getLogger(ArchiveBuilder.class.getName());
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
-    public static void buildPdf(Iterator<String> idList, IdentifierInfo inf, String output) throws BDRCAPIException, IOException {
+    public static void buildPdf(Iterator<String> idList, IdentifierInfo inf, String output, VolumeInfo vi) throws BDRCAPIException, IOException {
         long deb = System.currentTimeMillis();
         Application.perf.debug("Starting building pdf {}", inf.volumeId);
         ExecutorService service = Executors.newFixedThreadPool(50);
@@ -63,7 +64,7 @@ public class ArchiveBuilder {
         }
         ServerCache.addToCache("pdfjobs", output, false);
         PDDocument doc = preparePdfDocument(inf);
-        doc.setDocumentInformation(ArchiveInfo.getInstance(inf).getDocInformation());
+        doc.setDocumentInformation(ArchiveInfo.getInstance(inf, vi).getDocInformation());
         Application.perf.debug("building pdf writer and document opened {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
         for (int k = 1; k <= t_map.keySet().size(); k++) {
             Future<?> tmp = t_map.get(k);

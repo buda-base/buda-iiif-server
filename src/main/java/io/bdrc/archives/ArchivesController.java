@@ -110,7 +110,7 @@ public class ArchivesController {
                 log.debug("PDF " + id + " from IIIF cache >>" + pdf_cached);
                 if (pdf_cached == null) {
                     // Build pdf since the pdf file doesn't exist yet
-                    ArchiveBuilder.buildPdf(idIterator, inf, output);
+                    ArchiveBuilder.buildPdf(idIterator, inf, output, vi);
                 }
             }
             if (type.equals(ArchiveBuilder.ZIP_TYPE)) {
