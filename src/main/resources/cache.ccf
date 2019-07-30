@@ -132,3 +132,10 @@ jcs.region.iiifpres=
 jcs.region.iiifpres.cacheattributes=org.apache.commons.jcs.engine.CompositeCacheAttributes
 jcs.region.iiifpres.cacheattributes.MaxObjects=1000
 jcs.region.iiifpres.cacheattributes.MemoryCacheName=org.apache.commons.jcs.engine.memory.lru.LRUMemoryCache
+
+# DEFAULT IIIF REGION
+
+jcs.iiifpres=
+jcs.iiifpres.cacheattributes=org.apache.commons.jcs.engine.CompositeCacheAttributes
+jcs.iiifpres.cacheattributes.MaxObjects=1000
+jcs.iiifpres.cacheattributes.MemoryCacheName=org.apache.commons.jcs.engine.memory.lru.LRUMemoryCache
