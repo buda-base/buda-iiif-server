@@ -98,11 +98,16 @@ public class ArchivesController {
                 return new ResponseEntity<>("Insufficient rights", HttpStatus.FORBIDDEN);
             }
             Iterator<String> idIterator = null;
+            int introPages = vi.getPagesIntroTbrc().intValue();
             if (accValidation.isFairUse()) {
                 idIterator = getFairUseImgListIterator(bPage, ePage, vi);
                 output = idf.getVolumeId() + "FAIR_USE:" + bPage + "-" + ePage;// +"."+type;
             } else {
-                idIterator = vi.getImageListIterator(bPage, ePage);
+                if (introPages > 0) {
+                    idIterator = vi.getImageListIterator(bPage + introPages, ePage);
+                } else {
+                    idIterator = vi.getImageListIterator(bPage, ePage);
+                }
                 output = idf.getVolumeId() + ":" + bPage + "-" + ePage;// +"."+type;
             }
             if (type.equals(ArchiveBuilder.PDF_TYPE)) {
@@ -230,7 +235,13 @@ public class ArchivesController {
     private Iterator<String> getFairUseImgListIterator(int bPage, int ePage, VolumeInfo vi) {
         ArrayList<String> img = new ArrayList<>();
         int x = 0;
-        ImageListIterator it1 = new ImageListIterator(vi.getImageList(), bPage, 20);
+        int introPages = vi.getPagesIntroTbrc().intValue();
+        ImageListIterator it1 = null;
+        if (bPage == 1 && introPages > 0) {
+            it1 = new ImageListIterator(vi.getImageList(), bPage + introPages, 20 + introPages);
+        } else {
+            it1 = new ImageListIterator(vi.getImageList(), bPage, 20);
+        }
         while (it1.hasNext()) {
             img.add(x, it1.next());
             x++;
