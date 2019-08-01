@@ -12,7 +12,7 @@ import com.maxmind.geoip2.exception.GeoIp2Exception;
 import com.maxmind.geoip2.model.CountryResponse;
 
 import io.bdrc.auth.AuthProps;
-import io.bdrc.iiif.presentation.exceptions.BDRCAPIException;
+import io.bdrc.iiif.exceptions.IIIFException;
 
 public class GeoLocation {
 
@@ -33,7 +33,7 @@ public class GeoLocation {
             custom.info("IP = {}", ipAddress);
             CountryResponse response = dbReader.country(ipAddress);
             return response.getCountry().getName();
-        } catch (IOException | BDRCAPIException | GeoIp2Exception e) {
+        } catch (IOException | IIIFException | GeoIp2Exception e) {
             custom.info("GeoLocation exception {}", e.getMessage());
             e.printStackTrace();
             return null;

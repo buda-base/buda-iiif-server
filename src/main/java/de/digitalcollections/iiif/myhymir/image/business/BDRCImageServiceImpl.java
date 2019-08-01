@@ -58,7 +58,7 @@ import de.digitalcollections.iiif.myhymir.Application;
 import de.digitalcollections.iiif.myhymir.ServerCache;
 import de.digitalcollections.turbojpeg.imageio.TurboJpegImageReadParam;
 import de.digitalcollections.turbojpeg.imageio.TurboJpegImageReader;
-import io.bdrc.iiif.presentation.exceptions.BDRCAPIException;
+import io.bdrc.iiif.exceptions.IIIFException;
 
 @Service
 @Primary
@@ -166,7 +166,7 @@ public class BDRCImageServiceImpl implements ImageService {
     /**
      * Try to obtain a {@link ImageReader} for a given identifier
      * 
-     * @throws BDRCAPIException
+     * @throws IIIFException
      **/
     private ImageReader getReader(String identifier) throws ResourceNotFoundException, UnsupportedFormatException, IOException {
         long deb = System.currentTimeMillis();
@@ -191,7 +191,7 @@ public class BDRCImageServiceImpl implements ImageService {
             InputStream S3input = resourceService.getInputStream((S3Resource) res);
             try {
                 ServerCache.addToCache(IIIF_IMG, identifier, IOUtils.toByteArray(S3input));
-            } catch (BDRCAPIException e) {
+            } catch (IIIFException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }

@@ -17,7 +17,6 @@ import javax.imageio.ImageIO;
 
 import org.apache.pdfbox.pdfwriter.COSWriter;
 import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.pdmodel.PDDocumentInformation;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
@@ -31,9 +30,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import de.digitalcollections.iiif.myhymir.Application;
 import de.digitalcollections.iiif.myhymir.ServerCache;
 import de.digitalcollections.iiif.myhymir.backend.impl.repository.S3ResourceRepositoryImpl;
-import io.bdrc.iiif.presentation.AppConstants;
-import io.bdrc.iiif.presentation.exceptions.BDRCAPIException;
-import io.bdrc.iiif.presentation.models.VolumeInfo;
+import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 
 public class ArchiveBuilder {
@@ -46,7 +43,7 @@ public class ArchiveBuilder {
     public final static Logger log = LoggerFactory.getLogger(ArchiveBuilder.class.getName());
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
-    public static void buildPdf(Iterator<String> idList, IdentifierInfo inf, String output, VolumeInfo vi) throws BDRCAPIException, IOException {
+    public static void buildPdf(Iterator<String> idList, IdentifierInfo inf, String output) throws IIIFException, IOException {
         long deb = System.currentTimeMillis();
         Application.perf.debug("Starting building pdf {}", inf.volumeId);
         ExecutorService service = Executors.newFixedThreadPool(50);
@@ -63,8 +60,9 @@ public class ArchiveBuilder {
             i += 1;
         }
         ServerCache.addToCache("pdfjobs", output, false);
-        PDDocument doc = preparePdfDocument(inf);
-        doc.setDocumentInformation(ArchiveInfo.getInstance(inf, vi).getDocInformation());
+        PDDocument doc = new PDDocument();
+        ;
+        doc.setDocumentInformation(ArchiveInfo.getInstance(inf).getDocInformation());
         Application.perf.debug("building pdf writer and document opened {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
         for (int k = 1; k <= t_map.keySet().size(); k++) {
             Future<?> tmp = t_map.get(k);
@@ -87,7 +85,7 @@ public class ArchiveBuilder {
                 contents.drawImage(pdImage, 0, 0);
                 contents.close();
             } catch (ExecutionException | InterruptedException e) {
-                throw new BDRCAPIException(500, AppConstants.GENERIC_APP_ERROR_CODE, e);
+                throw new IIIFException(500, IIIFException.GENERIC_APP_ERROR_CODE, e);
             }
         }
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -101,7 +99,7 @@ public class ArchiveBuilder {
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public static void buildZip(Iterator<String> idList, IdentifierInfo inf, String output) throws BDRCAPIException {
+    public static void buildZip(Iterator<String> idList, IdentifierInfo inf, String output) throws IIIFException {
         long deb = System.currentTimeMillis();
         Application.perf.debug("Starting building zip {}", inf.volumeId);
         ExecutorService service = Executors.newFixedThreadPool(50);
@@ -148,18 +146,11 @@ public class ArchiveBuilder {
             }
             zipOut.close();
         } catch (IOException | ExecutionException | InterruptedException e) {
-            throw new BDRCAPIException(500, AppConstants.GENERIC_APP_ERROR_CODE, e);
+            throw new IIIFException(500, IIIFException.GENERIC_APP_ERROR_CODE, e);
         }
         Application.perf.debug("zip document finished and closed for {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
         ServerCache.addToCache(IIIF_ZIP, output.substring(3), baos.toByteArray());
         ServerCache.addToCache("zipjobs", output, true);
-    }
-
-    private static PDDocument preparePdfDocument(IdentifierInfo info) {
-        PDDocument doc = new PDDocument();
-        PDDocumentInformation docInf = new PDDocumentInformation();
-
-        return doc;
     }
 
     public static boolean isPdfDone(String id) {

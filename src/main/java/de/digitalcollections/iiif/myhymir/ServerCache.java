@@ -6,8 +6,7 @@ import org.apache.commons.jcs.access.exception.CacheException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.bdrc.iiif.presentation.AppConstants;
-import io.bdrc.iiif.presentation.exceptions.BDRCAPIException;
+import io.bdrc.iiif.exceptions.IIIFException;
 
 public class ServerCache {
 
@@ -22,7 +21,7 @@ public class ServerCache {
     private static final CacheAccess<Object, Object> DEFAULT = JCS.getInstance("default");
     private static final CacheAccess<Object, Object> IDENTIFIER = JCS.getInstance("identifier");
 
-    public static void addToCache(String cacheName, String name, Object res) throws BDRCAPIException {
+    public static void addToCache(String cacheName, String name, Object res) throws IIIFException {
         try {
             CacheAccess<Object, Object> access = getCacheAccess(cacheName);
             log.debug("Added " + res + " name :" + name + " to " + cacheName);
@@ -30,7 +29,7 @@ public class ServerCache {
             res = null;
         } catch (CacheException e) {
             log.error("Problem putting object -->" + name + " in the cache >> " + cacheName + " Exception: " + e.getMessage());
-            throw new BDRCAPIException(500, AppConstants.GENERIC_APP_ERROR_CODE, e);
+            throw new IIIFException(500, IIIFException.GENERIC_APP_ERROR_CODE, e);
         }
     }
 

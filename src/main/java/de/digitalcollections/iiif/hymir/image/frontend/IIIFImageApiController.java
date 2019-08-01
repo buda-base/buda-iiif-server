@@ -55,8 +55,7 @@ import io.bdrc.auth.Access;
 import io.bdrc.auth.AuthProps;
 import io.bdrc.auth.TokenValidation;
 import io.bdrc.iiif.auth.AuthServiceInfo;
-import io.bdrc.iiif.presentation.ServiceCache;
-import io.bdrc.iiif.presentation.exceptions.BDRCAPIException;
+import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 
 @Controller
@@ -151,7 +150,7 @@ public class IIIFImageApiController {
     @RequestMapping(value = "/clearcache", method = RequestMethod.POST)
     ResponseEntity<String> clearCache(HttpServletRequest req, HttpServletResponse response) {
         ResponseEntity<String> resp = null;
-        if (ServerCache.clearCache() && ServiceCache.clearCache()) {
+        if (ServerCache.clearCache()) {
             resp = new ResponseEntity<>("OK", HttpStatus.OK);
         } else {
             resp = new ResponseEntity<>("ERROR", HttpStatus.OK);
@@ -162,7 +161,7 @@ public class IIIFImageApiController {
     @RequestMapping(value = "{identifier}/{region}/{size}/{rotation}/{quality}.{format}")
     public ResponseEntity<byte[]> getImageRepresentation(@PathVariable String identifier, @PathVariable String region, @PathVariable String size, @PathVariable String rotation, @PathVariable String quality, @PathVariable String format,
             HttpServletRequest request, HttpServletResponse response, WebRequest webRequest)
-            throws ClientProtocolException, IOException, ResourceNotFoundException, BDRCAPIException, InvalidParametersException, UnsupportedOperationException, UnsupportedFormatException {
+            throws ClientProtocolException, IOException, ResourceNotFoundException, IIIFException, InvalidParametersException, UnsupportedOperationException, UnsupportedFormatException {
         long deb = System.currentTimeMillis();
         boolean staticImg = false;
         String img = "";

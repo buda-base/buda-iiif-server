@@ -10,7 +10,7 @@ import java.util.List;
 
 import org.junit.Test;
 
-import io.bdrc.iiif.presentation.models.ImageListIterator;
+import io.bdrc.libraries.ImageListIterator;
 
 public class ImageListIteratorTest {
 

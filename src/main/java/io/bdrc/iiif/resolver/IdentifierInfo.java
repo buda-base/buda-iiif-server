@@ -2,6 +2,7 @@ package io.bdrc.iiif.resolver;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Iterator;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
@@ -18,8 +19,8 @@ import de.digitalcollections.iiif.hymir.model.exception.ResourceNotFoundExceptio
 import de.digitalcollections.iiif.myhymir.Application;
 import de.digitalcollections.iiif.myhymir.ServerCache;
 import io.bdrc.auth.rdf.RdfConstants;
-import io.bdrc.iiif.presentation.exceptions.BDRCAPIException;
-import io.bdrc.iiif.presentation.models.ImageListIterator;
+import io.bdrc.iiif.exceptions.IIIFException;
+import io.bdrc.libraries.ImageListIterator;
 
 public class IdentifierInfo {
 
@@ -32,13 +33,17 @@ public class IdentifierInfo {
     public String imageId = "";
     public String license = "";
     public String imageGroup;
+    public int volumeNumber;
+    public int pagesIntroTbrc;
     public boolean isChinaRestricted = false;
     public int totalPages = 0;
     private HashMap<String, Class<Void>> fair_use;
 
     @SuppressWarnings("unchecked")
     public IdentifierInfo(String identifier) throws ClientProtocolException, IOException, ResourceNotFoundException {
+
         this.identifier = identifier;
+
         long deb = System.currentTimeMillis();
         Application.perf.debug("Creating ldspdi connexion " + identifier + " at " + System.currentTimeMillis());
         HttpClient httpClient = HttpClientBuilder.create().build();
@@ -48,6 +53,7 @@ public class IdentifierInfo {
         if (identifier.split("::").length > 1) {
             this.imageId = identifier.split("::")[1];
         }
+
         HttpPost request = new HttpPost("http://purl.bdrc.io/query/table/IIIFPres_volumeInfo");
         object.put("R_RES", volumeId);
         String message = object.toString();
@@ -67,6 +73,8 @@ public class IdentifierInfo {
                 this.license = parseValue(node.findValue("license"));
                 this.imageGroup = parseValue(node.findValue("imageGroup"));
                 this.totalPages = Integer.parseInt(parseValue(node.findValue("totalPages")));
+                this.volumeNumber = Integer.parseInt(parseValue(node.findValue("volumeNumber")));
+                this.pagesIntroTbrc = Integer.parseInt(parseValue(node.findValue("pagesIntroTbrc")));
                 this.isChinaRestricted = Boolean.parseBoolean(parseValue(node.findValue("ric")));
             } else {
                 throw new ResourceNotFoundException();
@@ -83,8 +91,9 @@ public class IdentifierInfo {
         return n.findValue("value").textValue();
     }
 
-    public static IdentifierInfo getIndentifierInfo(String identifier) throws ClientProtocolException, IOException, ResourceNotFoundException, BDRCAPIException {
+    public static IdentifierInfo getIndentifierInfo(String identifier) throws ClientProtocolException, IOException, ResourceNotFoundException, IIIFException {
         String volumeId = identifier.split("::")[0];
+        System.out.println("ID INFO vol Id>>" + volumeId);
         IdentifierInfo info = (IdentifierInfo) ServerCache.getObjectFromCache("identifier", "ID_" + volumeId);
         if (info != null) {
             return info;
@@ -93,6 +102,14 @@ public class IdentifierInfo {
             ServerCache.addToCache("identifier", "ID_" + volumeId, info);
             return info;
         }
+    }
+
+    public int getVolumeNumber() {
+        return volumeNumber;
+    }
+
+    public void setVolumeNumber(int volumeNumber) {
+        this.volumeNumber = volumeNumber;
     }
 
     public String getImageGroup() {
@@ -198,6 +215,22 @@ public class IdentifierInfo {
         return access;
     }
 
+    public int getPagesIntroTbrc() {
+        return pagesIntroTbrc;
+    }
+
+    public void setPagesIntroTbrc(int pagesIntroTbrc) {
+        this.pagesIntroTbrc = pagesIntroTbrc;
+    }
+
+    public void setLicense(String license) {
+        this.license = license;
+    }
+
+    public void setChinaRestricted(boolean isChinaRestricted) {
+        this.isChinaRestricted = isChinaRestricted;
+    }
+
     public String getAccessShortName() {
         return access.substring(access.lastIndexOf('/') + 1);
     }
@@ -208,6 +241,10 @@ public class IdentifierInfo {
 
     public String getVolumeId() {
         return volumeId;
+    }
+
+    public Iterator<String> getImageListIterator(int beginIdx, int endIdx) {
+        return new ImageListIterator(getImageList(), beginIdx, endIdx);
     }
 
     @Override

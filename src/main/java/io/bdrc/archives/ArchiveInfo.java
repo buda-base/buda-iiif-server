@@ -15,8 +15,7 @@ import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
 
 import de.digitalcollections.iiif.myhymir.ServerCache;
-import io.bdrc.iiif.presentation.exceptions.BDRCAPIException;
-import io.bdrc.iiif.presentation.models.VolumeInfo;
+import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 
 public class ArchiveInfo {
@@ -31,14 +30,13 @@ public class ArchiveInfo {
     public static Property PUBLISHER_NAME = ResourceFactory.createProperty("http://purl.bdrc.io/ontology/core/workPublisherName");
 
     IdentifierInfo inf;
-    VolumeInfo vi;
     Model m;
     static HashMap<String, Integer> langOrder;
 
-    private ArchiveInfo(IdentifierInfo inf, VolumeInfo vi) {
+    private ArchiveInfo(IdentifierInfo inf) {
         super();
         this.inf = inf;
-        this.vi = vi;
+
         langOrder = new HashMap<>();
         langOrder.put("bo-x-ewts", 0);
         langOrder.put("bo", 1);
@@ -47,11 +45,11 @@ public class ArchiveInfo {
         m.read(inf.getWork() + ".ttl", "TURTLE");
     }
 
-    public static ArchiveInfo getInstance(IdentifierInfo inf, VolumeInfo vi) throws BDRCAPIException {
-        ArchiveInfo info = (ArchiveInfo) ServerCache.getObjectFromCache("default", inf.getIdentifier());
+    public static ArchiveInfo getInstance(IdentifierInfo inf) throws IIIFException {
+        ArchiveInfo info = (ArchiveInfo) ServerCache.getObjectFromCache("default", inf.getVolumeId());
         if (info == null) {
-            info = new ArchiveInfo(inf, vi);
-            ServerCache.addToCache("default", inf.getIdentifier(), info);
+            info = new ArchiveInfo(inf);
+            ServerCache.addToCache("default", inf.getVolumeId(), info);
         }
         return info;
     }
@@ -177,7 +175,7 @@ public class ArchiveInfo {
         docInf.setCustomMetadataValue("Bibliographical note", getBiblioNote());
         docInf.setCustomMetadataValue("Catalog info", getCatalogInfo());
         docInf.setCustomMetadataValue("Number of volumes", getNumVolumes());
-        docInf.setCustomMetadataValue("Volume number", vi.volumeNumber.toString());
+        docInf.setCustomMetadataValue("Volume number", Integer.toString(inf.getVolumeNumber()));
         docInf.setCustomMetadataValue("Publisher name", getPublisherName());
         docInf.setCustomMetadataValue("Publisher location", getPublisherLocation());
         docInf.setTitle(getPrefLabel());

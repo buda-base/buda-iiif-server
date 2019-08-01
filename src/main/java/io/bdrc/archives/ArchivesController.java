@@ -12,6 +12,7 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.text.StringSubstitutor;
+import org.apache.http.client.ClientProtocolException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ByteArrayResource;
@@ -26,19 +27,14 @@ import org.springframework.web.bind.annotation.RequestMethod;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import de.digitalcollections.iiif.hymir.model.exception.ResourceNotFoundException;
 import de.digitalcollections.iiif.myhymir.ResourceAccessValidation;
 import de.digitalcollections.iiif.myhymir.ServerCache;
 import io.bdrc.auth.Access;
-import io.bdrc.iiif.presentation.ItemInfoService;
-import io.bdrc.iiif.presentation.VolumeInfoService;
-import io.bdrc.iiif.presentation.exceptions.BDRCAPIException;
-import io.bdrc.iiif.presentation.models.AccessType;
-import io.bdrc.iiif.presentation.models.Identifier;
-import io.bdrc.iiif.presentation.models.ImageListIterator;
-import io.bdrc.iiif.presentation.models.ItemInfo;
-import io.bdrc.iiif.presentation.models.ItemInfo.VolumeInfoSmall;
-import io.bdrc.iiif.presentation.models.VolumeInfo;
+import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.iiif.resolver.IdentifierInfo;
+import io.bdrc.libraries.Identifier;
+import io.bdrc.libraries.ImageListIterator;
 
 @Controller
 public class ArchivesController {
@@ -63,14 +59,12 @@ public class ArchivesController {
         HashMap<String, HashMap<String, String>> jsonMap = new HashMap<>();
         StringSubstitutor s = null;
         String html = "";
-        AccessType access = null;
         int subType = idf.getSubType();
         switch (subType) {
         // Case work item
         case 4:
-            ItemInfo item = ItemInfoService.getItemInfo(idf.getItemId());
-            access = item.access;
-            if (!acc.hasResourceAccess(getShortName(access.getUri()))) {
+            PdfItemInfo item = PdfItemInfo.getPdfItemInfo(idf.getItemId());
+            if (!acc.hasResourceAccess(item.getItemAccess())) {
                 return new ResponseEntity<>("Insufficient rights", HttpStatus.FORBIDDEN);
             }
             if (json) {
@@ -90,23 +84,21 @@ public class ArchivesController {
             int bPage = idf.getBPageNum().intValue();
             int ePage = idf.getEPageNum().intValue();
             IdentifierInfo inf = IdentifierInfo.getIndentifierInfo(idf.getVolumeId());
-            VolumeInfo vi = VolumeInfoService.getVolumeInfo(idf.getVolumeId(), false);
-            access = vi.getAccess();
-            String accessType = getShortName(access.getUri());
+            String accessType = inf.getAccessShortName();
             ResourceAccessValidation accValidation = new ResourceAccessValidation((Access) request.getAttribute("access"), accessType);
             if (!accValidation.isAccessible(request)) {
                 return new ResponseEntity<>("Insufficient rights", HttpStatus.FORBIDDEN);
             }
             Iterator<String> idIterator = null;
-            int introPages = vi.getPagesIntroTbrc().intValue();
+            int introPages = inf.getPagesIntroTbrc();
             if (accValidation.isFairUse()) {
-                idIterator = getFairUseImgListIterator(bPage, ePage, vi);
+                idIterator = getFairUseImgListIterator(bPage, ePage, inf);
                 output = idf.getVolumeId() + "FAIR_USE:" + bPage + "-" + ePage;// +"."+type;
             } else {
                 if (introPages > 0) {
-                    idIterator = vi.getImageListIterator(bPage + introPages, ePage);
+                    idIterator = inf.getImageListIterator(bPage + introPages, ePage);
                 } else {
-                    idIterator = vi.getImageListIterator(bPage, ePage);
+                    idIterator = inf.getImageListIterator(bPage, ePage);
                 }
                 output = idf.getVolumeId() + ":" + bPage + "-" + ePage;// +"."+type;
             }
@@ -115,7 +107,7 @@ public class ArchivesController {
                 log.debug("PDF " + id + " from IIIF cache >>" + pdf_cached);
                 if (pdf_cached == null) {
                     // Build pdf since the pdf file doesn't exist yet
-                    ArchiveBuilder.buildPdf(idIterator, inf, output, vi);
+                    ArchiveBuilder.buildPdf(idIterator, inf, output);
                 }
             }
             if (type.equals(ArchiveBuilder.ZIP_TYPE)) {
@@ -204,26 +196,28 @@ public class ArchivesController {
         return sb.toString();
     }
 
-    public String getVolumeDownLoadLinks(ItemInfo item, Identifier idf, String type) throws BDRCAPIException {
+    public String getVolumeDownLoadLinks(PdfItemInfo item, Identifier idf, String type) throws ClientProtocolException, IOException, ResourceNotFoundException, IIIFException {
         String links = "";
-        List<VolumeInfoSmall> vlist = item.volumes;
-        for (VolumeInfoSmall vis : vlist) {
-            VolumeInfo vi = VolumeInfoService.getVolumeInfo(vis.prefixedId, false);
-            links = links + "<a type=\"application/" + type + "\" href=\"/download/" + type + "/v:" + vis.prefixedId + "::1-" + vi.totalPages + "\">Vol." + vis.volumeNumber + " (" + vi.totalPages + " pages) - " + vis.prefixedId + "." + type
-                    + "</a><br/>";
+        List<String> vlist = item.getItemVolumes();
+        for (String s : vlist) {
+            String shortName = getShortName(s);
+            IdentifierInfo vi = IdentifierInfo.getIndentifierInfo("bdr:" + shortName);
+            links = links + "<a type=\"application/" + type + "\" href=\"/download/" + type + "/v:" + "bdr:" + shortName + "::1-" + vi.getTotalPages() + "\">Vol." + vi.getVolumeNumber() + " (" + vi.getTotalPages() + " pages) - " + "bdr:" + shortName
+                    + "." + type + "</a><br/>";
         }
         return links;
     }
 
-    public HashMap<String, HashMap<String, String>> getJsonVolumeLinks(ItemInfo item, String type) throws BDRCAPIException {
+    public HashMap<String, HashMap<String, String>> getJsonVolumeLinks(PdfItemInfo item, String type) throws ClientProtocolException, IOException, ResourceNotFoundException, IIIFException {
         HashMap<String, HashMap<String, String>> map = new HashMap<>();
-        List<VolumeInfoSmall> vlist = item.volumes;
-        for (VolumeInfoSmall vis : vlist) {
-            VolumeInfo vi = VolumeInfoService.getVolumeInfo(vis.prefixedId, false);
+        List<String> vlist = item.getItemVolumes();
+        for (String s : vlist) {
+            String shortName = getShortName(s);
+            IdentifierInfo vi = IdentifierInfo.getIndentifierInfo("bdr:" + shortName);
             HashMap<String, String> vol = new HashMap<>();
-            vol.put("link", "/download/" + type + "/v:" + vis.prefixedId + "::1-" + vi.totalPages);
-            vol.put("volume", vis.volumeNumber.toString());
-            map.put(vis.prefixedId, vol);
+            vol.put("link", "/download/" + type + "/v:" + "bdr:" + shortName + "::1-" + vi.getTotalPages());
+            vol.put("volume", Integer.toString(vi.getVolumeNumber()));
+            map.put("bdr:" + shortName, vol);
         }
         return map;
     }
@@ -232,21 +226,21 @@ public class ArchivesController {
         return st.substring(st.lastIndexOf("/") + 1);
     }
 
-    private Iterator<String> getFairUseImgListIterator(int bPage, int ePage, VolumeInfo vi) {
+    private Iterator<String> getFairUseImgListIterator(int bPage, int ePage, IdentifierInfo inf) {
         ArrayList<String> img = new ArrayList<>();
         int x = 0;
-        int introPages = vi.getPagesIntroTbrc().intValue();
+        int introPages = inf.getPagesIntroTbrc();
         ImageListIterator it1 = null;
         if (bPage == 1 && introPages > 0) {
-            it1 = new ImageListIterator(vi.getImageList(), bPage + introPages, 20 + introPages);
+            it1 = new ImageListIterator(inf.getImageList(), bPage + introPages, 20 + introPages);
         } else {
-            it1 = new ImageListIterator(vi.getImageList(), bPage, 20);
+            it1 = new ImageListIterator(inf.getImageList(), bPage, 20);
         }
         while (it1.hasNext()) {
             img.add(x, it1.next());
             x++;
         }
-        ImageListIterator it2 = new ImageListIterator(vi.getImageList(), vi.getTotalPages().intValue() - 19, ePage);
+        ImageListIterator it2 = new ImageListIterator(inf.getImageList(), inf.getTotalPages() - 19, ePage);
         while (it2.hasNext()) {
             img.add(x, it2.next());
             x++;

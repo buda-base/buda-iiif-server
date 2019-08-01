@@ -69,7 +69,7 @@
     <dependency>
       <groupId>io.bdrc.libraries</groupId>
       <artifactId>bdrc-libraries</artifactId>
-      <version>0.4.6</version>
+      <version>0.4.7</version>
     </dependency>
     <!-- https://mvnrepository.com/artifact/de.digitalcollections.imageio/imageio-turbojpeg -->
     <dependency>

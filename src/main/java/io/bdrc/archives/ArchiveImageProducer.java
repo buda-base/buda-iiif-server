@@ -22,8 +22,7 @@ import com.amazonaws.services.s3.model.GetObjectRequest;
 
 import de.digitalcollections.core.model.api.resource.exceptions.ResourceIOException;
 import de.digitalcollections.iiif.myhymir.ServerCache;
-import io.bdrc.iiif.presentation.AppConstants;
-import io.bdrc.iiif.presentation.exceptions.BDRCAPIException;
+import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.iiif.resolver.BdrcS3Resolver;
 
 @SuppressWarnings("rawtypes")
@@ -40,7 +39,7 @@ public class ArchiveImageProducer implements Callable {
     Dimension d;
     boolean isTiff = false;
 
-    public ArchiveImageProducer(AmazonS3 s3, String id, String archiveType) throws BDRCAPIException {
+    public ArchiveImageProducer(AmazonS3 s3, String id, String archiveType) throws IIIFException {
         this.s3 = s3;
         this.id = id;
         this.archiveType = archiveType;
@@ -52,11 +51,11 @@ public class ArchiveImageProducer implements Callable {
                 isTiff = true;
             }
         } catch (ResourceIOException e) {
-            throw new BDRCAPIException(500, AppConstants.GENERIC_APP_ERROR_CODE, e);
+            throw new IIIFException(500, IIIFException.GENERIC_APP_ERROR_CODE, e);
         }
     }
 
-    public BufferedImage getBufferedPdfImage() throws MalformedURLException, IOException, BDRCAPIException {
+    public BufferedImage getBufferedPdfImage() throws MalformedURLException, IOException, IIIFException {
         byte[] imgbytes = (byte[]) ServerCache.getObjectFromCache(IIIF_IMG, id);
         if (imgbytes != null) {
             InputStream in = new ByteArrayInputStream(imgbytes);
@@ -74,7 +73,7 @@ public class ArchiveImageProducer implements Callable {
         return bImg;
     }
 
-    public byte[] getImageAsBytes() throws MalformedURLException, IOException, BDRCAPIException {
+    public byte[] getImageAsBytes() throws MalformedURLException, IOException, IIIFException {
         byte[] imgbytes = (byte[]) ServerCache.getObjectFromCache(IIIF_IMG, id);
         if (imgbytes != null) {
             InputStream in = new ByteArrayInputStream(imgbytes);
@@ -109,7 +108,7 @@ public class ArchiveImageProducer implements Callable {
     }
 
     @Override
-    public Object call() throws BDRCAPIException {
+    public Object call() throws IIIFException {
         try {
             if (archiveType.equals(ArchiveBuilder.PDF_TYPE)) {
                 return getBufferedPdfImage();
@@ -119,7 +118,7 @@ public class ArchiveImageProducer implements Callable {
             }
             return null;
         } catch (IOException e) {
-            throw new BDRCAPIException(500, AppConstants.GENERIC_APP_ERROR_CODE, e);
+            throw new IIIFException(500, IIIFException.GENERIC_APP_ERROR_CODE, e);
         }
     }
 
