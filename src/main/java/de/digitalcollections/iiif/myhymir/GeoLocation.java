@@ -22,6 +22,7 @@ public class GeoLocation {
     public static final Logger custom = LoggerFactory.getLogger("custom");
 
     public static String getCountryName(String ip) {
+        InetAddress ipAddress = null;
         try {
             dbReader = (DatabaseReader) ServerCache.getObjectFromCache("info", GEO_CACHE_KEY);
             if (dbReader == null) {
@@ -29,13 +30,15 @@ public class GeoLocation {
                 dbReader = new DatabaseReader.Builder(database).build();
                 ServerCache.addToCache("info", GEO_CACHE_KEY, dbReader);
             }
-            InetAddress ipAddress = InetAddress.getByName(ip);
+            ipAddress = InetAddress.getByName(ip);
             custom.info("IP = {}", ipAddress);
             CountryResponse response = dbReader.country(ipAddress);
             return response.getCountry().getName();
         } catch (IOException | IIIFException | GeoIp2Exception e) {
             custom.info("GeoLocation exception {}", e.getMessage());
-            e.printStackTrace();
+            if (!ipAddress.toString().contains("127.0.0.1")) {
+                e.printStackTrace();
+            }
             return null;
         }
     }

@@ -39,7 +39,6 @@ import de.digitalcollections.core.model.api.MimeType;
 import de.digitalcollections.core.model.api.resource.enums.ResourcePersistenceType;
 import de.digitalcollections.core.model.impl.resource.S3Resource;
 import de.digitalcollections.iiif.hymir.model.exception.InvalidParametersException;
-import de.digitalcollections.iiif.hymir.model.exception.ResourceNotFoundException;
 import de.digitalcollections.iiif.hymir.model.exception.UnsupportedFormatException;
 import de.digitalcollections.iiif.model.PropertyValue;
 import de.digitalcollections.iiif.model.image.ImageApiProfile;
@@ -51,6 +50,7 @@ import de.digitalcollections.iiif.myhymir.Application;
 import de.digitalcollections.iiif.myhymir.ResourceAccessValidation;
 import de.digitalcollections.iiif.myhymir.ServerCache;
 import de.digitalcollections.iiif.myhymir.image.business.BDRCImageServiceImpl;
+import de.digitalcollections.model.api.identifiable.resource.exceptions.ResourceNotFoundException;
 import io.bdrc.auth.Access;
 import io.bdrc.auth.AuthProps;
 import io.bdrc.auth.TokenValidation;
@@ -161,7 +161,7 @@ public class IIIFImageApiController {
     @RequestMapping(value = "{identifier}/{region}/{size}/{rotation}/{quality}.{format}")
     public ResponseEntity<byte[]> getImageRepresentation(@PathVariable String identifier, @PathVariable String region, @PathVariable String size, @PathVariable String rotation, @PathVariable String quality, @PathVariable String format,
             HttpServletRequest request, HttpServletResponse response, WebRequest webRequest)
-            throws ClientProtocolException, IOException, ResourceNotFoundException, IIIFException, InvalidParametersException, UnsupportedOperationException, UnsupportedFormatException {
+            throws ClientProtocolException, IOException, IIIFException, InvalidParametersException, UnsupportedOperationException, UnsupportedFormatException, ResourceNotFoundException {
         long deb = System.currentTimeMillis();
         boolean staticImg = false;
         String img = "";
@@ -208,12 +208,14 @@ public class IIIFImageApiController {
         // Now a shortcut:
         if (!BDRCImageServiceImpl.requestDiffersFromOriginal(identifier, selector)) {
             // let's get our hands dirty
+            System.out.println("RESOURCE SERVICE >>" + resourceService);
             final S3Resource res = (S3Resource) resourceService.get(identifier, ResourcePersistenceType.RESOLVED, MimeType.MIME_IMAGE);
             if (staticImg) {
                 res.setStatic(true);
             }
             byte[] osbytes = (byte[]) ServerCache.getObjectFromCache(IIIF_IMG, identifier);
             if (osbytes == null) {
+                System.out.println("RESOURCE SERVICE >>" + resourceService);
                 final InputStream input = resourceService.getInputStream(res);
                 Application.perf.debug("got the S3 inputstream in {} ms for {}", (System.currentTimeMillis() - deb1), identifier);
                 osbytes = StreamUtils.copyToByteArray(input);

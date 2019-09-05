@@ -27,7 +27,6 @@ import org.springframework.web.bind.annotation.RequestMethod;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import de.digitalcollections.iiif.hymir.model.exception.ResourceNotFoundException;
 import de.digitalcollections.iiif.myhymir.ResourceAccessValidation;
 import de.digitalcollections.iiif.myhymir.ServerCache;
 import io.bdrc.auth.Access;
@@ -196,7 +195,7 @@ public class ArchivesController {
         return sb.toString();
     }
 
-    public String getVolumeDownLoadLinks(PdfItemInfo item, Identifier idf, String type) throws ClientProtocolException, IOException, ResourceNotFoundException, IIIFException {
+    public String getVolumeDownLoadLinks(PdfItemInfo item, Identifier idf, String type) throws ClientProtocolException, IOException, IIIFException {
         String links = "";
         List<String> vlist = item.getItemVolumes();
         for (String s : vlist) {
@@ -208,7 +207,7 @@ public class ArchivesController {
         return links;
     }
 
-    public HashMap<String, HashMap<String, String>> getJsonVolumeLinks(PdfItemInfo item, String type) throws ClientProtocolException, IOException, ResourceNotFoundException, IIIFException {
+    public HashMap<String, HashMap<String, String>> getJsonVolumeLinks(PdfItemInfo item, String type) throws ClientProtocolException, IOException, IIIFException {
         HashMap<String, HashMap<String, String>> map = new HashMap<>();
         List<String> vlist = item.getItemVolumes();
         for (String s : vlist) {

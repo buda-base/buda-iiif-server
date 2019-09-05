@@ -15,7 +15,6 @@ import org.json.simple.JSONObject;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import de.digitalcollections.iiif.hymir.model.exception.ResourceNotFoundException;
 import de.digitalcollections.iiif.myhymir.Application;
 import de.digitalcollections.iiif.myhymir.ServerCache;
 import io.bdrc.auth.rdf.RdfConstants;
@@ -40,7 +39,7 @@ public class IdentifierInfo {
     private HashMap<String, Class<Void>> fair_use;
 
     @SuppressWarnings("unchecked")
-    public IdentifierInfo(String identifier) throws ClientProtocolException, IOException, ResourceNotFoundException {
+    public IdentifierInfo(String identifier) throws ClientProtocolException, IOException, IIIFException {
 
         this.identifier = identifier;
 
@@ -77,10 +76,10 @@ public class IdentifierInfo {
                 this.pagesIntroTbrc = Integer.parseInt(parseValue(node.findValue("pagesIntroTbrc")));
                 this.isChinaRestricted = Boolean.parseBoolean(parseValue(node.findValue("ric")));
             } else {
-                throw new ResourceNotFoundException();
+                throw new IIIFException();
             }
         } else {
-            throw new ResourceNotFoundException();
+            throw new IIIFException();
         }
         if (getAccessShortName().equals(RdfConstants.FAIR_USE)) {
             initFairUse();
@@ -91,7 +90,7 @@ public class IdentifierInfo {
         return n.findValue("value").textValue();
     }
 
-    public static IdentifierInfo getIndentifierInfo(String identifier) throws ClientProtocolException, IOException, ResourceNotFoundException, IIIFException {
+    public static IdentifierInfo getIndentifierInfo(String identifier) throws ClientProtocolException, IOException, IIIFException {
         String volumeId = identifier.split("::")[0];
         System.out.println("ID INFO vol Id>>" + volumeId);
         IdentifierInfo info = (IdentifierInfo) ServerCache.getObjectFromCache("identifier", "ID_" + volumeId);
@@ -253,7 +252,7 @@ public class IdentifierInfo {
                 + ", isChinaRestricted=" + isChinaRestricted + ", totalPages=" + totalPages + ", fair_use=" + fair_use + "]";
     }
 
-    public static void main(String[] args) throws ClientProtocolException, IOException, ResourceNotFoundException {
+    public static void main(String[] args) throws ClientProtocolException, IOException, IIIFException {
         Application.initForTests();
         System.out.println(new IdentifierInfo("bdr:V1NLM7_I1NLM7_001::I1NLM7_0010003.jpg"));
     }

@@ -47,25 +47,20 @@
     <dependency>
         <groupId>de.digitalcollections</groupId>
         <artifactId>iiif-server-hymir</artifactId>
-        <version>3.6.3</version> 
+        <version>4.1.2</version> 
         <exclusions>
             <exclusion>
                 <groupId>de.digitalcollections.imageio</groupId>
                 <artifactId>imageio-jnr</artifactId>
             </exclusion>
         </exclusions>       
-    </dependency>
+    </dependency>    
+    <!-- https://mvnrepository.com/artifact/de.digitalcollections/digitalcollections-core-business-api -->
     <dependency>
-      <groupId>de.digitalcollections.core</groupId>
-      <artifactId>dc-core-backend-file</artifactId>
-      <version>2.2.0</version>
-      <exclusions>
-            <exclusion>
-                <groupId>de.digitalcollections.imageio</groupId>
-                <artifactId>imageio-jnr</artifactId>
-            </exclusion>
-        </exclusions> 
-    </dependency>
+        <groupId>de.digitalcollections</groupId>
+        <artifactId>digitalcollections-core-business-api</artifactId>
+        <version>1.2.5</version>
+    </dependency>    
     <dependency>
       <groupId>io.bdrc.libraries</groupId>
       <artifactId>bdrc-libraries</artifactId>

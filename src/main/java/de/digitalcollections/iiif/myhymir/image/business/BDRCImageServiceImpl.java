@@ -43,7 +43,6 @@ import de.digitalcollections.core.model.impl.resource.S3Resource;
 import de.digitalcollections.iiif.hymir.image.business.api.ImageSecurityService;
 import de.digitalcollections.iiif.hymir.image.business.api.ImageService;
 import de.digitalcollections.iiif.hymir.model.exception.InvalidParametersException;
-import de.digitalcollections.iiif.hymir.model.exception.ResourceNotFoundException;
 import de.digitalcollections.iiif.hymir.model.exception.UnsupportedFormatException;
 import de.digitalcollections.iiif.model.image.ImageApiProfile;
 import de.digitalcollections.iiif.model.image.ImageApiProfile.Format;
@@ -56,6 +55,7 @@ import de.digitalcollections.iiif.model.image.SizeRequest;
 import de.digitalcollections.iiif.model.image.TileInfo;
 import de.digitalcollections.iiif.myhymir.Application;
 import de.digitalcollections.iiif.myhymir.ServerCache;
+import de.digitalcollections.model.api.identifiable.resource.exceptions.ResourceNotFoundException;
 import de.digitalcollections.turbojpeg.imageio.TurboJpegImageReadParam;
 import de.digitalcollections.turbojpeg.imageio.TurboJpegImageReader;
 import io.bdrc.iiif.exceptions.IIIFException;
@@ -168,7 +168,7 @@ public class BDRCImageServiceImpl implements ImageService {
      * 
      * @throws IIIFException
      **/
-    private ImageReader getReader(String identifier) throws ResourceNotFoundException, UnsupportedFormatException, IOException {
+    private ImageReader getReader(String identifier) throws UnsupportedFormatException, IOException, IIIFException {
         long deb = System.currentTimeMillis();
 
         byte[] bytes = (byte[]) ServerCache.getObjectFromCache(IIIF_IMG, identifier);
@@ -177,7 +177,7 @@ public class BDRCImageServiceImpl implements ImageService {
         } else {
             Application.perf.debug("Image service reading {}", identifier);
             if (imageSecurityService != null && !imageSecurityService.isAccessAllowed(identifier)) {
-                throw new ResourceNotFoundException();
+                throw new IIIFException();
             }
             S3Resource res;
             try {
@@ -186,7 +186,7 @@ public class BDRCImageServiceImpl implements ImageService {
                     res.setStatic(true);
                 }
             } catch (ResourceIOException e) {
-                throw new ResourceNotFoundException();
+                throw new IIIFException();
             }
             InputStream S3input = resourceService.getInputStream((S3Resource) res);
             try {
@@ -207,12 +207,24 @@ public class BDRCImageServiceImpl implements ImageService {
     }
 
     @Override
-    public void readImageInfo(String identifier, de.digitalcollections.iiif.model.image.ImageService info) throws UnsupportedFormatException, UnsupportedOperationException, ResourceNotFoundException, IOException {
-        enrichInfo(getReader(identifier), info);
+    public void readImageInfo(String identifier, de.digitalcollections.iiif.model.image.ImageService info) throws UnsupportedFormatException, UnsupportedOperationException, IOException {
+        try {
+            enrichInfo(getReader(identifier), info);
+        } catch (IIIFException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+            throw new IOException(e);
+        }
     }
 
-    public ImageReader readImageInfo(String identifier, de.digitalcollections.iiif.model.image.ImageService info, ImageReader imgReader) throws UnsupportedFormatException, UnsupportedOperationException, ResourceNotFoundException, IOException {
-        imgReader = getReader(identifier);
+    public ImageReader readImageInfo(String identifier, de.digitalcollections.iiif.model.image.ImageService info, ImageReader imgReader) throws UnsupportedFormatException, UnsupportedOperationException, IOException {
+        try {
+            imgReader = getReader(identifier);
+        } catch (IIIFException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+            throw new IOException(e);
+        }
         enrichInfo(imgReader, info);
         return imgReader;
     }
@@ -244,7 +256,7 @@ public class BDRCImageServiceImpl implements ImageService {
         return readParam;
     }
 
-    private DecodedImage readImage(String identifier, ImageApiSelector selector, ImageApiProfile profile, ImageReader reader) throws IOException, ResourceNotFoundException, UnsupportedFormatException, InvalidParametersException {
+    private DecodedImage readImage(String identifier, ImageApiSelector selector, ImageApiProfile profile, ImageReader reader) throws IOException, UnsupportedFormatException, InvalidParametersException {
         long deb = System.currentTimeMillis();
         Application.perf.debug("Entering readImage for creating DecodedImage");
         if ((selector.getRotation().getRotation() % 90) != 0) {
@@ -350,8 +362,7 @@ public class BDRCImageServiceImpl implements ImageService {
     }
 
     @Override
-    public void processImage(String identifier, ImageApiSelector selector, ImageApiProfile profile, OutputStream os)
-            throws InvalidParametersException, UnsupportedOperationException, UnsupportedFormatException, ResourceNotFoundException, IOException {
+    public void processImage(String identifier, ImageApiSelector selector, ImageApiProfile profile, OutputStream os) throws InvalidParametersException, UnsupportedOperationException, UnsupportedFormatException, IOException {
         // unused
     }
 
@@ -390,7 +401,7 @@ public class BDRCImageServiceImpl implements ImageService {
     }
 
     public void processImage(String identifier, ImageApiSelector selector, ImageApiProfile profile, OutputStream os, ImageReader imgReader, String uri)
-            throws InvalidParametersException, UnsupportedOperationException, UnsupportedFormatException, ResourceNotFoundException, IOException {
+            throws InvalidParametersException, UnsupportedOperationException, UnsupportedFormatException, IOException {
         long deb = System.currentTimeMillis();
         Application.perf.debug("Entering Processimage.... with reader {} ", imgReader);
         DecodedImage img = readImage(identifier, selector, profile, imgReader);
