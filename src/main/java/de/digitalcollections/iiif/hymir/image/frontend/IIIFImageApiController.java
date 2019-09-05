@@ -37,6 +37,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import de.digitalcollections.core.business.api.ResourceService;
 import de.digitalcollections.core.model.api.MimeType;
 import de.digitalcollections.core.model.api.resource.enums.ResourcePersistenceType;
+import de.digitalcollections.core.model.api.resource.exceptions.ResourceIOException;
 import de.digitalcollections.core.model.impl.resource.S3Resource;
 import de.digitalcollections.iiif.hymir.model.exception.InvalidParametersException;
 import de.digitalcollections.iiif.hymir.model.exception.UnsupportedFormatException;
@@ -160,8 +161,7 @@ public class IIIFImageApiController {
 
     @RequestMapping(value = "{identifier}/{region}/{size}/{rotation}/{quality}.{format}")
     public ResponseEntity<byte[]> getImageRepresentation(@PathVariable String identifier, @PathVariable String region, @PathVariable String size, @PathVariable String rotation, @PathVariable String quality, @PathVariable String format,
-            HttpServletRequest request, HttpServletResponse response, WebRequest webRequest)
-            throws ClientProtocolException, IOException, IIIFException, InvalidParametersException, UnsupportedOperationException, UnsupportedFormatException, ResourceNotFoundException {
+            HttpServletRequest request, HttpServletResponse response, WebRequest webRequest) throws ClientProtocolException, IOException, IIIFException, InvalidParametersException, UnsupportedOperationException, UnsupportedFormatException {
         long deb = System.currentTimeMillis();
         boolean staticImg = false;
         String img = "";
@@ -171,7 +171,13 @@ public class IIIFImageApiController {
         }
         ResourceAccessValidation accValidation = null;
         if (!staticImg) {
-            accValidation = new ResourceAccessValidation((Access) request.getAttribute("access"), IdentifierInfo.getIndentifierInfo(identifier), img);
+            try {
+                accValidation = new ResourceAccessValidation((Access) request.getAttribute("access"), IdentifierInfo.getIndentifierInfo(identifier), img);
+            } catch (ResourceNotFoundException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+                return new ResponseEntity<>(("Resource was not found for identifier " + identifier).getBytes(), HttpStatus.NOT_FOUND);
+            }
             identifier = URLDecoder.decode(identifier, "UTF-8");
             if (!accValidation.isAccessible(request)) {
                 HttpHeaders headers1 = new HttpHeaders();
@@ -195,8 +201,15 @@ public class IIIFImageApiController {
                 headers.setCacheControl(CacheControl.maxAge(maxAge, TimeUnit.MILLISECONDS).cachePrivate());
             }
         }
-        webRequest.checkNotModified(imageService.getImageModificationDate(identifier).toEpochMilli());
-        headers.setDate("Last-Modified", imageService.getImageModificationDate(identifier).toEpochMilli());
+        try {
+            webRequest.checkNotModified(imageService.getImageModificationDate(identifier).toEpochMilli());
+            headers.setDate("Last-Modified", imageService.getImageModificationDate(identifier).toEpochMilli());
+        } catch (ResourceNotFoundException e1) {
+            // TODO Auto-generated catch block
+            e1.printStackTrace();
+            return new ResponseEntity<>(("Resource was not found for identifier " + identifier).getBytes(), HttpStatus.NOT_FOUND);
+        }
+
         ImageApiSelector selector = getImageApiSelector(identifier, region, size, rotation, quality, format);
         long deb1 = System.currentTimeMillis();
         final ImageApiProfile profile = ImageApiProfile.LEVEL_TWO;
@@ -226,7 +239,13 @@ public class IIIFImageApiController {
             return new ResponseEntity<>(osbytes, headers, HttpStatus.OK);
         }
         deb1 = System.currentTimeMillis();
-        final ImageReader imgReader = imageService.readImageInfo(identifier, info, null);
+        ImageReader imgReader = null;
+        try {
+            imgReader = imageService.readImageInfo(identifier, info, null);
+        } catch (ResourceIOException e) {
+            e.printStackTrace();
+            return new ResponseEntity<>(("Resource was not found for identifier " + identifier).getBytes(), HttpStatus.NOT_FOUND);
+        }
         Application.perf.debug("end reading from image service after {} ms for {} with reader {}", (System.currentTimeMillis() - deb1), identifier, imgReader);
         final String canonicalForm;
         try {
@@ -253,7 +272,8 @@ public class IIIFImageApiController {
     public static final PropertyValue pngHint = new PropertyValue("png", "jpg");
 
     @RequestMapping(value = "{identifier}/info.json", method = { RequestMethod.GET, RequestMethod.HEAD })
-    public ResponseEntity<String> getInfo(@PathVariable String identifier, HttpServletRequest req, HttpServletResponse res, WebRequest webRequest) throws Exception {
+    public ResponseEntity<String> getInfo(@PathVariable String identifier, HttpServletRequest req, HttpServletResponse res, WebRequest webRequest)
+            throws ClientProtocolException, IOException, IIIFException, UnsupportedOperationException, UnsupportedFormatException {
         long deb = System.currentTimeMillis();
         String img = "";
         boolean staticImg = false;
@@ -264,10 +284,23 @@ public class IIIFImageApiController {
         Application.perf.debug("Entering endpoint getInfo for {}", identifier);
         boolean unAuthorized = false;
         if (!staticImg) {
-            ResourceAccessValidation accValidation = new ResourceAccessValidation((Access) req.getAttribute("access"), IdentifierInfo.getIndentifierInfo(identifier), img);
+            ResourceAccessValidation accValidation = null;
+            try {
+                accValidation = new ResourceAccessValidation((Access) req.getAttribute("access"), IdentifierInfo.getIndentifierInfo(identifier), img);
+            } catch (ResourceNotFoundException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+                return new ResponseEntity<>("Resource was not found for identifier " + identifier, HttpStatus.NOT_FOUND);
+            }
             unAuthorized = !accValidation.isAccessible(req);
         }
-        webRequest.checkNotModified(imageService.getImageModificationDate(identifier).toEpochMilli());
+        try {
+            webRequest.checkNotModified(imageService.getImageModificationDate(identifier).toEpochMilli());
+        } catch (ResourceNotFoundException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+            return new ResponseEntity<>("Resource was not found for identifier " + identifier, HttpStatus.NOT_FOUND);
+        }
         String path = req.getServletPath();
         ;
         if (req.getPathInfo() != null) {
@@ -283,7 +316,13 @@ public class IIIFImageApiController {
         Application.perf.debug("getInfo read ImageInfo for {}", identifier);
         imageService.readImageInfo(identifier, info, null);
         HttpHeaders headers = new HttpHeaders();
-        headers.setDate("Last-Modified", imageService.getImageModificationDate(identifier).toEpochMilli());
+        try {
+            headers.setDate("Last-Modified", imageService.getImageModificationDate(identifier).toEpochMilli());
+        } catch (ResourceNotFoundException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+            return new ResponseEntity<>("Resource was not found for identifier " + identifier, HttpStatus.NOT_FOUND);
+        }
         if ("application/ld+json".equals(req.getHeader("Accept"))) {
             headers.set("Content-Type", req.getHeader("Accept"));
         } else {

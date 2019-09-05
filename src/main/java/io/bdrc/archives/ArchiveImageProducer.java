@@ -20,8 +20,8 @@ import org.slf4j.LoggerFactory;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 
-import de.digitalcollections.core.model.api.resource.exceptions.ResourceIOException;
 import de.digitalcollections.iiif.myhymir.ServerCache;
+import de.digitalcollections.model.api.identifiable.resource.exceptions.ResourceNotFoundException;
 import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.iiif.resolver.BdrcS3Resolver;
 
@@ -50,7 +50,7 @@ public class ArchiveImageProducer implements Callable {
             if (identifier.endsWith(".tif") || identifier.endsWith(".tiff")) {
                 isTiff = true;
             }
-        } catch (ResourceIOException e) {
+        } catch (ResourceNotFoundException | IOException e) {
             throw new IIIFException(500, IIIFException.GENERIC_APP_ERROR_CODE, e);
         }
     }

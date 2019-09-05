@@ -16,6 +16,11 @@ public class IIIFException extends Exception {
     String developerMessage;
     String message;
 
+    public IIIFException(Throwable cause) {
+        super(cause);
+        // TODO Auto-generated constructor stub
+    }
+
     public IIIFException() {
     }
 

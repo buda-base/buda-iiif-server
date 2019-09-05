@@ -167,8 +167,9 @@ public class BDRCImageServiceImpl implements ImageService {
      * Try to obtain a {@link ImageReader} for a given identifier
      * 
      * @throws IIIFException
+     * @throws ResourceNotFoundException
      **/
-    private ImageReader getReader(String identifier) throws UnsupportedFormatException, IOException, IIIFException {
+    private ImageReader getReader(String identifier) throws UnsupportedFormatException, IOException, IIIFException, ResourceNotFoundException {
         long deb = System.currentTimeMillis();
 
         byte[] bytes = (byte[]) ServerCache.getObjectFromCache(IIIF_IMG, identifier);
@@ -186,9 +187,12 @@ public class BDRCImageServiceImpl implements ImageService {
                     res.setStatic(true);
                 }
             } catch (ResourceIOException e) {
-                throw new IIIFException();
+                throw new ResourceNotFoundException(e);
             }
             InputStream S3input = resourceService.getInputStream((S3Resource) res);
+            if (S3input == null) {
+                throw new ResourceNotFoundException("No S3 resource could be found for identifier: " + identifier);
+            }
             try {
                 ServerCache.addToCache(IIIF_IMG, identifier, IOUtils.toByteArray(S3input));
             } catch (IIIFException e) {
@@ -213,7 +217,11 @@ public class BDRCImageServiceImpl implements ImageService {
         } catch (IIIFException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-            throw new IOException(e);
+            throw new ResourceIOException(e);
+        } catch (ResourceNotFoundException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+            throw new ResourceIOException(e);
         }
     }
 
@@ -223,7 +231,11 @@ public class BDRCImageServiceImpl implements ImageService {
         } catch (IIIFException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-            throw new IOException(e);
+            throw new ResourceIOException(e);
+        } catch (ResourceNotFoundException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+            throw new ResourceIOException(e);
         }
         enrichInfo(imgReader, info);
         return imgReader;
