@@ -46,13 +46,13 @@ public class ResourceAccessValidation {
     }
 
     public boolean isAccessible(HttpServletRequest request) {
-        log.info("TEST IP from X-Real-IP header: {} and country: {}", request.getHeader("X-Real-IP"), GeoLocation.getCountryName(request.getHeader("X-Real-IP")));
         if (access == null) {
             access = new Access();
         }
         boolean accessible = true;
         if (isRestrictedInChina) {
             String test = GeoLocation.getCountryName(request.getHeader("X-Real-IP"));
+            log.info("TEST IP from X-Real-IP header: {} and country: {}", request.getHeader("X-Real-IP"), test);
             if (test == null || CHINA.equalsIgnoreCase(test)) {
                 // if Geolocation country name is null (i.e throws -for instance- an IP parsing
                 // exception)
