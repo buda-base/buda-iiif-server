@@ -152,6 +152,11 @@ public class ArchivesController {
             array = (byte[]) ServerCache.getObjectFromCache(IIIF_ZIP, name.substring(3));
         }
         HttpHeaders headers = new HttpHeaders();
+        if (array == null) {
+            headers.setContentType(MediaType.parseMediaType("text/plain"));
+            array = new String("The link is wrong or has expired: please retry loading the archive and proceed to its download within 10 mn").getBytes();
+            return new ResponseEntity<ByteArrayResource>(new ByteArrayResource(array), headers, HttpStatus.NOT_FOUND);
+        }
         headers.setContentType(MediaType.parseMediaType("application/" + type));
         headers.setContentDispositionFormData("attachment", name.substring(4) + "." + type);
         ResponseEntity<ByteArrayResource> response = new ResponseEntity<ByteArrayResource>(new ByteArrayResource(array), headers, HttpStatus.OK);
