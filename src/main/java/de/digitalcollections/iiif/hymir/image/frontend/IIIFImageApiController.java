@@ -25,11 +25,12 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
+import org.springframework.stereotype.Component;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.WebRequest;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -57,9 +58,11 @@ import io.bdrc.auth.AuthProps;
 import io.bdrc.auth.TokenValidation;
 import io.bdrc.iiif.auth.AuthServiceInfo;
 import io.bdrc.iiif.exceptions.IIIFException;
+import io.bdrc.iiif.metrics.ImageMetrics;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 
-@Controller
+@RestController
+@Component
 // @RequestMapping("/image/v2/")
 @RequestMapping("/")
 public class IIIFImageApiController {
@@ -236,6 +239,7 @@ public class IIIFImageApiController {
                 Application.perf.debug("Not different from original, got byes from cache for {}", identifier);
             }
             Application.perf.debug("got the bytes in {} ms for {}", (System.currentTimeMillis() - deb1), identifier);
+            ImageMetrics.imageGetCount((String) request.getAttribute("origin"));
             return new ResponseEntity<>(osbytes, headers, HttpStatus.OK);
         }
         deb1 = System.currentTimeMillis();
@@ -261,6 +265,7 @@ public class IIIFImageApiController {
         Application.perf.debug("ended processing image after {} ms for {}", (System.currentTimeMillis() - deb1), identifier);
         Application.perf.debug("Total request time {} ms ", (System.currentTimeMillis() - deb), identifier);
         imgReader.dispose();
+        ImageMetrics.imageGetCount((String) request.getAttribute("origin"));
         return new ResponseEntity<>(os.toByteArray(), headers, HttpStatus.OK);
     }
 

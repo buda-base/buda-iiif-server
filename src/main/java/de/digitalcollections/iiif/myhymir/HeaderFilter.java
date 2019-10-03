@@ -43,6 +43,26 @@ public class HeaderFilter implements Filter {
         if (orig == null) {
             orig = allowOrigin;
         }
+        String referer = request.getHeader("Referer");
+        // for tests
+        // referer =
+        // "https://library.bdrc.io/scripts/embed-iframe.html?work=bdr:W1ERI0011001&origin=website.com";
+        String ref_orig = "";
+        if (referer == null) {
+            ref_orig = "unknown";
+        } else {
+            String queryString = referer.substring(referer.indexOf("?") + 1);
+            System.out.println("QUERY STRING =" + queryString);
+            String[] parts = queryString.split("&");
+            for (String p : parts) {
+                String[] pair = p.split("=");
+                if (pair[0].contentEquals("origin")) {
+                    ref_orig = pair[1];
+                    System.out.println("ORIGIN =" + ref_orig);
+                }
+            }
+        }
+        request.setAttribute("origin", ref_orig);
         HttpServletResponse response = (HttpServletResponse) res;
         response.setHeader("Access-Control-Allow-Origin", orig);
         response.setHeader("Access-Control-Allow-Headers", allowHeaders);

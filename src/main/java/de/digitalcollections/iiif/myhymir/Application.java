@@ -20,6 +20,7 @@ import org.springframework.context.annotation.Primary;
 import de.digitalcollections.iiif.myhymir.backend.impl.repository.S3ResourceRepositoryImpl;
 import io.bdrc.auth.AuthProps;
 import io.bdrc.auth.rdf.RdfAuthModel;
+import io.bdrc.iiif.metrics.ImageMetrics;
 
 @SpringBootApplication
 @Configuration
@@ -64,6 +65,7 @@ public class Application extends SpringBootServletInitializer {
         }
         S3ResourceRepositoryImpl.initWithProps(props);
         SpringApplication.run(Application.class, args);
+        ImageMetrics.init();
         perf.debug("Application main", "Test PERF Log ");
     }
 

@@ -23,6 +23,7 @@ import com.amazonaws.services.s3.model.GetObjectRequest;
 import de.digitalcollections.iiif.myhymir.ServerCache;
 import de.digitalcollections.model.api.identifiable.resource.exceptions.ResourceNotFoundException;
 import io.bdrc.iiif.exceptions.IIIFException;
+import io.bdrc.iiif.metrics.ImageMetrics;
 import io.bdrc.iiif.resolver.BdrcS3Resolver;
 
 @SuppressWarnings("rawtypes")
@@ -36,13 +37,15 @@ public class ArchiveImageProducer implements Callable {
     String identifier;
     String id;
     String archiveType;
+    String origin;
     Dimension d;
     boolean isTiff = false;
 
-    public ArchiveImageProducer(AmazonS3 s3, String id, String archiveType) throws IIIFException {
+    public ArchiveImageProducer(AmazonS3 s3, String id, String archiveType, String origin) throws IIIFException {
         this.s3 = s3;
         this.id = id;
         this.archiveType = archiveType;
+        this.origin = origin;
         BdrcS3Resolver resolver = new BdrcS3Resolver();
         try {
             this.identifier = resolver.getS3Identifier(id);
@@ -62,6 +65,7 @@ public class ArchiveImageProducer implements Callable {
             BufferedImage bImg = ImageIO.read(in);
             log.debug("Got " + id + " from cache ...");
             in.close();
+            ImageMetrics.imagePdfGetCount(origin);
             return bImg;
         }
         GetObjectRequest request = new GetObjectRequest(S3_BUCKET, identifier);
@@ -70,6 +74,7 @@ public class ArchiveImageProducer implements Callable {
         BufferedImage bImg = ImageIO.read(in);
         log.debug("Got " + id + " from S3 ...added to cache");
         ServerCache.addToCache(IIIF_IMG, id, imgbytes);
+        ImageMetrics.imagePdfGetCount(origin);
         return bImg;
     }
 
@@ -80,6 +85,7 @@ public class ArchiveImageProducer implements Callable {
             BufferedImage bImg = ImageIO.read(in);
             this.d = new Dimension(bImg.getWidth(), bImg.getHeight());
             log.debug("Zip Got " + id + " from cache ...");
+            ImageMetrics.imageZipGetCount(origin);
             return imgbytes;
         }
         GetObjectRequest request = new GetObjectRequest(S3_BUCKET, identifier);
@@ -89,6 +95,7 @@ public class ArchiveImageProducer implements Callable {
         this.d = new Dimension(bImg.getWidth(), bImg.getHeight());
         log.debug("Zip Got " + id + " from S3 ...added to cache");
         ServerCache.addToCache(IIIF_IMG, id, imgbytes);
+        ImageMetrics.imageZipGetCount(origin);
         return imgbytes;
     }
 

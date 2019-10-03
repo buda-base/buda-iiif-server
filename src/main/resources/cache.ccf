@@ -41,7 +41,7 @@ jcs.region.zipjobs.cacheattributes.MemoryCacheName=org.apache.commons.jcs.engine
 jcs.region.zipjobs.elementattributes.IsEternal=false
 
 ##### MEMORY ONLY - CACHE REGION for info services
-jcs.region.info=
+jcs.region.info=info
 jcs.region.info.cacheattributes=org.apache.commons.jcs.engine.CompositeCacheAttributes
 jcs.region.info.cacheattributes.MaxObjects=2000
 jcs.region.info.cacheattributes.MemoryCacheName=org.apache.commons.jcs.engine.memory.lru.LRUMemoryCache
@@ -49,14 +49,10 @@ jcs.region.info.elementattributes=org.apache.commons.jcs.engine.ElementAttribute
 jcs.region.info.elementattributes.IsEternal=false
 
 ##### MEMORY ONLY - CACHE REGION for identifierInfo objects
-jcs.region.identifier=
-jcs.region.identifier.cacheattributes.UseDisk=false
-jcs.region.identifier.cacheattributes=org.apache.commons.jcs.engine.CompositeCacheAttributes
-jcs.region.identifier.cacheattributes.MaxObjects=2000
-jcs.region.identifier.cacheattributes.MemoryCacheName=org.apache.commons.jcs.engine.memory.lru.LRUMemoryCache
-jcs.region.identifier.elementattributes=org.apache.commons.jcs.engine.ElementAttributes
-jcs.region.identifier.elementattributes.MaxLife=60
-jcs.region.identifier.elementattributes.IsEternal=false
+jcs.identifier=
+jcs.identifier.cacheattributes=org.apache.commons.jcs.engine.CompositeCacheAttributes
+jcs.identifier.cacheattributes.MaxObjects=2000
+jcs.identifier.cacheattributes.MemoryCacheName=org.apache.commons.jcs.engine.memory.lru.LRUMemoryCache
 
 # Indexed Disk Cache for pdf
 jcs.auxiliary.IIIF=org.apache.commons.jcs.auxiliary.disk.indexed.IndexedDiskCacheFactory
@@ -86,6 +82,18 @@ jcs.auxiliary.IIIF_ZIP.attributes.MaxPurgatorySize=500
             ##  5 Gig size limit
 jcs.auxiliary.IIIF_ZIP.attributes.MaxKeySize=5000000
 jcs.auxiliary.IIIF_ZIP.attributes.DiskLimitType=SIZE
+
+jcs.region.monitor=MNT
+jcs.region.monitor.cacheattributes.UseDisk=false
+jcs.region.monitor.cacheattributes=org.apache.commons.jcs.engine.CompositeCacheAttributes
+jcs.region.monitor.cacheattributes.MaxObjects=0
+
+jcs.auxiliary.MNT=org.apache.commons.jcs.auxiliary.disk.indexed.IndexedDiskCacheFactory
+jcs.auxiliary.MNT.attributes=org.apache.commons.jcs.auxiliary.disk.indexed.IndexedDiskCacheAttributes
+jcs.auxiliary.MNT.attributes.DiskPath=monitor
+jcs.auxiliary.MNT.attributes.MaxPurgatorySize=500
+jcs.auxiliary.MNT.attributes.MaxKeySize=50000
+jcs.auxiliary.MNT.attributes.DiskLimitType=SIZE
 
 ################# TEST STUFF #############################
 

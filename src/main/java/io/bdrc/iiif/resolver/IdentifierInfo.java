@@ -41,19 +41,15 @@ public class IdentifierInfo {
 
     @SuppressWarnings("unchecked")
     public IdentifierInfo(String identifier) throws ClientProtocolException, IOException, IIIFException, ResourceNotFoundException {
-
         this.identifier = identifier;
-
         long deb = System.currentTimeMillis();
         Application.perf.debug("Creating ldspdi connexion " + identifier + " at " + System.currentTimeMillis());
         HttpClient httpClient = HttpClientBuilder.create().build();
-
         JSONObject object = new JSONObject();
         this.volumeId = identifier.split("::")[0];
         if (identifier.split("::").length > 1) {
             this.imageId = identifier.split("::")[1];
         }
-
         HttpPost request = new HttpPost("http://purl.bdrc.io/query/table/IIIFPres_volumeInfo");
         object.put("R_RES", volumeId);
         String message = object.toString();
@@ -66,6 +62,7 @@ public class IdentifierInfo {
         node = node.findPath("results").findPath("bindings");
         if (node != null) {
             if (isValidJson(node)) {
+                fair_use = new HashMap<>();
                 this.work = parseValue(node.findValue("workId"));
                 this.asset = parseValue(node.findValue("itemId"));
                 this.access = parseValue(node.findValue("access"));
@@ -95,11 +92,14 @@ public class IdentifierInfo {
         String volumeId = identifier.split("::")[0];
         System.out.println("ID INFO vol Id>>" + volumeId);
         IdentifierInfo info = (IdentifierInfo) ServerCache.getObjectFromCache("identifier", "ID_" + volumeId);
+        System.out.println("IDENTIFIER INFO >>" + info);
         if (info != null) {
             return info;
         } else {
+            System.out.println("IDENTIFIER INFO not found querying ldspdi >>");
             info = new IdentifierInfo(identifier);
             ServerCache.addToCache("identifier", "ID_" + volumeId, info);
+            System.out.println("IDENTIFIER INFO ADDED TO CACHE >>" + info);
             return info;
         }
     }

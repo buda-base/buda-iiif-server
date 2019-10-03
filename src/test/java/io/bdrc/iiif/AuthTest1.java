@@ -52,19 +52,17 @@ public class AuthTest1 {
 	}
 
 	@Test
-	public void publicResource() throws ClientProtocolException, IOException, IllegalArgumentException,
-			CertificateException, InvalidKeySpecException, NoSuchAlgorithmException {
+	public void publicResource() throws ClientProtocolException, IOException, IllegalArgumentException, CertificateException, InvalidKeySpecException, NoSuchAlgorithmException {
 		HttpClient client = HttpClientBuilder.create().build();
 		HttpGet get = new HttpGet("http://localhost:" + environment.getProperty("local.server.port") + PUBLIC_RES);
-		// get.addHeader("Authorization", "Bearer "+publicToken);
+		// get.addHeader("Authorization", "Bearer " + publicToken);
 		HttpResponse resp = client.execute(get);
 		System.out.println("STATUS >>> " + resp.getStatusLine());
 		assert (resp.getStatusLine().getStatusCode() == 200);
 	}
 
 	@Test
-	public void ChinaRestrictedResource() throws ClientProtocolException, IOException, IllegalArgumentException,
-			CertificateException, InvalidKeySpecException, NoSuchAlgorithmException {
+	public void ChinaRestrictedResource() throws ClientProtocolException, IOException, IllegalArgumentException, CertificateException, InvalidKeySpecException, NoSuchAlgorithmException {
 		// with public Token and authorized picture
 		HttpClient client = HttpClientBuilder.create().build();
 		HttpGet get = new HttpGet("http://localhost:" + environment.getProperty("local.server.port") + PUBLIC_RES);

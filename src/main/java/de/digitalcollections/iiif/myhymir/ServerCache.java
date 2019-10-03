@@ -13,6 +13,7 @@ public class ServerCache {
     public final static Logger log = LoggerFactory.getLogger(ServerCache.class.getName());
 
     private static final CacheAccess<Object, Object> IIIF = JCS.getInstance("IIIF");
+    private static final CacheAccess<Object, Object> IIIF_MNT = JCS.getInstance("monitor");
     private static final CacheAccess<Object, Object> IIIF_IMG = JCS.getInstance("IIIF_IMG");
     private static final CacheAccess<Object, Object> IIIF_ZIP = JCS.getInstance("IIIF_ZIP");
     private static final CacheAccess<Object, Object> INFO = JCS.getInstance("info");
@@ -58,8 +59,11 @@ public class ServerCache {
             access = ZIP_JOBS;
         case "identifier":
             access = IDENTIFIER;
+        case "monitor":
+            access = IIIF_MNT;
         }
         return access;
+
     }
 
     public static boolean clearCache() {

@@ -43,7 +43,7 @@ public class ArchiveBuilder {
     public final static Logger log = LoggerFactory.getLogger(ArchiveBuilder.class.getName());
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
-    public static void buildPdf(Iterator<String> idList, IdentifierInfo inf, String output) throws IIIFException, IOException {
+    public static void buildPdf(Iterator<String> idList, IdentifierInfo inf, String output, String origin) throws IIIFException, IOException {
         long deb = System.currentTimeMillis();
         Application.perf.debug("Starting building pdf {}", inf.volumeId);
         ExecutorService service = Executors.newFixedThreadPool(50);
@@ -54,7 +54,7 @@ public class ArchiveBuilder {
         while (idList.hasNext()) {
             final String id = inf.getVolumeId() + "::" + idList.next();
             ArchiveImageProducer tmp = null;
-            tmp = new ArchiveImageProducer(s3, id, PDF_TYPE);
+            tmp = new ArchiveImageProducer(s3, id, PDF_TYPE, origin);
             Future<?> fut = service.submit((Callable) tmp);
             t_map.put(i, fut);
             i += 1;
@@ -99,7 +99,7 @@ public class ArchiveBuilder {
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public static void buildZip(Iterator<String> idList, IdentifierInfo inf, String output) throws IIIFException {
+    public static void buildZip(Iterator<String> idList, IdentifierInfo inf, String output, String origin) throws IIIFException {
         long deb = System.currentTimeMillis();
         Application.perf.debug("Starting building zip {}", inf.volumeId);
         ExecutorService service = Executors.newFixedThreadPool(50);
@@ -112,7 +112,7 @@ public class ArchiveBuilder {
             String img = idList.next();
             final String id = inf.getVolumeId() + "::" + img;
             ArchiveImageProducer tmp = null;
-            tmp = new ArchiveImageProducer(s3, id, ZIP_TYPE);
+            tmp = new ArchiveImageProducer(s3, id, ZIP_TYPE, origin);
             Future<?> fut = service.submit((Callable) tmp);
             t_map.put(i, fut);
             images.put(i, img);

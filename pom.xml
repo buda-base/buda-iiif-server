@@ -1,13 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   
-  <modelVersion>4.0.0</modelVersion>
-  
+  <modelVersion>4.0.0</modelVersion>  
   <groupId>de.digitalcollections</groupId>
   <artifactId>buda-hymir</artifactId>
   <version>1.0.0-SNAPSHOT</version>
-  <packaging>jar</packaging>
-  
+  <packaging>jar</packaging>  
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.source>1.8</maven.compiler.source>
@@ -22,22 +20,13 @@
     <artifactId>spring-boot-starter-parent</artifactId>
     <!-- version should be the same as version.spring-boot, and the same
          as the version indicated in hymir's pom -->
+    <relativePath></relativePath>
     <version>2.0.2.RELEASE</version>
   </parent>
-  <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>org.glassfish.jersey</groupId>
-                <artifactId>jersey-bom</artifactId>
-                <version>${jersey.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
-  </dependencyManagement>
-  
+   
   <dependencies>
-  	
+  	<!-- https://mvnrepository.com/artifact/io.micrometer/micrometer-core -->
+    
     <dependency>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-test</artifactId>
@@ -52,6 +41,10 @@
             <exclusion>
                 <groupId>de.digitalcollections.imageio</groupId>
                 <artifactId>imageio-jnr</artifactId>
+            </exclusion>
+            <exclusion>
+                <groupId>net.bull.javamelody</groupId>
+                <artifactId>javamelody-spring-boot-starter</artifactId>
             </exclusion>
         </exclusions>       
     </dependency>    
