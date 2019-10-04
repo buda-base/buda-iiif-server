@@ -6,16 +6,19 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
+import org.apache.http.client.ClientProtocolException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.context.event.EventListener;
 
 import de.digitalcollections.iiif.myhymir.backend.impl.repository.S3ResourceRepositoryImpl;
 import io.bdrc.auth.AuthProps;
@@ -44,10 +47,12 @@ import io.bdrc.iiif.metrics.ImageMetrics;
 public class Application extends SpringBootServletInitializer {
 
     static final String configPath = System.getProperty("iiifserv.configpath");
-    public static final Logger perf = LoggerFactory.getLogger("performance");
+    public static Logger perf;
     private static Properties props;
 
     public static void main(String[] args) throws Exception {
+        System.out.println("PROPS d>> " + props);
+        perf = LoggerFactory.getLogger("performance");
         InputStream input = new FileInputStream(new File(configPath + "iiifserv.properties"));
         props = new Properties();
         props.load(input);
@@ -65,12 +70,16 @@ public class Application extends SpringBootServletInitializer {
         }
         S3ResourceRepositoryImpl.initWithProps(props);
         SpringApplication.run(Application.class, args);
-        ImageMetrics.init();
         perf.debug("Application main", "Test PERF Log ");
     }
 
+    @EventListener(ApplicationReadyEvent.class)
+    public void postStartup() throws ClientProtocolException, IOException {
+        ImageMetrics.init();
+    }
+
     public static void initForTests() throws IOException {
-        InputStream input = Application.class.getClassLoader().getResourceAsStream("iiifservTest.properties");
+        InputStream input = Application.class.getClassLoader().getResourceAsStream("test.properties");
         props = new Properties();
         props.load(input);
         try {
@@ -83,6 +92,7 @@ public class Application extends SpringBootServletInitializer {
     }
 
     public static String getProperty(String key) {
+        System.out.println("PROPS >> " + props);
         return props.getProperty(key);
     }
 
