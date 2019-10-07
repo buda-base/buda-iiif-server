@@ -92,7 +92,6 @@ public class Application extends SpringBootServletInitializer {
     }
 
     public static String getProperty(String key) {
-        System.out.println("PROPS >> " + props);
         return props.getProperty(key);
     }
 

@@ -23,20 +23,22 @@ public class PromQLProcessor {
         HttpClient client = HttpClientBuilder.create().build();
         long end_in_seconds = (long) (System.currentTimeMillis() / 1000);
         // // two days period
-        long start_in_seconds = end_in_seconds - 172800;
-        String query = countName + "&_=" + Long.toString((long) (System.currentTimeMillis() / 1000)) + "&start=" + start_in_seconds + "&end=" + end_in_seconds + "&step=2000";
+        long start_in_seconds = end_in_seconds - 172800 /* 259200 */;
+        String query = "max_over_time(" + countName + "[2d])" + "&_=" + Long.toString((long) (System.currentTimeMillis() / 1000)) + "&start=" + start_in_seconds + "&end=" + end_in_seconds + "&step=72000";
         System.out.println("URL FULL >>> " + promURL + query);
         HttpGet get = new HttpGet(promURL + query);
+        System.out.println("HTTP QUERY >>" + promURL + query);
         HttpResponse resp = client.execute(get);
         String json = EntityUtils.toString(resp.getEntity(), "UTF-8");
+        System.out.println("HTTP RESP >>" + json);
         return json;
     }
 
     public static void main(String[] args) throws ClientProtocolException, IOException {
         Application.initForTests();
         String root = Application.getProperty("promQueryRangeURL");
-        System.out.println(PromQLProcessor.getCounterValues(root, "image_calls_total"));
-        System.out.println(PromQLProcessor.getFilteredCounterValues(root, "image_calls_total", "context", "website.com"));
+        System.out.println(PromQLProcessor.getCounterValues(root, "image_calls_pdf_total"));
+        System.out.println(PromQLProcessor.getFilteredCounterValues(root, "image_calls_pdf_total", "context", "unknown"));
     }
 
 }

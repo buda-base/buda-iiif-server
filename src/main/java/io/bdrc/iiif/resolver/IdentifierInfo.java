@@ -90,16 +90,16 @@ public class IdentifierInfo {
 
     public static IdentifierInfo getIndentifierInfo(String identifier) throws ClientProtocolException, IOException, IIIFException, ResourceNotFoundException {
         String volumeId = identifier.split("::")[0];
-        System.out.println("ID INFO vol Id>>" + volumeId);
+        // System.out.println("ID INFO vol Id>>" + volumeId);
         IdentifierInfo info = (IdentifierInfo) ServerCache.getObjectFromCache("identifier", "ID_" + volumeId);
-        System.out.println("IDENTIFIER INFO >>" + info);
+        // System.out.println("IDENTIFIER INFO >>" + info);
         if (info != null) {
             return info;
         } else {
-            System.out.println("IDENTIFIER INFO not found querying ldspdi >>");
+            // System.out.println("IDENTIFIER INFO not found querying ldspdi >>");
             info = new IdentifierInfo(identifier);
             ServerCache.addToCache("identifier", "ID_" + volumeId, info);
-            System.out.println("IDENTIFIER INFO ADDED TO CACHE >>" + info);
+            // System.out.println("IDENTIFIER INFO ADDED TO CACHE >>" + info);
             return info;
         }
     }
