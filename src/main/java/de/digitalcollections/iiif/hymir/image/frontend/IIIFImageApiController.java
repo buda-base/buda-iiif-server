@@ -224,14 +224,12 @@ public class IIIFImageApiController {
         // Now a shortcut:
         if (!BDRCImageServiceImpl.requestDiffersFromOriginal(identifier, selector)) {
             // let's get our hands dirty
-            System.out.println("RESOURCE SERVICE >>" + resourceService);
             final S3Resource res = (S3Resource) resourceService.get(identifier, ResourcePersistenceType.RESOLVED, MimeType.MIME_IMAGE);
             if (staticImg) {
                 res.setStatic(true);
             }
             byte[] osbytes = (byte[]) ServerCache.getObjectFromCache(IIIF_IMG, identifier);
             if (osbytes == null) {
-                System.out.println("RESOURCE SERVICE >>" + resourceService);
                 final InputStream input = resourceService.getInputStream(res);
                 Application.perf.debug("got the S3 inputstream in {} ms for {}", (System.currentTimeMillis() - deb1), identifier);
                 osbytes = StreamUtils.copyToByteArray(input);
@@ -390,7 +388,6 @@ public class IIIFImageApiController {
             }
             selector.setQuality(ImageApiProfile.Quality.valueOf(quality.toUpperCase()));
             selector.setFormat(ImageApiProfile.Format.valueOf(format.toUpperCase()));
-            System.out.println("FORMAT >> " + selector.getFormat());
         } catch (ResolvingException e) {
             throw new InvalidParametersException(e);
         }

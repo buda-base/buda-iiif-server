@@ -215,11 +215,9 @@ public class BDRCImageServiceImpl implements ImageService {
         try {
             enrichInfo(getReader(identifier), info);
         } catch (IIIFException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
             throw new ResourceIOException(e);
         } catch (ResourceNotFoundException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
             throw new ResourceIOException(e);
         }
@@ -229,11 +227,10 @@ public class BDRCImageServiceImpl implements ImageService {
         try {
             imgReader = getReader(identifier);
         } catch (IIIFException e) {
-            // TODO Auto-generated catch block
+
             e.printStackTrace();
             throw new ResourceIOException(e);
         } catch (ResourceNotFoundException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
             throw new ResourceIOException(e);
         }
@@ -358,7 +355,7 @@ public class BDRCImageServiceImpl implements ImageService {
             break;
         case DEFAULT:
             outType = BufferedImage.TYPE_3BYTE_BGR;
-            System.out.println("Transform image DEFAULT quality >>" + quality + " OutType: " + outType + " format " + format);
+            Application.perf.debug("Transform image DEFAULT quality >>" + quality + " OutType: " + outType + " format " + format);
             break;
         default:
             outType = inType;
@@ -449,15 +446,12 @@ public class BDRCImageServiceImpl implements ImageService {
                 if (w.getClass().getName().equals("com.twelvemonkeys.imageio.plugins.jpeg.JPEGImageWriter")) {
                     wtr = w;
                 }
-                System.out.println("Should use WRITERS for JPEG >>" + wtr + " with quality >>" + outImg.getType());
                 Application.perf.debug("Should use WRITERS for JPEG >> {} with quality {}", wtr, outImg.getType());
                 Application.perf.debug("WRITERS---> in list {}", w.getClass().getName());
             }
             if (outImg.getType() != BufferedImage.TYPE_BYTE_GRAY) {
                 wtr = ImageIO.getImageWritersByMIMEType("image/jpeg").next();
             }
-            System.out.println("Using WRITERS for JPEG >>" + wtr);
-            // }
             Application.perf.debug("USING JPEG WRITER {} for {}", wtr, identifier);
             // This setting, using 0.75f as compression quality produces the same
             // as the default setting, with no writeParam --> writer.write(outImg)
@@ -475,7 +469,7 @@ public class BDRCImageServiceImpl implements ImageService {
 
         case WEBP:
             writer = ImageIO.getImageWritersByMIMEType("image/webp").next();
-            System.out.println("Using WRITER for WEBP >>" + writer);
+            Application.perf.debug("Using WRITER for WEBP >>" + writer);
             ImageWriteParam pr = writer.getDefaultWriteParam();
             WebPWriteParam writeParam = (WebPWriteParam) pr;
             writeParam.setCompressionMode(WebPWriteParam.MODE_DEFAULT);

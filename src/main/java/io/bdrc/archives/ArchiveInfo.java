@@ -151,7 +151,6 @@ public class ArchiveInfo {
         while (ni.hasNext()) {
             RDFNode nd = ni.next();
             tmp = nd.asLiteral().getString();
-            System.out.println(nd.asLiteral().getLanguage());
             Integer i = langOrder.get(nd.asLiteral().getLanguage());
             if (i != null) {
                 if (i.intValue() < min) {

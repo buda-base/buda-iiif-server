@@ -8,14 +8,17 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import de.digitalcollections.iiif.myhymir.Application;
 
 public class PromQLProcessor {
 
+    public final static Logger log = LoggerFactory.getLogger("default");
+
     public static String getFilteredCounterValues(String promURL, String countName, String filterkey, String filterValue) throws ClientProtocolException, IOException {
         String count = countName + "%7B" + filterkey + "=%22" + filterValue + "%22%7D";
-        System.out.println("COUNT >>" + count);
         return getCounterValues(promURL, count);
     }
 
@@ -25,12 +28,11 @@ public class PromQLProcessor {
         // // two days period
         long start_in_seconds = end_in_seconds - 172800 /* 259200 */;
         String query = "max_over_time(" + countName + "[2d])" + "&_=" + Long.toString((long) (System.currentTimeMillis() / 1000)) + "&start=" + start_in_seconds + "&end=" + end_in_seconds + "&step=72000";
-        System.out.println("URL FULL >>> " + promURL + query);
+        log.info("Full PromQL URL HTTP QUERY>>> {}", promURL + query);
         HttpGet get = new HttpGet(promURL + query);
-        System.out.println("HTTP QUERY >>" + promURL + query);
         HttpResponse resp = client.execute(get);
         String json = EntityUtils.toString(resp.getEntity(), "UTF-8");
-        System.out.println("HTTP RESP >>" + json);
+        log.info("Full PromQL HTTP RESP >> {}", json);
         return json;
     }
 

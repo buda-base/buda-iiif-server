@@ -18,7 +18,7 @@ import io.micrometer.core.instrument.Metrics;
 
 public class ImageMetrics {
 
-    private static final Logger log = LoggerFactory.getLogger(ImageMetrics.class);
+    private static final Logger log = LoggerFactory.getLogger("default");
     public static ArrayList<String> counters;
 
     static {

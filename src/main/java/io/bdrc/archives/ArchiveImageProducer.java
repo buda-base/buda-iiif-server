@@ -31,7 +31,7 @@ public class ArchiveImageProducer implements Callable {
 
     final static String S3_BUCKET = "archive.tbrc.org";
     public static final String IIIF_IMG = "IIIF_IMG";
-    public final static Logger log = LoggerFactory.getLogger(ArchiveImageProducer.class.getName());
+    public final static Logger log = LoggerFactory.getLogger("default");
 
     AmazonS3 s3;
     String identifier;
@@ -49,7 +49,7 @@ public class ArchiveImageProducer implements Callable {
         BdrcS3Resolver resolver = new BdrcS3Resolver();
         try {
             this.identifier = resolver.getS3Identifier(id);
-            System.out.println("IDENTIFIER " + identifier + "ID " + id);
+            log.info("IDENTIFIER " + identifier + "ID " + id);
             if (identifier.endsWith(".tif") || identifier.endsWith(".tiff")) {
                 isTiff = true;
             }

@@ -52,13 +52,11 @@ public class HeaderFilter implements Filter {
             ref_orig = "unknown";
         } else {
             String queryString = referer.substring(referer.indexOf("?") + 1);
-            System.out.println("QUERY STRING =" + queryString);
             String[] parts = queryString.split("&");
             for (String p : parts) {
                 String[] pair = p.split("=");
                 if (pair[0].contentEquals("origin")) {
                     ref_orig = pair[1];
-                    System.out.println("ORIGIN =" + ref_orig);
                 }
             }
         }

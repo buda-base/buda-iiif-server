@@ -51,7 +51,6 @@ public class Application extends SpringBootServletInitializer {
     private static Properties props;
 
     public static void main(String[] args) throws Exception {
-        System.out.println("PROPS d>> " + props);
         perf = LoggerFactory.getLogger("performance");
         InputStream input = new FileInputStream(new File(configPath + "iiifserv.properties"));
         props = new Properties();

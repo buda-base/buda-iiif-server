@@ -65,9 +65,7 @@ public class Metric {
         return "Metric [__name__=" + __name__ + ", context=" + context + ", instance=" + instance + ", job=" + job + ", count=" + count + "]";
     }
 
-    @SuppressWarnings("unchecked")
     public static Metric getMetric(String name, String json, String val) throws JsonParseException, JsonMappingException, IOException {
-        // System.out.println("VALUES >>>> <<<" + val);
         Metric m = new ObjectMapper().readValue(json, Metric.class);
         m.setCount(val);
         m.set__name__(name);
