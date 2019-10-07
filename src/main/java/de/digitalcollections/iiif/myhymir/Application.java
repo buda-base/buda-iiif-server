@@ -47,11 +47,10 @@ import io.bdrc.iiif.metrics.ImageMetrics;
 public class Application extends SpringBootServletInitializer {
 
     static final String configPath = System.getProperty("iiifserv.configpath");
-    public static Logger perf;
+    public static Logger perf = LoggerFactory.getLogger("performance");
     private static Properties props;
 
     public static void main(String[] args) throws Exception {
-        perf = LoggerFactory.getLogger("performance");
         InputStream input = new FileInputStream(new File(configPath + "iiifserv.properties"));
         props = new Properties();
         props.load(input);
