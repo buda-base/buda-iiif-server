@@ -236,7 +236,7 @@ public class IIIFImageApiController {
                 Application.perf.debug("Not different from original, got byes from cache for {}", identifier);
             }
             Application.perf.debug("got the bytes in {} ms for {}", (System.currentTimeMillis() - deb1), identifier);
-            ImageMetrics.imageGetCount((String) request.getAttribute("origin"));
+            ImageMetrics.imageCount(ImageMetrics.IMG_CALLS_COMMON, (String) request.getAttribute("origin"));
             return new ResponseEntity<>(osbytes, headers, HttpStatus.OK);
         }
         deb1 = System.currentTimeMillis();
@@ -262,7 +262,7 @@ public class IIIFImageApiController {
         Application.perf.debug("ended processing image after {} ms for {}", (System.currentTimeMillis() - deb1), identifier);
         Application.perf.debug("Total request time {} ms ", (System.currentTimeMillis() - deb), identifier);
         imgReader.dispose();
-        ImageMetrics.imageGetCount((String) request.getAttribute("origin"));
+        ImageMetrics.imageCount(ImageMetrics.IMG_CALLS_COMMON, (String) request.getAttribute("origin"));
         return new ResponseEntity<>(os.toByteArray(), headers, HttpStatus.OK);
     }
 

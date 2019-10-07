@@ -21,29 +21,21 @@ public class ImageMetrics {
     private static final Logger log = LoggerFactory.getLogger("default");
     public static ArrayList<String> counters;
 
+    public final static String IMG_CALLS_COMMON = "image.calls";
+    public final static String IMG_CALLS_PDF = "image.calls.pdf";
+    public final static String IMG_CALLS_ZIP = "image.calls.zip";
+
     static {
         counters = new ArrayList<>();
-        counters.add("image.calls");
-        counters.add("image.calls.pdf");
-        counters.add("image.calls.zip");
+        counters.add(IMG_CALLS_COMMON);
+        counters.add(IMG_CALLS_PDF);
+        counters.add(IMG_CALLS_ZIP);
     }
 
-    public static void imageGetCount(String origin) throws IIIFException {
+    public static void imageCount(String countName, String origin) throws IIIFException {
         Counter cnt = Metrics.counter("image.calls", "context", origin);
         cnt.increment();
         log.info("Incremented image counter {}; it's value is now {}", cnt.getId(), cnt.count());
-    }
-
-    public static void imagePdfGetCount(String origin) throws IIIFException {
-        Counter cnt = Metrics.counter("image.calls.pdf", "context", origin);
-        cnt.increment();
-        log.info("Incremented pdf image counter {}; it's value is now {}", cnt.getId(), cnt.count());
-    }
-
-    public static void imageZipGetCount(String origin) throws IIIFException {
-        Counter cnt = Metrics.counter("image.calls.zip", "context", origin);
-        cnt.increment();
-        log.info("Incremented zip image counter {}; it's value is now {}", cnt.getId(), cnt.count());
     }
 
     public static void init() throws ClientProtocolException, IOException {

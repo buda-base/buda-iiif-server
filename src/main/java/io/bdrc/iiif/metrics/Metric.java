@@ -69,6 +69,9 @@ public class Metric {
         Metric m = new ObjectMapper().readValue(json, Metric.class);
         m.setCount(val);
         m.set__name__(name);
+        if (m.context == null || m.context.equals("")) {
+            m.setContext("unknown");
+        }
         return m;
     }
 

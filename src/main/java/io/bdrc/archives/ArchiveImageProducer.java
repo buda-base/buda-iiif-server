@@ -65,7 +65,7 @@ public class ArchiveImageProducer implements Callable {
             BufferedImage bImg = ImageIO.read(in);
             log.debug("Got " + id + " from cache ...");
             in.close();
-            ImageMetrics.imagePdfGetCount(origin);
+            ImageMetrics.imageCount(ImageMetrics.IMG_CALLS_PDF, origin);
             return bImg;
         }
         GetObjectRequest request = new GetObjectRequest(S3_BUCKET, identifier);
@@ -74,7 +74,7 @@ public class ArchiveImageProducer implements Callable {
         BufferedImage bImg = ImageIO.read(in);
         log.debug("Got " + id + " from S3 ...added to cache");
         ServerCache.addToCache(IIIF_IMG, id, imgbytes);
-        ImageMetrics.imagePdfGetCount(origin);
+        ImageMetrics.imageCount(ImageMetrics.IMG_CALLS_PDF, origin);
         return bImg;
     }
 
@@ -85,7 +85,7 @@ public class ArchiveImageProducer implements Callable {
             BufferedImage bImg = ImageIO.read(in);
             this.d = new Dimension(bImg.getWidth(), bImg.getHeight());
             log.debug("Zip Got " + id + " from cache ...");
-            ImageMetrics.imageZipGetCount(origin);
+            ImageMetrics.imageCount(ImageMetrics.IMG_CALLS_ZIP, origin);
             return imgbytes;
         }
         GetObjectRequest request = new GetObjectRequest(S3_BUCKET, identifier);
@@ -95,7 +95,7 @@ public class ArchiveImageProducer implements Callable {
         this.d = new Dimension(bImg.getWidth(), bImg.getHeight());
         log.debug("Zip Got " + id + " from S3 ...added to cache");
         ServerCache.addToCache(IIIF_IMG, id, imgbytes);
-        ImageMetrics.imageZipGetCount(origin);
+        ImageMetrics.imageCount(ImageMetrics.IMG_CALLS_ZIP, origin);
         return imgbytes;
     }
 
