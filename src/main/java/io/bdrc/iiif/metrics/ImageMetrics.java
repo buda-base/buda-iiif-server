@@ -62,12 +62,12 @@ public class ImageMetrics {
                 JsonNode values = ij.next();
                 String val = values.get(values.size() - 1).get(1).asText();
                 Metric m = Metric.getMetric(c, metric.toString(), val);
-                if (m != null) {
+                try {
                     Counter cnt = Metrics.counter(c, "context", m.getContext());
                     cnt.increment(Double.parseDouble(m.getCount()));
                     log.info("{} METRICS INCREMENTED to >> {} for context: {}", c, m.getCount(), m.getContext());
-                } else {
-                    log.info("{} METRICS IS NULL WITH Prometheus resp  >> {} ", c, json);
+                } catch (Exception e) {
+                    log.error("{} METRICS IS NULL WITH Prometheus resp  >> {} ", c, json);
                 }
             }
         }
