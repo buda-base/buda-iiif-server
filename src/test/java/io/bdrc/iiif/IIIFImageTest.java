@@ -18,10 +18,14 @@ import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
 
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import de.digitalcollections.iiif.myhymir.Application;
 
 public class IIIFImageTest {
+
+    public final static Logger log = LoggerFactory.getLogger("default");
 
     @Test
     public void iiiftext() throws IOException {
@@ -55,8 +59,9 @@ public class IIIFImageTest {
         }
         System.out.println("out " + outImg);
         Iterator<ImageWriter> it = ImageIO.getImageWritersByMIMEType("image/jpeg");
+        System.out.println("APP PERF " + Application.perf);
         while (it.hasNext()) {
-            Application.perf.debug("WRITER in list {}", it.next());
+            System.out.println("WRITER in list :" + it.next());
         }
         ImageWriter writer = ImageIO.getImageWritersByMIMEType("image/jpeg").next();
         System.out.println("using writer " + writer);
