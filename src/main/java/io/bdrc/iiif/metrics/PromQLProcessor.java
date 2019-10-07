@@ -16,6 +16,7 @@ import de.digitalcollections.iiif.myhymir.Application;
 public class PromQLProcessor {
 
     public final static Logger log = LoggerFactory.getLogger("default");
+    public static int step = 600;
 
     public static String getFilteredCounterValues(String promURL, String countName, String filterkey, String filterValue) throws ClientProtocolException, IOException {
         String count = countName + "%7B" + filterkey + "=%22" + filterValue + "%22%7D";
@@ -27,12 +28,11 @@ public class PromQLProcessor {
         long end_in_seconds = (long) (System.currentTimeMillis() / 1000);
         // // two days period
         long start_in_seconds = end_in_seconds - 172800 /* 259200 */;
-        String query = "max_over_time(" + countName + "[2d])" + "&_=" + Long.toString((long) (System.currentTimeMillis() / 1000)) + "&start=" + start_in_seconds + "&end=" + end_in_seconds + "&step=72000";
+        String query = "max_over_time(" + countName + "[2d])" + "&_=" + Long.toString((long) (System.currentTimeMillis() / 1000)) + "&start=" + start_in_seconds + "&end=" + end_in_seconds + "&step=" + step;
         log.info("Full PromQL URL HTTP QUERY>>> {}", promURL + query);
         HttpGet get = new HttpGet(promURL + query);
         HttpResponse resp = client.execute(get);
         String json = EntityUtils.toString(resp.getEntity(), "UTF-8");
-        log.info("Full PromQL HTTP RESP >> {}", json);
         return json;
     }
 
