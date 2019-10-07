@@ -177,7 +177,6 @@ public class IIIFImageApiController {
             try {
                 accValidation = new ResourceAccessValidation((Access) request.getAttribute("access"), IdentifierInfo.getIndentifierInfo(identifier), img);
             } catch (ResourceNotFoundException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
                 return new ResponseEntity<>(("Resource was not found for identifier " + identifier).getBytes(), HttpStatus.NOT_FOUND);
             }
@@ -291,7 +290,6 @@ public class IIIFImageApiController {
             try {
                 accValidation = new ResourceAccessValidation((Access) req.getAttribute("access"), IdentifierInfo.getIndentifierInfo(identifier), img);
             } catch (ResourceNotFoundException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
                 return new ResponseEntity<>("Resource was not found for identifier " + identifier, HttpStatus.NOT_FOUND);
             }
@@ -300,7 +298,6 @@ public class IIIFImageApiController {
         try {
             webRequest.checkNotModified(imageService.getImageModificationDate(identifier).toEpochMilli());
         } catch (ResourceNotFoundException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
             return new ResponseEntity<>("Resource was not found for identifier " + identifier, HttpStatus.NOT_FOUND);
         }

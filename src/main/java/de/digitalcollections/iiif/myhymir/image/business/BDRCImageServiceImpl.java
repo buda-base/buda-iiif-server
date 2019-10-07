@@ -215,10 +215,8 @@ public class BDRCImageServiceImpl implements ImageService {
         try {
             enrichInfo(getReader(identifier), info);
         } catch (IIIFException e) {
-            e.printStackTrace();
             throw new ResourceIOException(e);
         } catch (ResourceNotFoundException e) {
-            e.printStackTrace();
             throw new ResourceIOException(e);
         }
     }
@@ -227,11 +225,8 @@ public class BDRCImageServiceImpl implements ImageService {
         try {
             imgReader = getReader(identifier);
         } catch (IIIFException e) {
-
-            e.printStackTrace();
             throw new ResourceIOException(e);
         } catch (ResourceNotFoundException e) {
-            e.printStackTrace();
             throw new ResourceIOException(e);
         }
         enrichInfo(imgReader, info);

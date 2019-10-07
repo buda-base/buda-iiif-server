@@ -103,7 +103,6 @@ public class S3ResourceRepositoryImpl implements ResourceRepository<Resource> {
             obj = s3.getObject(request);
             Application.perf.debug("S3 object size is " + obj.getObjectMetadata().getContentLength());
         } catch (AmazonS3Exception e) {
-            e.printStackTrace();
             log.error(">>>>>>>> S3 client failed for identifier {} >> {}", identifier, e.getStatusCode());
             throw new IOException();
         }
@@ -118,7 +117,7 @@ public class S3ResourceRepositoryImpl implements ResourceRepository<Resource> {
             return getInputStream((S3Resource) r);
         } catch (IOException e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+            log.error(">>>>>>>> Could not get input Stream for Resource {} ", r.getUri());
         }
         return null;
     }

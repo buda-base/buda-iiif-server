@@ -75,7 +75,7 @@ public class ArchiveBuilder {
 
                     } catch (IOException e) {
                         // We don't interrupt the pdf generation process
-                        e.printStackTrace();
+                        log.error("Could not get Buffered Missing image from producer for page {} of volume {}", k, inf.volumeId);
                     }
                 }
                 PDPage page = new PDPage(new PDRectangle(bImg.getWidth(), bImg.getHeight()));
@@ -136,7 +136,7 @@ public class ArchiveBuilder {
                         img = out.toByteArray();
                     } catch (IOException e) {
                         // We don't interrupt the pdf generation process
-                        e.printStackTrace();
+                        log.error("Could not get Buffered Missing image from producer for page {} of volume {}", k, inf.volumeId);
                     }
                 }
                 ZipEntry zipEntry = new ZipEntry(images.get(k));

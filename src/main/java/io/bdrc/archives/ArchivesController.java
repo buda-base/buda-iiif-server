@@ -196,7 +196,7 @@ public class ArchivesController {
                 line = buffer.readLine();
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error("Could not get template as resource {}", template);
         }
         return sb.toString();
     }

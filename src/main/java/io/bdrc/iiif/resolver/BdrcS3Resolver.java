@@ -40,7 +40,6 @@ public class BdrcS3Resolver implements S3Resolver {
                 try {
                     md = MessageDigest.getInstance("MD5");
                 } catch (NoSuchAlgorithmException e) {
-                    e.printStackTrace();
                     throw new IIIFException(e);
                 }
                 md.reset();
