@@ -1,6 +1,7 @@
 package de.digitalcollections.iiif.myhymir;
 
 import java.io.IOException;
+import java.net.URL;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -44,21 +45,33 @@ public class HeaderFilter implements Filter {
             orig = allowOrigin;
         }
         String referer = request.getHeader("Referer");
+
         // for tests
         // referer =
         // "https://library.bdrc.io/scripts/embed-iframe.html?work=bdr:W1ERI0011001&origin=website.com";
         String ref_orig = "";
         if (referer == null) {
-            ref_orig = "unknown";
+            ref_orig = request.getHeader("Origin");
+            if (ref_orig == null || ref_orig.equals("")) {
+                ref_orig = request.getHeader("Host");
+            }
         } else {
             String queryString = referer.substring(referer.indexOf("?") + 1);
             String[] parts = queryString.split("&");
-            for (String p : parts) {
-                String[] pair = p.split("=");
-                if (pair[0].contentEquals("origin")) {
-                    ref_orig = pair[1];
+            if (parts.length == 2) {
+                for (String p : parts) {
+                    String[] pair = p.split("=");
+                    if (pair[0].contentEquals("origin")) {
+                        ref_orig = pair[1];
+                    }
                 }
+            } else {
+                URL ref = new URL(referer);
+                ref_orig = ref.getHost();
             }
+        }
+        if (ref_orig == null || ref_orig.equals("")) {
+            ref_orig = "unknown";
         }
         request.setAttribute("origin", ref_orig);
         HttpServletResponse response = (HttpServletResponse) res;
