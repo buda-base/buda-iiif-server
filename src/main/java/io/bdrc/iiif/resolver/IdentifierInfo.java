@@ -1,7 +1,7 @@
 package io.bdrc.iiif.resolver;
 
 import java.io.IOException;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.Iterator;
 
 import org.apache.http.HttpResponse;
@@ -18,7 +18,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.digitalcollections.iiif.myhymir.Application;
 import de.digitalcollections.iiif.myhymir.ServerCache;
 import de.digitalcollections.model.api.identifiable.resource.exceptions.ResourceNotFoundException;
-import io.bdrc.auth.rdf.RdfConstants;
 import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.libraries.ImageListIterator;
 
@@ -37,10 +36,12 @@ public class IdentifierInfo {
     public int pagesIntroTbrc;
     public boolean isChinaRestricted = false;
     public int totalPages = 0;
-    private HashMap<String, Class<Void>> fair_use;
+    // private HashMap<String, Class<Void>> fair_use;
+    private ArrayList<String> fair_use;
 
     @SuppressWarnings("unchecked")
     public IdentifierInfo(String identifier) throws ClientProtocolException, IOException, IIIFException, ResourceNotFoundException {
+        fair_use = new ArrayList<>();
         this.identifier = identifier;
         long deb = System.currentTimeMillis();
         Application.perf.debug("Creating ldspdi connexion " + identifier + " at " + System.currentTimeMillis());
@@ -62,7 +63,7 @@ public class IdentifierInfo {
         node = node.findPath("results").findPath("bindings");
         if (node != null) {
             if (isValidJson(node)) {
-                fair_use = new HashMap<>();
+                fair_use = new ArrayList<>();
                 this.work = parseValue(node.findValue("workId"));
                 this.asset = parseValue(node.findValue("itemId"));
                 this.access = parseValue(node.findValue("access"));
@@ -79,9 +80,9 @@ public class IdentifierInfo {
         } else {
             throw new ResourceNotFoundException();
         }
-        if (getAccessShortName().equals(RdfConstants.FAIR_USE)) {
-            initFairUse();
-        }
+        // if (getAccessShortName().equals(RdfConstants.FAIR_USE)) {
+        initFairUse();
+        // }
     }
 
     private String parseValue(JsonNode n) {
@@ -124,10 +125,6 @@ public class IdentifierInfo {
         this.imageId = imageId;
     }
 
-    public void setFair_use(HashMap<String, Class<Void>> fair_use) {
-        this.fair_use = fair_use;
-    }
-
     public boolean isChinaRestricted() {
         return isChinaRestricted;
     }
@@ -137,22 +134,23 @@ public class IdentifierInfo {
     }
 
     private void initFairUse() {
-        fair_use = new HashMap<>();
         ImageListIterator it1 = new ImageListIterator(imageList, 1, 20);
         while (it1.hasNext()) {
-            fair_use.put(it1.next(), Void.TYPE);
+            // fair_use.put(it1.next(), Void.TYPE);
+            fair_use.add(it1.next());
         }
         ImageListIterator it2 = new ImageListIterator(imageList, totalPages - 19, totalPages);
         while (it2.hasNext()) {
-            fair_use.put(it2.next(), Void.TYPE);
+            // fair_use.put(it2.next(), Void.TYPE);
+            fair_use.add(it2.next());
         }
     }
 
     public boolean isFairUsePublicImage(String img) {
-        if (fair_use == null) {
+        if (fair_use.size() == 0) {
             return false;
         }
-        return fair_use.containsKey(img);
+        return fair_use.contains(img);
     }
 
     public boolean isValidJson(JsonNode node) {
@@ -185,10 +183,6 @@ public class IdentifierInfo {
 
     public void setTotalPages(int totalPages) {
         this.totalPages = totalPages;
-    }
-
-    public HashMap<String, Class<Void>> getFair_use() {
-        return fair_use;
     }
 
     public void setVolumeId(String volumeId) {
@@ -255,6 +249,11 @@ public class IdentifierInfo {
 
     public static void main(String[] args) throws ClientProtocolException, IOException, IIIFException, ResourceNotFoundException {
         Application.initForTests();
-        System.out.println(new IdentifierInfo("bdr:V1NLM7_I1NLM7_001::I1NLM7_0010003.jpg"));
+        IdentifierInfo info = new IdentifierInfo("bdr:V1NLM7_I1NLM7_001::I1NLM7_0010003.jpg");
+        System.out.println("INFO >> " + info);
+        ServerCache.addToCache("identifier", "ID_" + 415289, info);
+        info = (IdentifierInfo) ServerCache.getObjectFromCache("identifier", "ID_" + 415289);
+        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>");
+        System.out.println(info);
     }
 }
