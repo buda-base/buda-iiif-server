@@ -35,33 +35,36 @@ public class ImageMetrics {
     public static void imageCount(String countName, String origin) throws IIIFException {
         Counter cnt = Metrics.counter("image.calls", "context", origin);
         cnt.increment();
-        log.info("Incremented image counter {}; it's value is now {}", cnt.getId(), cnt.count());
+        log.debug("Incremented image counter {}; it's value is now {}", cnt.getId(), cnt.count());
     }
 
     public static void init() throws ClientProtocolException, IOException {
-
         ObjectMapper om = new ObjectMapper();
         String root = Application.getProperty("promQueryRangeURL");
-        for (String c : counters) {
-            String cstr = c.replace(".", "_") + "_total";
-            String json = PromQLProcessor.getCounterValues(root, cstr);
-            JsonNode jn = om.readTree(json);
-            Iterator<JsonNode> it = jn.at("/data/result").iterator();
-            while (it.hasNext()) {
-                JsonNode jd = it.next();
-                Iterator<JsonNode> ij = jd.elements();
-                JsonNode metric = ij.next();
-                JsonNode values = ij.next();
-                String val = values.get(values.size() - 1).get(1).asText();
-                Metric m = Metric.getMetric(c, metric.toString(), val);
-                try {
-                    Counter cnt = Metrics.counter(c, "context", m.getContext());
-                    cnt.increment(Double.parseDouble(m.getCount()));
-                    log.info("{} METRICS INCREMENTED to >> {} for context: {}", c, m.getCount(), m.getContext());
-                } catch (Exception e) {
-                    log.error("{} METRICS IS NULL WITH Prometheus resp  >> {} ", c, json);
+        try {
+            for (String c : counters) {
+                String cstr = c.replace(".", "_") + "_total";
+                String json = PromQLProcessor.getCounterValues(root, cstr);
+                JsonNode jn = om.readTree(json);
+                Iterator<JsonNode> it = jn.at("/data/result").iterator();
+                while (it.hasNext()) {
+                    JsonNode jd = it.next();
+                    Iterator<JsonNode> ij = jd.elements();
+                    JsonNode metric = ij.next();
+                    JsonNode values = ij.next();
+                    String val = values.get(values.size() - 1).get(1).asText();
+                    Metric m = Metric.getMetric(c, metric.toString(), val);
+                    try {
+                        Counter cnt = Metrics.counter(c, "context", m.getContext());
+                        cnt.increment(Double.parseDouble(m.getCount()));
+                        log.info("{} METRICS INCREMENTED to >> {} for context: {}", c, m.getCount(), m.getContext());
+                    } catch (Exception e) {
+                        log.error("{} METRICS IS NULL WITH Prometheus resp  >> {} ", c, json);
+                    }
                 }
             }
+        } catch (Exception e) {
+            log.error("Image metrics init failed ", e);
         }
     }
 
