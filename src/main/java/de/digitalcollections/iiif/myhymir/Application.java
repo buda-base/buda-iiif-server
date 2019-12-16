@@ -47,8 +47,9 @@ import io.bdrc.iiif.metrics.ImageMetrics;
 public class Application extends SpringBootServletInitializer {
 
     static final String configPath = System.getProperty("iiifserv.configpath");
-    public static Logger perf = LoggerFactory.getLogger("performance");
+    public static Logger perfLog = LoggerFactory.getLogger("performance");
     private static Properties props;
+    private static boolean logPerf = true;
 
     public static void main(String[] args) throws Exception {
         InputStream input = new FileInputStream(new File(configPath + "iiifserv.properties"));
@@ -66,9 +67,36 @@ public class Application extends SpringBootServletInitializer {
 
             RdfAuthModel.init();
         }
+        if (props.getProperty("logPerf") != null) {
+            logPerf = Boolean.parseBoolean(props.getProperty("logPerf"));
+        }
         S3ResourceRepositoryImpl.initWithProps(props);
         SpringApplication.run(Application.class, args);
-        perf.debug("Application main", "Test PERF Log ");
+        logPerf("Application main", "Test PERF Log ");
+    }
+
+    public static void logPerf(String msg) {
+        if (logPerf) {
+            perfLog.debug(msg);
+        }
+    }
+
+    public static void logPerf(String msg, Object o) {
+        if (logPerf) {
+            perfLog.debug(msg, o);
+        }
+    }
+
+    public static void logPerf(String msg, Object o, Object i) {
+        if (logPerf) {
+            perfLog.debug(msg, o, i);
+        }
+    }
+
+    public static void logPerf(String msg, Object o, Object i, Object j) {
+        if (logPerf) {
+            perfLog.debug(msg, o, i, j);
+        }
     }
 
     @EventListener(ApplicationReadyEvent.class)

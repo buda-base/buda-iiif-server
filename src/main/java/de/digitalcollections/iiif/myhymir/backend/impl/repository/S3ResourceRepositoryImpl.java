@@ -90,7 +90,7 @@ public class S3ResourceRepositoryImpl implements ResourceRepository<Resource> {
     }
 
     public InputStream getInputStream(S3Resource r) throws IOException {
-        Application.perf.debug("getting S3 client " + r.getIdentifier());
+        Application.logPerf("getting S3 client " + r.getIdentifier());
         String identifier = r.getId();
         S3Object obj = null;
         final AmazonS3 s3 = S3ResourceRepositoryImpl.getClientInstance();
@@ -101,13 +101,13 @@ public class S3ResourceRepositoryImpl implements ResourceRepository<Resource> {
         try {
             final GetObjectRequest request = new GetObjectRequest(bucket, r.getIdentifier());
             obj = s3.getObject(request);
-            Application.perf.debug("S3 object size is " + obj.getObjectMetadata().getContentLength());
+            Application.logPerf("S3 object size is " + obj.getObjectMetadata().getContentLength());
         } catch (AmazonS3Exception e) {
             log.error(">>>>>>>> S3 client failed for identifier {} >> {}", identifier, e.getStatusCode());
             throw new IOException();
         }
         final InputStream stream = obj.getObjectContent();
-        Application.perf.debug("S3 stream {} returned for {}", stream, identifier);
+        Application.logPerf("S3 stream {} returned for {}", stream, identifier);
         return stream;
     }
 

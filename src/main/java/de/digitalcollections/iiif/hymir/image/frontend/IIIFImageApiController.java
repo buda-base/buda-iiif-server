@@ -230,12 +230,12 @@ public class IIIFImageApiController {
             byte[] osbytes = (byte[]) ServerCache.getObjectFromCache(IIIF_IMG, identifier);
             if (osbytes == null) {
                 final InputStream input = resourceService.getInputStream(res);
-                Application.perf.debug("got the S3 inputstream in {} ms for {}", (System.currentTimeMillis() - deb1), identifier);
+                Application.logPerf("got the S3 inputstream in {} ms for {}", (System.currentTimeMillis() - deb1), identifier);
                 osbytes = StreamUtils.copyToByteArray(input);
             } else {
-                Application.perf.debug("Not different from original, got byes from cache for {}", identifier);
+                Application.logPerf("Not different from original, got byes from cache for {}", identifier);
             }
-            Application.perf.debug("got the bytes in {} ms for {}", (System.currentTimeMillis() - deb1), identifier);
+            Application.logPerf("got the bytes in {} ms for {}", (System.currentTimeMillis() - deb1), identifier);
             ImageMetrics.imageCount(ImageMetrics.IMG_CALLS_COMMON, (String) request.getAttribute("origin"));
             return new ResponseEntity<>(osbytes, headers, HttpStatus.OK);
         }
@@ -247,7 +247,7 @@ public class IIIFImageApiController {
             e.printStackTrace();
             return new ResponseEntity<>(("Resource was not found for identifier " + identifier).getBytes(), HttpStatus.NOT_FOUND);
         }
-        Application.perf.debug("end reading from image service after {} ms for {} with reader {}", (System.currentTimeMillis() - deb1), identifier, imgReader);
+        Application.logPerf("end reading from image service after {} ms for {} with reader {}", (System.currentTimeMillis() - deb1), identifier, imgReader);
         final String canonicalForm;
         try {
             canonicalForm = selector.getCanonicalForm(new Dimension(info.getWidth(), info.getHeight()), profile, selector.getQuality());
@@ -256,11 +256,11 @@ public class IIIFImageApiController {
         }
         headers.add("Link", String.format("<%s>;rel=\"canonical\"", getUrlBase(request) + path.substring(0, path.indexOf(identifier)) + canonicalForm));
         deb1 = System.currentTimeMillis();
-        Application.perf.debug("processing image output stream for {}", identifier);
+        Application.logPerf("processing image output stream for {}", identifier);
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         imageService.processImage(identifier, selector, profile, os, imgReader, request.getRequestURI());
-        Application.perf.debug("ended processing image after {} ms for {}", (System.currentTimeMillis() - deb1), identifier);
-        Application.perf.debug("Total request time {} ms ", (System.currentTimeMillis() - deb), identifier);
+        Application.logPerf("ended processing image after {} ms for {}", (System.currentTimeMillis() - deb1), identifier);
+        Application.logPerf("Total request time {} ms ", (System.currentTimeMillis() - deb), identifier);
         imgReader.dispose();
         ImageMetrics.imageCount(ImageMetrics.IMG_CALLS_COMMON, (String) request.getAttribute("origin"));
         return new ResponseEntity<>(os.toByteArray(), headers, HttpStatus.OK);
@@ -283,7 +283,7 @@ public class IIIFImageApiController {
             img = identifier.split("::")[1];
             staticImg = identifier.split("::")[0].trim().equals("static");
         }
-        Application.perf.debug("Entering endpoint getInfo for {}", identifier);
+        Application.logPerf("Entering endpoint getInfo for {}", identifier);
         boolean unAuthorized = false;
         if (!staticImg) {
             ResourceAccessValidation accValidation = null;
@@ -313,7 +313,7 @@ public class IIIFImageApiController {
         if (pngOutput(identifier)) {
             info.setPreferredFormats(pngHint);
         }
-        Application.perf.debug("getInfo read ImageInfo for {}", identifier);
+        Application.logPerf("getInfo read ImageInfo for {}", identifier);
         imageService.readImageInfo(identifier, info, null);
         HttpHeaders headers = new HttpHeaders();
         try {
@@ -333,7 +333,7 @@ public class IIIFImageApiController {
         // We set the header ourselves, since using @CrossOrigin doesn't expose "*", but
         // always sets the requesting domain
         // headers.add("Access-Control-Allow-Origin", "*");
-        Application.perf.debug("getInfo ready to return after {} ms for {}", (System.currentTimeMillis() - deb), identifier);
+        Application.logPerf("getInfo ready to return after {} ms for {}", (System.currentTimeMillis() - deb), identifier);
         if (unAuthorized) {
             if (serviceInfo.hasValidProperties() && serviceInfo.authEnabled()) {
                 headers.setCacheControl(CacheControl.maxAge(maxAge, TimeUnit.MILLISECONDS).cachePublic());

@@ -44,7 +44,7 @@ public class IdentifierInfo {
         fair_use = new ArrayList<>();
         this.identifier = identifier;
         long deb = System.currentTimeMillis();
-        Application.perf.debug("Creating ldspdi connexion " + identifier + " at " + System.currentTimeMillis());
+        Application.logPerf("Creating ldspdi connexion " + identifier + " at " + System.currentTimeMillis());
         HttpClient httpClient = HttpClientBuilder.create().build();
         JSONObject object = new JSONObject();
         this.volumeId = identifier.split("::")[0];
@@ -57,7 +57,7 @@ public class IdentifierInfo {
         request.setEntity(new StringEntity(message, "UTF8"));
         request.setHeader("Content-type", "application/json");
         HttpResponse response = httpClient.execute(request);
-        Application.perf.debug("getting ldspdi response after " + (System.currentTimeMillis() - deb) + " ms " + identifier);
+        Application.logPerf("getting ldspdi response after " + (System.currentTimeMillis() - deb) + " ms " + identifier);
         ObjectMapper mapper = new ObjectMapper();
         JsonNode node = mapper.readTree(response.getEntity().getContent());
         node = node.findPath("results").findPath("bindings");

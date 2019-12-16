@@ -45,10 +45,10 @@ public class ArchiveBuilder {
     @SuppressWarnings({ "rawtypes", "unchecked" })
     public static void buildPdf(Iterator<String> idList, IdentifierInfo inf, String output, String origin) throws IIIFException, IOException {
         long deb = System.currentTimeMillis();
-        Application.perf.debug("Starting building pdf {}", inf.volumeId);
+        Application.logPerf("Starting building pdf {}", inf.volumeId);
         ExecutorService service = Executors.newFixedThreadPool(50);
         AmazonS3 s3 = S3ResourceRepositoryImpl.getClientInstance();
-        Application.perf.debug("S3 client obtained in building pdf {} after {} ", inf.volumeId, System.currentTimeMillis() - deb);
+        Application.logPerf("S3 client obtained in building pdf {} after {} ", inf.volumeId, System.currentTimeMillis() - deb);
         TreeMap<Integer, Future<?>> t_map = new TreeMap<>();
         int i = 1;
         while (idList.hasNext()) {
@@ -63,7 +63,7 @@ public class ArchiveBuilder {
         PDDocument doc = new PDDocument();
         ;
         doc.setDocumentInformation(ArchiveInfo.getInstance(inf).getDocInformation());
-        Application.perf.debug("building pdf writer and document opened {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
+        Application.logPerf("building pdf writer and document opened {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
         for (int k = 1; k <= t_map.keySet().size(); k++) {
             Future<?> tmp = t_map.get(k);
             try {
@@ -91,7 +91,7 @@ public class ArchiveBuilder {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         COSWriter cw = new COSWriter(baos);
         cw.write(doc);
-        Application.perf.debug("pdf document finished and closed for {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
+        Application.logPerf("pdf document finished and closed for {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
         ServerCache.addToCache(IIIF, output.substring(4), baos.toByteArray());
         cw.close();
         doc.close();
@@ -101,10 +101,10 @@ public class ArchiveBuilder {
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public static void buildZip(Iterator<String> idList, IdentifierInfo inf, String output, String origin) throws IIIFException {
         long deb = System.currentTimeMillis();
-        Application.perf.debug("Starting building zip {}", inf.volumeId);
+        Application.logPerf("Starting building zip {}", inf.volumeId);
         ExecutorService service = Executors.newFixedThreadPool(50);
         AmazonS3 s3 = S3ResourceRepositoryImpl.getClientInstance();
-        Application.perf.debug("S3 client obtained in building pdf {} after {} ", inf.volumeId, System.currentTimeMillis() - deb);
+        Application.logPerf("S3 client obtained in building pdf {} after {} ", inf.volumeId, System.currentTimeMillis() - deb);
         TreeMap<Integer, Future<?>> t_map = new TreeMap<>();
         TreeMap<Integer, String> images = new TreeMap<>();
         int i = 1;
@@ -121,7 +121,7 @@ public class ArchiveBuilder {
         ServerCache.addToCache("zipjobs", output, false);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ZipOutputStream zipOut = new ZipOutputStream(baos);
-        Application.perf.debug("building zip stream opened {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
+        Application.logPerf("building zip stream opened {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
         try {
             for (int k = 1; k <= t_map.keySet().size(); k++) {
                 Future<?> tmp = t_map.get(k);
@@ -148,7 +148,7 @@ public class ArchiveBuilder {
         } catch (IOException | ExecutionException | InterruptedException e) {
             throw new IIIFException(500, IIIFException.GENERIC_APP_ERROR_CODE, e);
         }
-        Application.perf.debug("zip document finished and closed for {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
+        Application.logPerf("zip document finished and closed for {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
         ServerCache.addToCache(IIIF_ZIP, output.substring(3), baos.toByteArray());
         ServerCache.addToCache("zipjobs", output, true);
     }

@@ -34,7 +34,6 @@ public class HeaderFilter implements Filter {
     @Override
     public void destroy() {
         // TODO Auto-generated method stub
-
     }
 
     @Override
@@ -45,10 +44,6 @@ public class HeaderFilter implements Filter {
             orig = allowOrigin;
         }
         String referer = request.getHeader("Referer");
-
-        // for tests
-        // referer =
-        // "https://library.bdrc.io/scripts/embed-iframe.html?work=bdr:W1ERI0011001&origin=website.com";
         String ref_orig = "";
         if (referer == null) {
             ref_orig = request.getHeader("Origin");

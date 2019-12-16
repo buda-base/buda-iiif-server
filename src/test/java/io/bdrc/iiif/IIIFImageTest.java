@@ -21,8 +21,6 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.digitalcollections.iiif.myhymir.Application;
-
 public class IIIFImageTest {
 
     public final static Logger log = LoggerFactory.getLogger("default");
@@ -59,7 +57,6 @@ public class IIIFImageTest {
         }
         System.out.println("out " + outImg);
         Iterator<ImageWriter> it = ImageIO.getImageWritersByMIMEType("image/jpeg");
-        System.out.println("APP PERF " + Application.perf);
         while (it.hasNext()) {
             System.out.println("WRITER in list :" + it.next());
         }

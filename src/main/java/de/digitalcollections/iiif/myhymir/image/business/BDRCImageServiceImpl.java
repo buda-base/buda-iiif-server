@@ -174,9 +174,9 @@ public class BDRCImageServiceImpl implements ImageService {
 
         byte[] bytes = (byte[]) ServerCache.getObjectFromCache(IIIF_IMG, identifier);
         if (bytes != null) {
-            Application.perf.debug("Image service image was cached {}", identifier);
+            Application.logPerf("Image service image was cached {}", identifier);
         } else {
-            Application.perf.debug("Image service reading {}", identifier);
+            Application.logPerf("Image service reading {}", identifier);
             if (imageSecurityService != null && !imageSecurityService.isAccessAllowed(identifier)) {
                 throw new IIIFException();
             }
@@ -200,13 +200,13 @@ public class BDRCImageServiceImpl implements ImageService {
                 e.printStackTrace();
             }
             bytes = (byte[]) ServerCache.getObjectFromCache(IIIF_IMG, identifier);
-            Application.perf.debug("Image service read {} from s3 {}", S3input, identifier);
+            Application.logPerf("Image service read {} from s3 {}", S3input, identifier);
         }
         ImageInputStream iis = ImageIO.createImageInputStream(new ByteArrayInputStream(bytes));
         ImageReader reader = Streams.stream(ImageIO.getImageReaders(iis)).findFirst().orElseThrow(UnsupportedFormatException::new);
         reader.setInput(iis);
-        Application.perf.debug("S3 object IIIS READER >> {}", reader);
-        Application.perf.debug("Image service return reader at " + (System.currentTimeMillis() - deb) + " ms " + identifier);
+        Application.logPerf("S3 object IIIS READER >> {}", reader);
+        Application.logPerf("Image service return reader at " + (System.currentTimeMillis() - deb) + " ms " + identifier);
         return reader;
     }
 
@@ -239,7 +239,7 @@ public class BDRCImageServiceImpl implements ImageService {
      **/
     private ImageReadParam getReadParam(ImageReader reader, ImageApiSelector selector, double decodeScaleFactor) throws IOException, InvalidParametersException {
         ImageReadParam readParam = reader.getDefaultReadParam();
-        Application.perf.debug("Entering ReadParam with ImageReadParam {}", readParam);
+        Application.logPerf("Entering ReadParam with ImageReadParam {}", readParam);
         Dimension nativeDimensions = new Dimension(reader.getWidth(0), reader.getHeight(0));
         Rectangle targetRegion;
         try {
@@ -262,7 +262,7 @@ public class BDRCImageServiceImpl implements ImageService {
 
     private DecodedImage readImage(String identifier, ImageApiSelector selector, ImageApiProfile profile, ImageReader reader) throws IOException, UnsupportedFormatException, InvalidParametersException {
         long deb = System.currentTimeMillis();
-        Application.perf.debug("Entering readImage for creating DecodedImage");
+        Application.logPerf("Entering readImage for creating DecodedImage");
         if ((selector.getRotation().getRotation() % 90) != 0) {
             throw new UnsupportedOperationException("Can only rotate by multiples of 90 degrees.");
         }
@@ -305,7 +305,7 @@ public class BDRCImageServiceImpl implements ImageService {
             }
             rotation = 0;
         }
-        Application.perf.debug("Done readingImage computing DecodedImage after {} ms", System.currentTimeMillis() - deb);
+        Application.logPerf("Done readingImage computing DecodedImage after {} ms", System.currentTimeMillis() - deb);
         return new DecodedImage(reader.read(imageIndex, readParam), targetSize, rotation);
     }
 
@@ -350,7 +350,7 @@ public class BDRCImageServiceImpl implements ImageService {
             break;
         case DEFAULT:
             outType = BufferedImage.TYPE_3BYTE_BGR;
-            Application.perf.debug("Transform image DEFAULT quality >>" + quality + " OutType: " + outType + " format " + format);
+            Application.logPerf("Transform image DEFAULT quality >>" + quality + " OutType: " + outType + " format " + format);
             break;
         default:
             outType = inType;
@@ -407,15 +407,15 @@ public class BDRCImageServiceImpl implements ImageService {
     public void processImage(String identifier, ImageApiSelector selector, ImageApiProfile profile, OutputStream os, ImageReader imgReader, String uri)
             throws InvalidParametersException, UnsupportedOperationException, UnsupportedFormatException, IOException {
         long deb = System.currentTimeMillis();
-        Application.perf.debug("Entering Processimage.... with reader {} ", imgReader);
+        Application.logPerf("Entering Processimage.... with reader {} ", imgReader);
         DecodedImage img = readImage(identifier, selector, profile, imgReader);
-        Application.perf.debug("Done readingImage DecodedImage created");
+        Application.logPerf("Done readingImage DecodedImage created");
         BufferedImage outImg = transformImage(selector.getFormat(), img.img, img.targetSize, img.rotation, selector.getRotation().isMirror(), selector.getQuality());
         ImageWriter writer = null;
         Iterator<ImageWriter> writers = ImageIO.getImageWritersByMIMEType(selector.getFormat().getMimeType().getTypeName());
         while (writers.hasNext()) {
             ImageWriter w = writers.next();
-            Application.perf.debug("FOUND REGISTERED WRITER in list {}", w);
+            Application.logPerf("FOUND REGISTERED WRITER in list {}", w);
             writer = w;
         }
         if (writer == null) {
@@ -424,7 +424,7 @@ public class BDRCImageServiceImpl implements ImageService {
         switch (selector.getFormat()) {
 
         case PNG:
-            Application.perf.debug("USING JAI PNG for {} ", identifier);
+            Application.logPerf("USING JAI PNG for {} ", identifier);
             ImageEncodeParam param = PNGEncodeParam.getDefaultEncodeParam(outImg);
             String format = "PNG";
             ImageEncoder encoder = ImageCodec.createImageEncoder(format, os, param);
@@ -441,13 +441,13 @@ public class BDRCImageServiceImpl implements ImageService {
                 if (w.getClass().getName().equals("com.twelvemonkeys.imageio.plugins.jpeg.JPEGImageWriter")) {
                     wtr = w;
                 }
-                Application.perf.debug("Should use WRITERS for JPEG >> {} with quality {}", wtr, outImg.getType());
-                Application.perf.debug("WRITERS---> in list {}", w.getClass().getName());
+                Application.logPerf("Should use WRITERS for JPEG >> {} with quality {}", wtr, outImg.getType());
+                Application.logPerf("WRITERS---> in list {}", w.getClass().getName());
             }
             if (outImg.getType() != BufferedImage.TYPE_BYTE_GRAY) {
                 wtr = ImageIO.getImageWritersByMIMEType("image/jpeg").next();
             }
-            Application.perf.debug("USING JPEG WRITER {} for {}", wtr, identifier);
+            Application.logPerf("USING JPEG WRITER {} for {}", wtr, identifier);
             // This setting, using 0.75f as compression quality produces the same
             // as the default setting, with no writeParam --> writer.write(outImg)
 
@@ -464,7 +464,7 @@ public class BDRCImageServiceImpl implements ImageService {
 
         case WEBP:
             writer = ImageIO.getImageWritersByMIMEType("image/webp").next();
-            Application.perf.debug("Using WRITER for WEBP >>" + writer);
+            Application.logPerf("Using WRITER for WEBP >>" + writer);
             ImageWriteParam pr = writer.getDefaultWriteParam();
             WebPWriteParam writeParam = (WebPWriteParam) pr;
             writeParam.setCompressionMode(WebPWriteParam.MODE_DEFAULT);
@@ -477,14 +477,14 @@ public class BDRCImageServiceImpl implements ImageService {
             break;
 
         default:
-            Application.perf.debug("USING NON NULL WRITER {}", writer);
+            Application.logPerf("USING NON NULL WRITER {}", writer);
             ImageOutputStream ios = ImageIO.createImageOutputStream(os);
             writer.setOutput(ios);
             writer.write(outImg);
             writer.dispose();
             ios.flush();
         }
-        Application.perf.debug("Done with Processimage.... in {} ms", System.currentTimeMillis() - deb);
+        Application.logPerf("Done with Processimage.... in {} ms", System.currentTimeMillis() - deb);
     }
 
     @Override
