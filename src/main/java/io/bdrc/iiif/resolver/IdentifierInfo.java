@@ -1,23 +1,30 @@
 package io.bdrc.iiif.resolver;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.digitalcollections.iiif.myhymir.Application;
 import de.digitalcollections.iiif.myhymir.ServerCache;
 import de.digitalcollections.model.api.identifiable.resource.exceptions.ResourceNotFoundException;
+import io.bdrc.auth.rdf.RdfConstants;
 import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.libraries.ImageListIterator;
 
@@ -36,11 +43,13 @@ public class IdentifierInfo {
     public int pagesIntroTbrc;
     public boolean isChinaRestricted = false;
     public int totalPages = 0;
-    // private HashMap<String, Class<Void>> fair_use;
     private ArrayList<String> fair_use;
+
+    public final static Logger log = LoggerFactory.getLogger(IdentifierInfo.class.getName());
 
     @SuppressWarnings("unchecked")
     public IdentifierInfo(String identifier) throws ClientProtocolException, IOException, IIIFException, ResourceNotFoundException {
+        log.info("Instanciating identifierInfo with {}", identifier);
         fair_use = new ArrayList<>();
         this.identifier = identifier;
         long deb = System.currentTimeMillis();
@@ -51,12 +60,14 @@ public class IdentifierInfo {
         if (identifier.split("::").length > 1) {
             this.imageId = identifier.split("::")[1];
         }
+        log.info("IdentifierInfo volumeId = {}", volumeId);
         HttpPost request = new HttpPost("http://purl.bdrc.io/query/table/IIIFPres_volumeInfo");
         object.put("R_RES", volumeId);
         String message = object.toString();
         request.setEntity(new StringEntity(message, "UTF8"));
         request.setHeader("Content-type", "application/json");
         HttpResponse response = httpClient.execute(request);
+        log.info("IdentifierInfo ldspdi response code = {}", response.getStatusLine().getStatusCode());
         Application.logPerf("getting ldspdi response after " + (System.currentTimeMillis() - deb) + " ms " + identifier);
         ObjectMapper mapper = new ObjectMapper();
         JsonNode node = mapper.readTree(response.getEntity().getContent());
@@ -68,6 +79,7 @@ public class IdentifierInfo {
                 this.asset = parseValue(node.findValue("itemId"));
                 this.access = parseValue(node.findValue("access"));
                 this.imageList = parseValue(node.findValue("imageList"));
+                log.info("IdentifierInfo Image List = {}", imageList);
                 this.license = parseValue(node.findValue("license"));
                 this.imageGroup = parseValue(node.findValue("imageGroup"));
                 this.totalPages = Integer.parseInt(parseValue(node.findValue("totalPages")));
@@ -80,9 +92,9 @@ public class IdentifierInfo {
         } else {
             throw new ResourceNotFoundException();
         }
-        // if (getAccessShortName().equals(RdfConstants.FAIR_USE)) {
-        initFairUse();
-        // }
+        if (getAccessShortName().equals(RdfConstants.FAIR_USE)) {
+            initFairUse(volumeId);
+        }
     }
 
     private String parseValue(JsonNode n) {
@@ -91,18 +103,28 @@ public class IdentifierInfo {
 
     public static IdentifierInfo getIndentifierInfo(String identifier) throws ClientProtocolException, IOException, IIIFException, ResourceNotFoundException {
         String volumeId = identifier.split("::")[0];
-        // System.out.println("ID INFO vol Id>>" + volumeId);
         IdentifierInfo info = (IdentifierInfo) ServerCache.getObjectFromCache("identifier", "ID_" + volumeId);
-        // System.out.println("IDENTIFIER INFO >>" + info);
         if (info != null) {
             return info;
         } else {
-            // System.out.println("IDENTIFIER INFO not found querying ldspdi >>");
             info = new IdentifierInfo(identifier);
             ServerCache.addToCache("identifier", "ID_" + volumeId, info);
-            // System.out.println("IDENTIFIER INFO ADDED TO CACHE >>" + info);
             return info;
         }
+    }
+
+    public List<ImageInfo> getImageList(String voulumeId) throws ClientProtocolException, IOException {
+        HttpClient client = HttpClientBuilder.create().build();
+        HttpGet get = new HttpGet("https://iiifpres.bdrc.io/il/v:" + volumeId);
+        HttpResponse resp = client.execute(get);
+        ObjectMapper om = new ObjectMapper();
+        final InputStream objectData = resp.getEntity().getContent();
+        List<ImageInfo> imageList = om.readValue(objectData, new TypeReference<List<ImageInfo>>() {
+        });
+        objectData.close();
+        imageList.removeIf(imageInfo -> imageInfo.filename.endsWith("json"));
+        log.debug("List for volumeId {} >>> {}", volumeId, imageList);
+        return imageList;
     }
 
     public int getVolumeNumber() {
@@ -133,16 +155,13 @@ public class IdentifierInfo {
         return license;
     }
 
-    private void initFairUse() {
-        ImageListIterator it1 = new ImageListIterator(imageList, 1, 20);
-        while (it1.hasNext()) {
-            // fair_use.put(it1.next(), Void.TYPE);
-            fair_use.add(it1.next());
+    private void initFairUse(String volumeId) throws ClientProtocolException, IOException {
+        List<ImageInfo> list = getImageList(volumeId);
+        for (int x = 0; x < 20; x++) {
+            fair_use.add(list.get(x).filename);
         }
-        ImageListIterator it2 = new ImageListIterator(imageList, totalPages - 19, totalPages);
-        while (it2.hasNext()) {
-            // fair_use.put(it2.next(), Void.TYPE);
-            fair_use.add(it2.next());
+        for (int x = list.size() - 20; x < list.size(); x++) {
+            fair_use.add(list.get(x).filename);
         }
     }
 
