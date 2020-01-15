@@ -63,13 +63,10 @@ import io.bdrc.iiif.resolver.IdentifierInfo;
 
 @RestController
 @Component
-// @RequestMapping("/image/v2/")
 @RequestMapping("/")
 public class IIIFImageApiController {
 
     public static final String IIIF_IMG = "IIIF_IMG";
-
-    // public static final String VERSION = "v2";
 
     @Autowired
     private BDRCImageServiceImpl imageService;
@@ -140,7 +137,6 @@ public class IIIFImageApiController {
         valid = tkVal.isValid();
         if (valid) {
             Cookie c = new Cookie(AuthProps.getProperty("cookieKey"), URLEncoder.encode(token, "UTF-8"));
-            // c.setSecure(true);
             c.setMaxAge(computeExpires(tkVal));
             c.setHttpOnly(true);
             response.addCookie(c);
@@ -177,7 +173,7 @@ public class IIIFImageApiController {
             try {
                 accValidation = new ResourceAccessValidation((Access) request.getAttribute("access"), IdentifierInfo.getIndentifierInfo(identifier), img);
             } catch (ResourceNotFoundException e) {
-                e.printStackTrace();
+                log.error("Resource was not found for identifier " + identifier + " Message: " + e.getMessage());
                 return new ResponseEntity<>(("Resource was not found for identifier " + identifier).getBytes(), HttpStatus.NOT_FOUND);
             }
             identifier = URLDecoder.decode(identifier, "UTF-8");
@@ -207,8 +203,7 @@ public class IIIFImageApiController {
             webRequest.checkNotModified(imageService.getImageModificationDate(identifier).toEpochMilli());
             headers.setDate("Last-Modified", imageService.getImageModificationDate(identifier).toEpochMilli());
         } catch (ResourceNotFoundException e1) {
-            // TODO Auto-generated catch block
-            e1.printStackTrace();
+            log.error("Resource was not found for identifier " + identifier + " Message: " + e1.getMessage());
             return new ResponseEntity<>(("Resource was not found for identifier " + identifier).getBytes(), HttpStatus.NOT_FOUND);
         }
 
@@ -244,7 +239,7 @@ public class IIIFImageApiController {
         try {
             imgReader = imageService.readImageInfo(identifier, info, null);
         } catch (ResourceIOException e) {
-            e.printStackTrace();
+            log.error("Resource was not found for identifier " + identifier + " Message: " + e.getMessage());
             return new ResponseEntity<>(("Resource was not found for identifier " + identifier).getBytes(), HttpStatus.NOT_FOUND);
         }
         Application.logPerf("end reading from image service after {} ms for {} with reader {}", (System.currentTimeMillis() - deb1), identifier, imgReader);
@@ -252,7 +247,8 @@ public class IIIFImageApiController {
         try {
             canonicalForm = selector.getCanonicalForm(new Dimension(info.getWidth(), info.getHeight()), profile, selector.getQuality());
         } catch (ResolvingException e) {
-            throw new InvalidParametersException(e);
+            log.error("Could not get a canonical form for identifier " + identifier + " Message:" + e.getMessage());
+            return new ResponseEntity<>(("Could not get a canonical form for identifier " + identifier).getBytes(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
         headers.add("Link", String.format("<%s>;rel=\"canonical\"", getUrlBase(request) + path.substring(0, path.indexOf(identifier)) + canonicalForm));
         deb1 = System.currentTimeMillis();
@@ -290,7 +286,7 @@ public class IIIFImageApiController {
             try {
                 accValidation = new ResourceAccessValidation((Access) req.getAttribute("access"), IdentifierInfo.getIndentifierInfo(identifier), img);
             } catch (ResourceNotFoundException e) {
-                e.printStackTrace();
+                log.error("Resource was not found for identifier " + identifier + " Message: " + e.getMessage());
                 return new ResponseEntity<>("Resource was not found for identifier " + identifier, HttpStatus.NOT_FOUND);
             }
             unAuthorized = !accValidation.isAccessible(req);
@@ -298,7 +294,7 @@ public class IIIFImageApiController {
         try {
             webRequest.checkNotModified(imageService.getImageModificationDate(identifier).toEpochMilli());
         } catch (ResourceNotFoundException e) {
-            e.printStackTrace();
+            log.error("Resource was not found for identifier " + identifier + " Message: " + e.getMessage());
             return new ResponseEntity<>("Resource was not found for identifier " + identifier, HttpStatus.NOT_FOUND);
         }
         String path = req.getServletPath();
@@ -319,8 +315,7 @@ public class IIIFImageApiController {
         try {
             headers.setDate("Last-Modified", imageService.getImageModificationDate(identifier).toEpochMilli());
         } catch (ResourceNotFoundException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            log.error("Resource was not found for identifier " + identifier + " Message: " + e.getMessage());
             return new ResponseEntity<>("Resource was not found for identifier " + identifier, HttpStatus.NOT_FOUND);
         }
         if ("application/ld+json".equals(req.getHeader("Accept"))) {
@@ -367,7 +362,7 @@ public class IIIFImageApiController {
                 return header.split(" ")[1];
             }
         } catch (Exception ex) {
-            ex.printStackTrace();
+            log.error("Could not get the token from header " + header + " Message: " + ex.getMessage());
             return null;
         }
         return null;
@@ -386,6 +381,7 @@ public class IIIFImageApiController {
             selector.setQuality(ImageApiProfile.Quality.valueOf(quality.toUpperCase()));
             selector.setFormat(ImageApiProfile.Format.valueOf(format.toUpperCase()));
         } catch (ResolvingException e) {
+            log.error("ImageApiSelector could not be obtained; Message:" + e.getMessage());
             throw new InvalidParametersException(e);
         }
         return selector;

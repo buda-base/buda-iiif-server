@@ -53,7 +53,7 @@ public class BdrcS3Resolver implements S3Resolver {
             return id;
         } catch (ResourceNotFoundException ex) {
             String msg = "BdrcS3Resolver was unable to produce identifier for key >> " + identifier;
-            log.debug(msg, ex);
+            log.error(msg, ex);
             throw new ResourceIOException(msg, ex);
         }
     }

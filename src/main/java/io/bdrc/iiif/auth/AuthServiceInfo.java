@@ -5,6 +5,8 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -15,7 +17,7 @@ import de.digitalcollections.iiif.model.Service;
 import io.bdrc.auth.AuthProps;
 
 @Component
-public class AuthServiceInfo extends Service{
+public class AuthServiceInfo extends Service {
 
     @JsonProperty("service")
     private List<AuthService> services;
@@ -36,46 +38,46 @@ public class AuthServiceInfo extends Service{
     private String tokenSvc;
     private String logoutSvc;
 
-    public static String AUTH_LOGIN="http://iiif.io/api/auth/1/login";
-    public static String AUTH_EXT="http://iiif.io/api/auth/1/external";
-    public static String AUTH_CONTEXT="http://iiif.io/api/auth/1/context.json";
+    public static String AUTH_LOGIN = "http://iiif.io/api/auth/1/login";
+    public static String AUTH_EXT = "http://iiif.io/api/auth/1/external";
+    public static String AUTH_CONTEXT = "http://iiif.io/api/auth/1/context.json";
 
+    public final static Logger log = LoggerFactory.getLogger(AuthServiceInfo.class.getName());
 
     public AuthServiceInfo() throws URISyntaxException {
         super(new URI(AUTH_CONTEXT));
         try {
             loginSvc = AuthProps.getProperty("authLoginSvc");
+
+            tokenSvc = AuthProps.getProperty("authTokenSvc");
+            logoutSvc = AuthProps.getProperty("authLogoutSvc");
+            boolean useExternal = Boolean.parseBoolean(AuthProps.getProperty("authExternal"));
+            if (hasValidProperties()) {
+                setIdentifier(new URI(loginSvc));
+                if (useExternal) {
+                    addProfile(new Profile(new URI(AUTH_EXT)));
+                } else {
+                    addProfile(new Profile(new URI(AUTH_LOGIN)));
+                }
+                setLabel(new PropertyValue("Login to BDRC"));
+                setHeader(new PropertyValue("Please Log In"));
+                setDescription(new PropertyValue("Login to BDRC image resources"));
+                setConfirmLabel(new PropertyValue("Login"));
+                setFailureHeader(new PropertyValue("Authentication Failed"));
+                services = new ArrayList<>();
+                AuthService token = new AuthService(tokenSvc, "http://iiif.io/api/auth/1/token");
+                addService(token);
+                AuthService logout = new AuthService(logoutSvc, "http://iiif.io/api/auth/1/logout");
+                addService(logout);
+            }
         } catch (Exception e) {
+            log.error("Could not instantiate AuthServiceInfo ", e.getMessage());
             return;
-        }
-        tokenSvc = AuthProps.getProperty("authTokenSvc");
-        logoutSvc = AuthProps.getProperty("authLogoutSvc");
-        boolean useExternal=Boolean.parseBoolean(AuthProps.getProperty("authExternal"));
-        if(hasValidProperties()) {
-            setIdentifier(new URI(loginSvc));
-            if(useExternal) {
-                addProfile(new Profile(new URI(AUTH_EXT)));
-            }
-            else{
-                addProfile(new Profile(new URI(AUTH_LOGIN)));
-            }
-            setLabel(new PropertyValue("Login to BDRC"));
-            setHeader(new PropertyValue("Please Log In"));
-            setDescription(new PropertyValue("Login to BDRC image resources"));
-            setConfirmLabel(new PropertyValue("Login"));
-            setFailureHeader(new PropertyValue("Authentication Failed"));
-            services=new ArrayList<>();
-            AuthService token=new AuthService(tokenSvc,
-                    "http://iiif.io/api/auth/1/token");
-            addService(token);
-            AuthService logout=new AuthService(logoutSvc,
-                    "http://iiif.io/api/auth/1/logout");
-            addService(logout);
         }
     }
 
     public boolean hasValidProperties() {
-        return (loginSvc!=null && tokenSvc!=null && logoutSvc!=null);
+        return (loginSvc != null && tokenSvc != null && logoutSvc != null);
     }
 
     public void addService(AuthService auth) {

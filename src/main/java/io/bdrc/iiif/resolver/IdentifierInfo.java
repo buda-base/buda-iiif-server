@@ -48,52 +48,57 @@ public class IdentifierInfo {
     public final static Logger log = LoggerFactory.getLogger(IdentifierInfo.class.getName());
 
     @SuppressWarnings("unchecked")
-    public IdentifierInfo(String identifier) throws ClientProtocolException, IOException, IIIFException, ResourceNotFoundException {
+    public IdentifierInfo(String identifier) throws IOException, ResourceNotFoundException {
         log.info("Instanciating identifierInfo with {}", identifier);
-        fair_use = new ArrayList<>();
-        this.identifier = identifier;
-        long deb = System.currentTimeMillis();
-        Application.logPerf("Creating ldspdi connexion " + identifier + " at " + System.currentTimeMillis());
-        HttpClient httpClient = HttpClientBuilder.create().build();
-        JSONObject object = new JSONObject();
-        this.volumeId = identifier.split("::")[0];
-        if (identifier.split("::").length > 1) {
-            this.imageId = identifier.split("::")[1];
-        }
-        log.info("IdentifierInfo volumeId = {}", volumeId);
-        HttpPost request = new HttpPost("http://purl.bdrc.io/query/table/IIIFPres_volumeInfo");
-        object.put("R_RES", volumeId);
-        String message = object.toString();
-        request.setEntity(new StringEntity(message, "UTF8"));
-        request.setHeader("Content-type", "application/json");
-        HttpResponse response = httpClient.execute(request);
-        log.info("IdentifierInfo ldspdi response code = {}", response.getStatusLine().getStatusCode());
-        Application.logPerf("getting ldspdi response after " + (System.currentTimeMillis() - deb) + " ms " + identifier);
-        ObjectMapper mapper = new ObjectMapper();
-        JsonNode node = mapper.readTree(response.getEntity().getContent());
-        node = node.findPath("results").findPath("bindings");
-        if (node != null) {
-            if (isValidJson(node)) {
-                fair_use = new ArrayList<>();
-                this.work = parseValue(node.findValue("workId"));
-                this.asset = parseValue(node.findValue("itemId"));
-                this.access = parseValue(node.findValue("access"));
-                this.imageList = parseValue(node.findValue("imageList"));
-                log.info("IdentifierInfo Image List = {}", imageList);
-                this.license = parseValue(node.findValue("license"));
-                this.imageGroup = parseValue(node.findValue("imageGroup"));
-                this.totalPages = Integer.parseInt(parseValue(node.findValue("totalPages")));
-                this.volumeNumber = Integer.parseInt(parseValue(node.findValue("volumeNumber")));
-                this.pagesIntroTbrc = Integer.parseInt(parseValue(node.findValue("pagesIntroTbrc")));
-                this.isChinaRestricted = Boolean.parseBoolean(parseValue(node.findValue("ric")));
+        try {
+            fair_use = new ArrayList<>();
+            this.identifier = identifier;
+            long deb = System.currentTimeMillis();
+            Application.logPerf("Creating ldspdi connexion " + identifier + " at " + System.currentTimeMillis());
+            HttpClient httpClient = HttpClientBuilder.create().build();
+            JSONObject object = new JSONObject();
+            this.volumeId = identifier.split("::")[0];
+            if (identifier.split("::").length > 1) {
+                this.imageId = identifier.split("::")[1];
+            }
+            log.info("IdentifierInfo volumeId = {}", volumeId);
+            HttpPost request = new HttpPost("http://purl.bdrc.io/query/table/IIIFPres_volumeInfo");
+            object.put("R_RES", volumeId);
+            String message = object.toString();
+            request.setEntity(new StringEntity(message, "UTF8"));
+            request.setHeader("Content-type", "application/json");
+            HttpResponse response = httpClient.execute(request);
+            log.info("IdentifierInfo ldspdi response code = {}", response.getStatusLine().getStatusCode());
+            Application.logPerf("getting ldspdi response after " + (System.currentTimeMillis() - deb) + " ms " + identifier);
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode node = mapper.readTree(response.getEntity().getContent());
+            node = node.findPath("results").findPath("bindings");
+            if (node != null) {
+                if (isValidJson(node)) {
+                    fair_use = new ArrayList<>();
+                    this.work = parseValue(node.findValue("workId"));
+                    this.asset = parseValue(node.findValue("itemId"));
+                    this.access = parseValue(node.findValue("access"));
+                    this.imageList = parseValue(node.findValue("imageList"));
+                    log.info("IdentifierInfo Image List = {}", imageList);
+                    this.license = parseValue(node.findValue("license"));
+                    this.imageGroup = parseValue(node.findValue("imageGroup"));
+                    this.totalPages = Integer.parseInt(parseValue(node.findValue("totalPages")));
+                    this.volumeNumber = Integer.parseInt(parseValue(node.findValue("volumeNumber")));
+                    this.pagesIntroTbrc = Integer.parseInt(parseValue(node.findValue("pagesIntroTbrc")));
+                    this.isChinaRestricted = Boolean.parseBoolean(parseValue(node.findValue("ric")));
+                } else {
+                    throw new ResourceNotFoundException();
+                }
             } else {
                 throw new ResourceNotFoundException();
             }
-        } else {
-            throw new ResourceNotFoundException();
-        }
-        if (getAccessShortName().equals(RdfConstants.FAIR_USE)) {
-            initFairUse(volumeId);
+            if (getAccessShortName().equals(RdfConstants.FAIR_USE)) {
+                initFairUse(volumeId);
+            }
+        } catch (IOException | ResourceNotFoundException e) {
+            log.error("Could not instantiate Identifier info for identifier:" + identifier, e.getMessage());
+            throw e;
         }
     }
 
@@ -113,17 +118,23 @@ public class IdentifierInfo {
         }
     }
 
-    public List<ImageInfo> getImageList(String voulumeId) throws ClientProtocolException, IOException {
-        HttpClient client = HttpClientBuilder.create().build();
-        HttpGet get = new HttpGet("https://iiifpres.bdrc.io/il/v:" + volumeId);
-        HttpResponse resp = client.execute(get);
-        ObjectMapper om = new ObjectMapper();
-        final InputStream objectData = resp.getEntity().getContent();
-        List<ImageInfo> imageList = om.readValue(objectData, new TypeReference<List<ImageInfo>>() {
-        });
-        objectData.close();
-        imageList.removeIf(imageInfo -> imageInfo.filename.endsWith("json"));
-        log.debug("List for volumeId {} >>> {}", volumeId, imageList);
+    public List<ImageInfo> getImageList(String voulumeId) throws IOException {
+        List<ImageInfo> imageList = null;
+        try {
+            HttpClient client = HttpClientBuilder.create().build();
+            HttpGet get = new HttpGet("https://iiifpres.bdrc.io/il/v:" + volumeId);
+            HttpResponse resp = client.execute(get);
+            ObjectMapper om = new ObjectMapper();
+            final InputStream objectData = resp.getEntity().getContent();
+            imageList = om.readValue(objectData, new TypeReference<List<ImageInfo>>() {
+            });
+            objectData.close();
+            imageList.removeIf(imageInfo -> imageInfo.filename.endsWith("json"));
+            log.debug("List for volumeId {} >>> {}", volumeId, imageList);
+        } catch (IOException e) {
+            log.error("Could not get Image List from identifier " + identifier, e.getMessage());
+            throw e;
+        }
         return imageList;
     }
 

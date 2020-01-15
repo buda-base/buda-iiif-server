@@ -23,15 +23,21 @@ public class PromQLProcessor {
         return getCounterValues(promURL, count);
     }
 
-    public static String getCounterValues(String promURL, String countName) throws ClientProtocolException, IOException {
-        HttpClient client = HttpClientBuilder.create().build();
-        long end_in_seconds = (long) (System.currentTimeMillis() / 1000);
-        // // two days period
-        long start_in_seconds = end_in_seconds - 172800 /* 259200 */;
-        String query = "max_over_time(" + countName + "[2d])" + "&_=" + Long.toString((long) (System.currentTimeMillis() / 1000)) + "&start=" + start_in_seconds + "&end=" + end_in_seconds + "&step=" + step;
-        log.info("Full PromQL URL HTTP QUERY>>> {}", promURL + query);
-        HttpGet get = new HttpGet(promURL + query);
-        HttpResponse resp = client.execute(get);
+    public static String getCounterValues(String promURL, String countName) throws IOException {
+        HttpResponse resp = null;
+        try {
+            HttpClient client = HttpClientBuilder.create().build();
+            long end_in_seconds = (long) (System.currentTimeMillis() / 1000);
+            // // two days period
+            long start_in_seconds = end_in_seconds - 172800 /* 259200 */;
+            String query = "max_over_time(" + countName + "[2d])" + "&_=" + Long.toString((long) (System.currentTimeMillis() / 1000)) + "&start=" + start_in_seconds + "&end=" + end_in_seconds + "&step=" + step;
+            log.info("Full PromQL URL HTTP QUERY>>> {}", promURL + query);
+            HttpGet get = new HttpGet(promURL + query);
+            resp = client.execute(get);
+        } catch (IOException e) {
+            log.error("Could not get Counter values from Prometheus at " + promURL, e.getMessage());
+            throw e;
+        }
         String json = EntityUtils.toString(resp.getEntity(), "UTF-8");
         return json;
     }

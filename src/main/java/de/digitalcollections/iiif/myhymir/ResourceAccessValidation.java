@@ -1,11 +1,8 @@
 
 package de.digitalcollections.iiif.myhymir;
 
-import java.io.IOException;
-
 import javax.servlet.http.HttpServletRequest;
 
-import org.apache.http.client.ClientProtocolException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,7 +20,7 @@ public class ResourceAccessValidation {
     boolean fairUse;
     boolean isRestrictedInChina;
 
-    public ResourceAccessValidation(Access access, IdentifierInfo idInfo, String img) throws ClientProtocolException, IOException {
+    public ResourceAccessValidation(Access access, IdentifierInfo idInfo, String img) {
         super();
         this.access = access;
         accessType = idInfo.getAccessShortName();
@@ -34,7 +31,7 @@ public class ResourceAccessValidation {
         }
     }
 
-    public ResourceAccessValidation(Access access, String accessType) throws ClientProtocolException, IOException {
+    public ResourceAccessValidation(Access access, String accessType) {
         super();
         this.access = access;
         this.accessType = accessType;

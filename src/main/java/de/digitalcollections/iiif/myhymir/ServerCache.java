@@ -60,7 +60,6 @@ public class ServerCache {
             access = IDENTIFIER;
         }
         return access;
-
     }
 
     public static boolean clearCache() {
@@ -92,6 +91,7 @@ public class ServerCache {
             }
             return true;
         } catch (Exception e) {
+            log.error("There was an issue while clearing caches; Message:" + e.getMessage());
             return false;
         }
     }

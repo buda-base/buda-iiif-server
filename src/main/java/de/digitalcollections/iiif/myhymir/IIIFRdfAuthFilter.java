@@ -35,31 +35,35 @@ public class IIIFRdfAuthFilter implements Filter {
 
     @Override
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
-
-        String token = getToken(((HttpServletRequest) req).getHeader("Authorization"));
-        if (token == null) {
-            Cookie[] cookies = ((HttpServletRequest) req).getCookies();
-            if (cookies != null) {
-                for (Cookie cook : cookies) {
-                    if (cook.getName().equals(AuthProps.getProperty("cookieKey"))) {
-                        token = cook.getValue();
-                        break;
+        try {
+            String token = getToken(((HttpServletRequest) req).getHeader("Authorization"));
+            if (token == null) {
+                Cookie[] cookies = ((HttpServletRequest) req).getCookies();
+                if (cookies != null) {
+                    for (Cookie cook : cookies) {
+                        if (cook.getName().equals(AuthProps.getProperty("cookieKey"))) {
+                            token = cook.getValue();
+                            break;
+                        }
                     }
                 }
             }
+            TokenValidation validation = null;
+            UserProfile prof = null;
+            if (token != null) {
+                // User is logged in
+                // Getting his profile
+                validation = new TokenValidation(token);
+                prof = validation.getUser();
+                req.setAttribute("access", new Access(prof, new Endpoint()));
+            } else {
+                req.setAttribute("access", new Access());
+            }
+            chain.doFilter(req, res);
+        } catch (IOException | ServletException e) {
+            log.error("IIIF RdfAuth filter failed ! Message: " + e.getMessage());
+            throw e;
         }
-        TokenValidation validation = null;
-        UserProfile prof = null;
-        if (token != null) {
-            // User is logged in
-            // Getting his profile
-            validation = new TokenValidation(token);
-            prof = validation.getUser();
-            req.setAttribute("access", new Access(prof, new Endpoint()));
-        } else {
-            req.setAttribute("access", new Access());
-        }
-        chain.doFilter(req, res);
     }
 
     @Override
@@ -73,8 +77,7 @@ public class IIIFRdfAuthFilter implements Filter {
                 return header.split(" ")[1];
             }
         } catch (Exception ex) {
-            ex.printStackTrace();
-            log.error(ex.getMessage());
+            log.error("Could not get Token from header " + header + " Message: " + ex.getMessage());
             return null;
         }
         return null;

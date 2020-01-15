@@ -116,7 +116,6 @@ public class S3ResourceRepositoryImpl implements ResourceRepository<Resource> {
         try {
             return getInputStream((S3Resource) r);
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             log.error(">>>>>>>> Could not get input Stream for Resource {} ", r.getUri());
         }
         return null;

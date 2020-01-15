@@ -45,35 +45,35 @@ public class ArchiveBuilder {
     @SuppressWarnings({ "rawtypes", "unchecked" })
     public static void buildPdf(Iterator<String> idList, IdentifierInfo inf, String output, String origin) throws IIIFException, IOException {
         long deb = System.currentTimeMillis();
-        Application.logPerf("Starting building pdf {}", inf.volumeId);
-        ExecutorService service = Executors.newFixedThreadPool(50);
-        AmazonS3 s3 = S3ResourceRepositoryImpl.getClientInstance();
-        Application.logPerf("S3 client obtained in building pdf {} after {} ", inf.volumeId, System.currentTimeMillis() - deb);
-        TreeMap<Integer, Future<?>> t_map = new TreeMap<>();
-        int i = 1;
-        while (idList.hasNext()) {
-            final String id = inf.getVolumeId() + "::" + idList.next();
-            ArchiveImageProducer tmp = null;
-            tmp = new ArchiveImageProducer(s3, id, PDF_TYPE, origin);
-            Future<?> fut = service.submit((Callable) tmp);
-            t_map.put(i, fut);
-            i += 1;
-        }
-        ServerCache.addToCache("pdfjobs", output, false);
-        PDDocument doc = new PDDocument();
-        ;
-        doc.setDocumentInformation(ArchiveInfo.getInstance(inf).getDocInformation());
-        Application.logPerf("building pdf writer and document opened {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
-        for (int k = 1; k <= t_map.keySet().size(); k++) {
-            Future<?> tmp = t_map.get(k);
-            try {
+        try {
+            Application.logPerf("Starting building pdf {}", inf.volumeId);
+            ExecutorService service = Executors.newFixedThreadPool(50);
+            AmazonS3 s3 = S3ResourceRepositoryImpl.getClientInstance();
+            Application.logPerf("S3 client obtained in building pdf {} after {} ", inf.volumeId, System.currentTimeMillis() - deb);
+            TreeMap<Integer, Future<?>> t_map = new TreeMap<>();
+            int i = 1;
+            while (idList.hasNext()) {
+                final String id = inf.getVolumeId() + "::" + idList.next();
+                ArchiveImageProducer tmp = null;
+                tmp = new ArchiveImageProducer(s3, id, PDF_TYPE, origin);
+                Future<?> fut = service.submit((Callable) tmp);
+                t_map.put(i, fut);
+                i += 1;
+            }
+            ServerCache.addToCache("pdfjobs", output, false);
+            PDDocument doc = new PDDocument();
+
+            doc.setDocumentInformation(ArchiveInfo.getInstance(inf).getDocInformation());
+            Application.logPerf("building pdf writer and document opened {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
+            for (int k = 1; k <= t_map.keySet().size(); k++) {
+                Future<?> tmp = t_map.get(k);
+
                 BufferedImage bImg = (BufferedImage) tmp.get();
                 if (bImg == null) {
                     // Trying to insert image indicating that original image is missing
                     try {
                         bImg = ArchiveImageProducer.getBufferedMissingImage("Page " + k + " couldn't be found");
-
-                    } catch (IOException e) {
+                    } catch (Exception e) {
                         // We don't interrupt the pdf generation process
                         log.error("Could not get Buffered Missing image from producer for page {} of volume {}", k, inf.volumeId);
                     }
@@ -84,45 +84,49 @@ public class ArchiveBuilder {
                 PDPageContentStream contents = new PDPageContentStream(doc, page);
                 contents.drawImage(pdImage, 0, 0);
                 contents.close();
-            } catch (ExecutionException | InterruptedException e) {
-                throw new IIIFException(500, IIIFException.GENERIC_APP_ERROR_CODE, e);
+
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                COSWriter cw = new COSWriter(baos);
+                cw.write(doc);
+                Application.logPerf("pdf document finished and closed for {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
+                ServerCache.addToCache(IIIF, output.substring(4), baos.toByteArray());
+                cw.close();
+                doc.close();
+                ServerCache.addToCache("pdfjobs", output, true);
             }
+        } catch (ExecutionException | InterruptedException e) {
+            log.error("Error while building pdf for identifier info " + inf.toString(), "");
+            throw new IIIFException(500, IIIFException.GENERIC_APP_ERROR_CODE, e);
         }
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        COSWriter cw = new COSWriter(baos);
-        cw.write(doc);
-        Application.logPerf("pdf document finished and closed for {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
-        ServerCache.addToCache(IIIF, output.substring(4), baos.toByteArray());
-        cw.close();
-        doc.close();
-        ServerCache.addToCache("pdfjobs", output, true);
+
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public static void buildZip(Iterator<String> idList, IdentifierInfo inf, String output, String origin) throws IIIFException {
-        long deb = System.currentTimeMillis();
-        Application.logPerf("Starting building zip {}", inf.volumeId);
-        ExecutorService service = Executors.newFixedThreadPool(50);
-        AmazonS3 s3 = S3ResourceRepositoryImpl.getClientInstance();
-        Application.logPerf("S3 client obtained in building pdf {} after {} ", inf.volumeId, System.currentTimeMillis() - deb);
-        TreeMap<Integer, Future<?>> t_map = new TreeMap<>();
-        TreeMap<Integer, String> images = new TreeMap<>();
-        int i = 1;
-        while (idList.hasNext()) {
-            String img = idList.next();
-            final String id = inf.getVolumeId() + "::" + img;
-            ArchiveImageProducer tmp = null;
-            tmp = new ArchiveImageProducer(s3, id, ZIP_TYPE, origin);
-            Future<?> fut = service.submit((Callable) tmp);
-            t_map.put(i, fut);
-            images.put(i, img);
-            i += 1;
-        }
-        ServerCache.addToCache("zipjobs", output, false);
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ZipOutputStream zipOut = new ZipOutputStream(baos);
-        Application.logPerf("building zip stream opened {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
         try {
+            long deb = System.currentTimeMillis();
+            Application.logPerf("Starting building zip {}", inf.volumeId);
+            ExecutorService service = Executors.newFixedThreadPool(50);
+            AmazonS3 s3 = S3ResourceRepositoryImpl.getClientInstance();
+            Application.logPerf("S3 client obtained in building pdf {} after {} ", inf.volumeId, System.currentTimeMillis() - deb);
+            TreeMap<Integer, Future<?>> t_map = new TreeMap<>();
+            TreeMap<Integer, String> images = new TreeMap<>();
+            int i = 1;
+            while (idList.hasNext()) {
+                String img = idList.next();
+                final String id = inf.getVolumeId() + "::" + img;
+                ArchiveImageProducer tmp = null;
+                tmp = new ArchiveImageProducer(s3, id, ZIP_TYPE, origin);
+                Future<?> fut = service.submit((Callable) tmp);
+                t_map.put(i, fut);
+                images.put(i, img);
+                i += 1;
+            }
+            ServerCache.addToCache("zipjobs", output, false);
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ZipOutputStream zipOut = new ZipOutputStream(baos);
+            Application.logPerf("building zip stream opened {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
+
             for (int k = 1; k <= t_map.keySet().size(); k++) {
                 Future<?> tmp = t_map.get(k);
                 byte[] img = null;
@@ -145,12 +149,13 @@ public class ArchiveBuilder {
                 zipOut.closeEntry();
             }
             zipOut.close();
+            Application.logPerf("zip document finished and closed for {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
+            ServerCache.addToCache(IIIF_ZIP, output.substring(3), baos.toByteArray());
+            ServerCache.addToCache("zipjobs", output, true);
         } catch (IOException | ExecutionException | InterruptedException e) {
+            log.error("Error while building zip archives ", e.getMessage());
             throw new IIIFException(500, IIIFException.GENERIC_APP_ERROR_CODE, e);
         }
-        Application.logPerf("zip document finished and closed for {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
-        ServerCache.addToCache(IIIF_ZIP, output.substring(3), baos.toByteArray());
-        ServerCache.addToCache("zipjobs", output, true);
     }
 
     public static boolean isPdfDone(String id) {

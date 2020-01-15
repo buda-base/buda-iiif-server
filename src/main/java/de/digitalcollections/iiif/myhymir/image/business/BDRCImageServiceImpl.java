@@ -21,6 +21,7 @@ import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.jena.atlas.logging.Log;
 import org.imgscalr.Scalr;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -171,7 +172,6 @@ public class BDRCImageServiceImpl implements ImageService {
      **/
     private ImageReader getReader(String identifier) throws UnsupportedFormatException, IOException, IIIFException, ResourceNotFoundException {
         long deb = System.currentTimeMillis();
-
         byte[] bytes = (byte[]) ServerCache.getObjectFromCache(IIIF_IMG, identifier);
         if (bytes != null) {
             Application.logPerf("Image service image was cached {}", identifier);
@@ -196,8 +196,7 @@ public class BDRCImageServiceImpl implements ImageService {
             try {
                 ServerCache.addToCache(IIIF_IMG, identifier, IOUtils.toByteArray(S3input));
             } catch (IIIFException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+                Log.error("Could not add bytearray image to cache", e.getMessage());
             }
             bytes = (byte[]) ServerCache.getObjectFromCache(IIIF_IMG, identifier);
             Application.logPerf("Image service read {} from s3 {}", S3input, identifier);
@@ -214,9 +213,8 @@ public class BDRCImageServiceImpl implements ImageService {
     public void readImageInfo(String identifier, de.digitalcollections.iiif.model.image.ImageService info) throws UnsupportedFormatException, UnsupportedOperationException, IOException {
         try {
             enrichInfo(getReader(identifier), info);
-        } catch (IIIFException e) {
-            throw new ResourceIOException(e);
-        } catch (ResourceNotFoundException e) {
+        } catch (IIIFException | ResourceNotFoundException e) {
+            Log.error("Could not get Image Info", e.getMessage());
             throw new ResourceIOException(e);
         }
     }
@@ -224,12 +222,11 @@ public class BDRCImageServiceImpl implements ImageService {
     public ImageReader readImageInfo(String identifier, de.digitalcollections.iiif.model.image.ImageService info, ImageReader imgReader) throws UnsupportedFormatException, UnsupportedOperationException, IOException {
         try {
             imgReader = getReader(identifier);
-        } catch (IIIFException e) {
-            throw new ResourceIOException(e);
-        } catch (ResourceNotFoundException e) {
+            enrichInfo(imgReader, info);
+        } catch (IIIFException | ResourceNotFoundException e) {
+            Log.error("Could not get Image Info", e.getMessage());
             throw new ResourceIOException(e);
         }
-        enrichInfo(imgReader, info);
         return imgReader;
     }
 
@@ -245,6 +242,7 @@ public class BDRCImageServiceImpl implements ImageService {
         try {
             targetRegion = selector.getRegion().resolve(nativeDimensions);
         } catch (ResolvingException e) {
+            Log.error("Could not get image ReadParam", e.getMessage());
             throw new InvalidParametersException(e);
         }
         // IIIF regions are always relative to the native size, while ImageIO regions
@@ -264,6 +262,7 @@ public class BDRCImageServiceImpl implements ImageService {
         long deb = System.currentTimeMillis();
         Application.logPerf("Entering readImage for creating DecodedImage");
         if ((selector.getRotation().getRotation() % 90) != 0) {
+            Log.error("Rotation is not a multiple of 90 degrees for selector " + selector.toString(), "");
             throw new UnsupportedOperationException("Can only rotate by multiples of 90 degrees.");
         }
         Dimension nativeDimensions = new Dimension(reader.getWidth(0), reader.getHeight(0));
@@ -271,6 +270,7 @@ public class BDRCImageServiceImpl implements ImageService {
         try {
             targetRegion = selector.getRegion().resolve(nativeDimensions);
         } catch (ResolvingException e) {
+            Log.error("Could not resolve selector region :" + selector.getRegion(), e.getMessage());
             throw new InvalidParametersException(e);
         }
         Dimension croppedDimensions = new Dimension(targetRegion.width, targetRegion.height);
@@ -278,6 +278,7 @@ public class BDRCImageServiceImpl implements ImageService {
         try {
             targetSize = selector.getSize().resolve(croppedDimensions, profile);
         } catch (ResolvingException e) {
+            Log.error("Could not resolve selector size :" + selector.getSize(), e.getMessage());
             throw new InvalidParametersException(e);
         }
 
@@ -407,95 +408,101 @@ public class BDRCImageServiceImpl implements ImageService {
     public void processImage(String identifier, ImageApiSelector selector, ImageApiProfile profile, OutputStream os, ImageReader imgReader, String uri)
             throws InvalidParametersException, UnsupportedOperationException, UnsupportedFormatException, IOException {
         long deb = System.currentTimeMillis();
-        Application.logPerf("Entering Processimage.... with reader {} ", imgReader);
-        DecodedImage img = readImage(identifier, selector, profile, imgReader);
-        Application.logPerf("Done readingImage DecodedImage created");
-        BufferedImage outImg = transformImage(selector.getFormat(), img.img, img.targetSize, img.rotation, selector.getRotation().isMirror(), selector.getQuality());
-        ImageWriter writer = null;
-        Iterator<ImageWriter> writers = ImageIO.getImageWritersByMIMEType(selector.getFormat().getMimeType().getTypeName());
-        while (writers.hasNext()) {
-            ImageWriter w = writers.next();
-            Application.logPerf("FOUND REGISTERED WRITER in list {}", w);
-            writer = w;
-        }
-        if (writer == null) {
-            throw new UnsupportedFormatException(selector.getFormat().getMimeType().getTypeName());
-        }
-        switch (selector.getFormat()) {
+        try {
+            Application.logPerf("Entering Processimage.... with reader {} ", imgReader);
+            DecodedImage img = readImage(identifier, selector, profile, imgReader);
+            Application.logPerf("Done readingImage DecodedImage created");
+            BufferedImage outImg = transformImage(selector.getFormat(), img.img, img.targetSize, img.rotation, selector.getRotation().isMirror(), selector.getQuality());
+            ImageWriter writer = null;
+            Iterator<ImageWriter> writers = ImageIO.getImageWritersByMIMEType(selector.getFormat().getMimeType().getTypeName());
+            while (writers.hasNext()) {
+                ImageWriter w = writers.next();
+                Application.logPerf("FOUND REGISTERED WRITER in list {}", w);
+                writer = w;
+            }
+            if (writer == null) {
+                throw new UnsupportedFormatException(selector.getFormat().getMimeType().getTypeName());
+            }
+            switch (selector.getFormat()) {
 
-        case PNG:
-            Application.logPerf("USING JAI PNG for {} ", identifier);
-            ImageEncodeParam param = PNGEncodeParam.getDefaultEncodeParam(outImg);
-            String format = "PNG";
-            ImageEncoder encoder = ImageCodec.createImageEncoder(format, os, param);
-            encoder.encode(outImg);
-            os.flush();
-            break;
+            case PNG:
+                Application.logPerf("USING JAI PNG for {} ", identifier);
+                ImageEncodeParam param = PNGEncodeParam.getDefaultEncodeParam(outImg);
+                String format = "PNG";
+                ImageEncoder encoder = ImageCodec.createImageEncoder(format, os, param);
+                encoder.encode(outImg);
+                os.flush();
+                break;
 
-        case JPG:
-
-            Iterator<ImageWriter> it1 = ImageIO.getImageWritersByMIMEType("image/jpeg");
-            ImageWriter wtr = null;
-            while (it1.hasNext()) {
-                ImageWriter w = it1.next();
-                if (w.getClass().getName().equals("com.twelvemonkeys.imageio.plugins.jpeg.JPEGImageWriter")) {
-                    wtr = w;
+            case JPG:
+                Iterator<ImageWriter> it1 = ImageIO.getImageWritersByMIMEType("image/jpeg");
+                ImageWriter wtr = null;
+                while (it1.hasNext()) {
+                    ImageWriter w = it1.next();
+                    if (w.getClass().getName().equals("com.twelvemonkeys.imageio.plugins.jpeg.JPEGImageWriter")) {
+                        wtr = w;
+                    }
+                    Application.logPerf("Should use WRITERS for JPEG >> {} with quality {}", wtr, outImg.getType());
+                    Application.logPerf("WRITERS---> in list {}", w.getClass().getName());
                 }
-                Application.logPerf("Should use WRITERS for JPEG >> {} with quality {}", wtr, outImg.getType());
-                Application.logPerf("WRITERS---> in list {}", w.getClass().getName());
+                if (outImg.getType() != BufferedImage.TYPE_BYTE_GRAY) {
+                    wtr = ImageIO.getImageWritersByMIMEType("image/jpeg").next();
+                }
+                Application.logPerf("USING JPEG WRITER {} for {}", wtr, identifier);
+                // This setting, using 0.75f as compression quality produces the same
+                // as the default setting, with no writeParam --> writer.write(outImg)
+
+                ImageWriteParam jpgWriteParam = wtr.getDefaultWriteParam();
+                jpgWriteParam.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+                jpgWriteParam.setCompressionQuality(0.75f);
+
+                ImageOutputStream is = ImageIO.createImageOutputStream(os);
+                wtr.setOutput(is);
+                wtr.write(null, new IIOImage(outImg, null, null), jpgWriteParam);
+                wtr.dispose();
+                is.flush();
+                break;
+
+            case WEBP:
+                writer = ImageIO.getImageWritersByMIMEType("image/webp").next();
+                Application.logPerf("Using WRITER for WEBP >>" + writer);
+                ImageWriteParam pr = writer.getDefaultWriteParam();
+                WebPWriteParam writeParam = (WebPWriteParam) pr;
+                writeParam.setCompressionMode(WebPWriteParam.MODE_DEFAULT);
+                ImageOutputStream iss = ImageIO.createImageOutputStream(os);
+                writer.setOutput(iss);
+                // writer.write(outImg);
+                writer.write(null, new IIOImage(outImg, null, null), writeParam);
+                writer.dispose();
+                iss.flush();
+                break;
+
+            default:
+                Application.logPerf("USING NON NULL WRITER {}", writer);
+                ImageOutputStream ios = ImageIO.createImageOutputStream(os);
+                writer.setOutput(ios);
+                writer.write(outImg);
+                writer.dispose();
+                ios.flush();
             }
-            if (outImg.getType() != BufferedImage.TYPE_BYTE_GRAY) {
-                wtr = ImageIO.getImageWritersByMIMEType("image/jpeg").next();
-            }
-            Application.logPerf("USING JPEG WRITER {} for {}", wtr, identifier);
-            // This setting, using 0.75f as compression quality produces the same
-            // as the default setting, with no writeParam --> writer.write(outImg)
-
-            ImageWriteParam jpgWriteParam = wtr.getDefaultWriteParam();
-            jpgWriteParam.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
-            jpgWriteParam.setCompressionQuality(0.75f);
-
-            ImageOutputStream is = ImageIO.createImageOutputStream(os);
-            wtr.setOutput(is);
-            wtr.write(null, new IIOImage(outImg, null, null), jpgWriteParam);
-            wtr.dispose();
-            is.flush();
-            break;
-
-        case WEBP:
-            writer = ImageIO.getImageWritersByMIMEType("image/webp").next();
-            Application.logPerf("Using WRITER for WEBP >>" + writer);
-            ImageWriteParam pr = writer.getDefaultWriteParam();
-            WebPWriteParam writeParam = (WebPWriteParam) pr;
-            writeParam.setCompressionMode(WebPWriteParam.MODE_DEFAULT);
-            ImageOutputStream iss = ImageIO.createImageOutputStream(os);
-            writer.setOutput(iss);
-            // writer.write(outImg);
-            writer.write(null, new IIOImage(outImg, null, null), writeParam);
-            writer.dispose();
-            iss.flush();
-            break;
-
-        default:
-            Application.logPerf("USING NON NULL WRITER {}", writer);
-            ImageOutputStream ios = ImageIO.createImageOutputStream(os);
-            writer.setOutput(ios);
-            writer.write(outImg);
-            writer.dispose();
-            ios.flush();
+            Application.logPerf("Done with Processimage.... in {} ms", System.currentTimeMillis() - deb);
+        } catch (InvalidParametersException | UnsupportedOperationException | UnsupportedFormatException | IOException e) {
+            Log.error("Error while processing image", e.getMessage());
+            throw e;
         }
-        Application.logPerf("Done with Processimage.... in {} ms", System.currentTimeMillis() - deb);
     }
 
     @Override
     public Instant getImageModificationDate(String identifier) throws ResourceNotFoundException {
         if (imageSecurityService != null && !imageSecurityService.isAccessAllowed(identifier)) {
+            Log.error("Could not get Image modification date for identifier " + identifier, "");
             throw new ResourceNotFoundException();
         }
         try {
             Resource res = resourceService.get(identifier, ResourcePersistenceType.RESOLVED, MimeType.MIME_IMAGE);
             return Instant.ofEpochMilli(res.getLastModified());
         } catch (ResourceIOException e) {
+            Log.error("Could not get Image modification date from resource for identifier " + identifier, "");
             throw new ResourceNotFoundException();
         }
     }
