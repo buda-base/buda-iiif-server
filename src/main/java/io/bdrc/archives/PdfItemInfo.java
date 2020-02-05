@@ -21,7 +21,7 @@ public class PdfItemInfo {
     public HashMap<String, String> volNumbers;
     public String itemAccess;
 
-    public static String ITEM_URL_ROOT = "http://purl.bdrc.io/query/graph/IIIFPres_itemGraph?R_RES=";
+    public static String ITEM_URL_ROOT = Application.getProperty("dataserver") + "/query/graph/IIIFPres_itemGraph?R_RES=";
     public static String BDO = "http://purl.bdrc.io/ontology/core/";
     public static String BDR = "http://purl.bdrc.io/resource/";
     public static String BDA = "http://purl.bdrc.io/admindata/";
