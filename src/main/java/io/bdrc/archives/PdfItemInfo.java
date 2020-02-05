@@ -11,6 +11,7 @@ import org.apache.jena.rdf.model.NodeIterator;
 import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.ResourceFactory;
 
+import de.digitalcollections.iiif.myhymir.Application;
 import de.digitalcollections.iiif.myhymir.ServerCache;
 import io.bdrc.iiif.exceptions.IIIFException;
 
@@ -21,7 +22,7 @@ public class PdfItemInfo {
     public HashMap<String, String> volNumbers;
     public String itemAccess;
 
-    public static String ITEM_URL_ROOT = "http://purl.bdrc.io/query/graph/IIIFPres_itemGraph?R_RES=";
+    public static String ITEM_URL_ROOT = Application.getProperty("dataserver") + "/query/graph/IIIFPres_itemGraph?R_RES=";
     public static String BDO = "http://purl.bdrc.io/ontology/core/";
     public static String BDR = "http://purl.bdrc.io/resource/";
     public static String BDA = "http://purl.bdrc.io/admindata/";
@@ -76,7 +77,9 @@ public class PdfItemInfo {
             List<String> itemVols = getItemVolumes();
             for (String vol : itemVols) {
                 String shortName = vol.substring(vol.lastIndexOf('/') + 1);
-                String num = itemModel.listObjectsOfProperty(ResourceFactory.createResource(vol), ResourceFactory.createProperty(BDO + "volumeNumber")).next().asLiteral().getString();
+                String num = itemModel
+                        .listObjectsOfProperty(ResourceFactory.createResource(vol), ResourceFactory.createProperty(BDO + "volumeNumber")).next()
+                        .asLiteral().getString();
                 volNumbers.put(shortName, num);
             }
         }
@@ -89,7 +92,8 @@ public class PdfItemInfo {
 
     @Override
     public String toString() {
-        return "PdfItemInfo [itemId=" + itemId + ", itemVolumes=" + itemVolumes + ", volNumbers=" + volNumbers + ", itemAccess=" + itemAccess + ", itemModel=" + itemModel + "]";
+        return "PdfItemInfo [itemId=" + itemId + ", itemVolumes=" + itemVolumes + ", volNumbers=" + volNumbers + ", itemAccess=" + itemAccess
+                + ", itemModel=" + itemModel + "]";
     }
 
     public static void main(String[] args) throws MalformedURLException, IIIFException {
