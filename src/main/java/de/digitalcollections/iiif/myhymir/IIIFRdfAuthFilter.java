@@ -36,26 +36,30 @@ public class IIIFRdfAuthFilter implements Filter {
     @Override
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
         try {
-            String token = getToken(((HttpServletRequest) req).getHeader("Authorization"));
-            if (token == null) {
-                Cookie[] cookies = ((HttpServletRequest) req).getCookies();
-                if (cookies != null) {
-                    for (Cookie cook : cookies) {
-                        if (cook.getName().equals(AuthProps.getProperty("cookieKey"))) {
-                            token = cook.getValue();
-                            break;
+            if ("true".equals(AuthProps.getProperty("authEnabled"))) {
+                String token = getToken(((HttpServletRequest) req).getHeader("Authorization"));
+                if (token == null) {
+                    Cookie[] cookies = ((HttpServletRequest) req).getCookies();
+                    if (cookies != null) {
+                        for (Cookie cook : cookies) {
+                            if (cook.getName().equals(AuthProps.getProperty("cookieKey"))) {
+                                token = cook.getValue();
+                                break;
+                            }
                         }
                     }
                 }
-            }
-            TokenValidation validation = null;
-            UserProfile prof = null;
-            if (token != null) {
-                // User is logged in
-                // Getting his profile
-                validation = new TokenValidation(token);
-                prof = validation.getUser();
-                req.setAttribute("access", new Access(prof, new Endpoint()));
+                TokenValidation validation = null;
+                UserProfile prof = null;
+                if (token != null) {
+                    // User is logged in
+                    // Getting his profile
+                    validation = new TokenValidation(token);
+                    prof = validation.getUser();
+                    req.setAttribute("access", new Access(prof, new Endpoint()));
+                } else {
+                    req.setAttribute("access", new Access());
+                }
             } else {
                 req.setAttribute("access", new Access());
             }
