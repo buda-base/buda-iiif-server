@@ -29,7 +29,8 @@ import io.bdrc.iiif.metrics.ImageMetrics;
 @Configuration
 @EnableAutoConfiguration
 @Primary
-@ComponentScan(basePackages = { "de.digitalcollections.core.business.impl.service", "io.bdrc.archives", "io.bdrc.iiif", "de.digitalcollections.iiif.hymir", "de.digitalcollections.iiif.myhymir",
+@ComponentScan(basePackages = { "de.digitalcollections.core.business.impl.service", "io.bdrc.archives", "io.bdrc.iiif",
+        "de.digitalcollections.iiif.hymir", "de.digitalcollections.iiif.myhymir",
         "de.digitalcollections.core.backend.impl.file.repository.resource.util" })
 
 //REMINDER : DO NOT REMOVE THE FOLLOWING COMMENTS
@@ -64,7 +65,6 @@ public class Application extends SpringBootServletInitializer {
         }
         AuthProps.init(props);
         if ("true".equals(props.getProperty("authEnabled"))) {
-
             RdfAuthModel.init();
         }
         if (props.getProperty("logPerf") != null) {
