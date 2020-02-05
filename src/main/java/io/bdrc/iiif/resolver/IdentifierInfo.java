@@ -61,8 +61,8 @@ public class IdentifierInfo {
             if (identifier.split("::").length > 1) {
                 this.imageId = identifier.split("::")[1];
             }
-            log.info("IdentifierInfo volumeId = {}", volumeId);
-            HttpPost request = new HttpPost("http://purl.bdrc.io/query/table/IIIFPres_volumeInfo");
+            log.info("IdentifierInfo volumeId = {}", volumeId);            
+            HttpPost request = new HttpPost(Application.getProperty("dataserver") + "/query/table/IIIFPres_volumeInfo");
             object.put("R_RES", volumeId);
             String message = object.toString();
             request.setEntity(new StringEntity(message, "UTF8"));
