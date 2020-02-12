@@ -35,8 +35,9 @@ public class IIIFRdfAuthFilter implements Filter {
 
     @Override
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
+        String method = ((HttpServletRequest) req).getMethod();
         try {
-            if ("true".equals(AuthProps.getProperty("authEnabled"))) {
+            if ("true".equals(AuthProps.getProperty("authEnabled")) && !method.equalsIgnoreCase("OPTIONS")) {
                 String token = getToken(((HttpServletRequest) req).getHeader("Authorization"));
                 if (token == null) {
                     Cookie[] cookies = ((HttpServletRequest) req).getCookies();
