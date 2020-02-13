@@ -251,20 +251,11 @@ public class IIIFImageApiController {
         Application.logPerf("end reading from image service after {} ms for {} with reader {}", (System.currentTimeMillis() - deb1), identifier,
                 imgReader);
         final String canonicalForm;
-        // try {
         canonicalForm = imgId.getCanonical(IdentifierInfo.getIndentifierInfo(identifier).getImageInfoList());
-        // canonicalForm = selector.getCanonicalForm(new Dimension(info.getWidth(),
-        // info.getHeight()), profile, selector.getQuality());
-        // } catch (ResolvingException e) {
-        // log.error("Could not get a canonical form for identifier " + identifier + "
-        // Message:" + e.getMessage());
-        // return new ResponseEntity<>(("Could not get a canonical form for identifier "
-        // + identifier).getBytes(), HttpStatus.INTERNAL_SERVER_ERROR);
-        // }
         headers.add("Link",
                 String.format("<%s>;rel=\"canonical\"", getUrlBase(request) + path.substring(0, path.indexOf(identifier)) + canonicalForm));
-        headers.add("Location", getUrlBase(request) + path.substring(0, path.indexOf(identifier)) + canonicalForm);
-
+        // headers.add("Location", getUrlBase(request) + path.substring(0,
+        // path.indexOf(identifier)) + canonicalForm);
         deb1 = System.currentTimeMillis();
         Application.logPerf("processing image output stream for {}", identifier);
         ByteArrayOutputStream os = new ByteArrayOutputStream();
