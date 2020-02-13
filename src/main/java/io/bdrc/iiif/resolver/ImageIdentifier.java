@@ -1,8 +1,12 @@
 package io.bdrc.iiif.resolver;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 
+import org.apache.http.client.ClientProtocolException;
+
+import de.digitalcollections.model.api.identifiable.resource.exceptions.ResourceNotFoundException;
 import io.bdrc.iiif.exceptions.IIIFException;
 
 public class ImageIdentifier {
@@ -46,16 +50,19 @@ public class ImageIdentifier {
         return parts;
     }
 
-    public String getImageName(List<ImageInfo> inf) {
+    public String getImageName(List<ImageInfo> inf) throws ClientProtocolException, IOException, IIIFException, ResourceNotFoundException {
         if (parts.get("imageIndex") != null) {
+            if (inf == null) {
+                inf = IdentifierInfo.getIndentifierInfo(identifier).getImageInfoList();
+            }
             return inf.get(Integer.parseInt(parts.get("imageIndex"))).filename;
         } else {
             return parts.get("imageName");
         }
     }
 
-    public String getCanonical() {
-        return IGFN + ":" + parts.get("imageGroup") + ":" + parts.get("imageName");
+    public String getCanonical(List<ImageInfo> inf) throws ClientProtocolException, IOException, IIIFException, ResourceNotFoundException {
+        return IGFN + ":" + parts.get("imageGroup") + ":" + getImageName(inf);
     }
 
     public String getPart(String key) {
