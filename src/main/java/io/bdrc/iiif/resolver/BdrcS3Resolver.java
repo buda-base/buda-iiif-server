@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.List;
 import java.util.regex.Pattern;
 
 import org.apache.commons.codec.binary.Hex;
@@ -26,6 +27,7 @@ public class BdrcS3Resolver implements S3Resolver {
     public String getS3Identifier(String identifier) throws ResourceNotFoundException, ClientProtocolException, IOException, IIIFException {
 
         try {
+            ImageIdentifier imgId = new ImageIdentifier(identifier);
             String id = "";
             String[] parts = identifier.split("::");
             if (parts.length == 2 && parts[0].equals("static")) {
@@ -33,6 +35,7 @@ public class BdrcS3Resolver implements S3Resolver {
             } else {
                 id = "Works/";
                 IdentifierInfo info = IdentifierInfo.getIndentifierInfo(identifier);
+                List<ImageInfo> imgInf = info.getImageInfoList();
                 String work = info.getWork().substring(info.getWork().lastIndexOf('/') + 1);
                 // String imgGroup = parts[0].substring(parts[0].lastIndexOf('_') + 1);
                 String imgGroup = info.getImageGroup();
@@ -48,7 +51,7 @@ public class BdrcS3Resolver implements S3Resolver {
                 if (oldImageGroupPattern.matcher(imgGroup).matches()) {
                     imgGroup = imgGroup.substring(1);
                 }
-                id = id + hash + "/" + work + "/images/" + work + "-" + imgGroup + "/" + parts[1];
+                id = id + hash + "/" + work + "/images/" + work + "-" + imgGroup + "/" + imgId.getImageName(imgInf);
             }
             return id;
         } catch (ResourceNotFoundException ex) {
