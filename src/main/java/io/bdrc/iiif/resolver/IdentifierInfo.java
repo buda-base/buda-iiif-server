@@ -62,6 +62,7 @@ public class IdentifierInfo {
                 this.imageId = identifier.split("::")[1];
             }
             log.info("IdentifierInfo volumeId = {}", volumeId);            
+            log.info("IdentifierInfo volumeId = {}", volumeId);
             HttpPost request = new HttpPost(Application.getProperty("dataserver") + "/query/table/IIIFPres_volumeInfo");
             object.put("R_RES", volumeId);
             String message = object.toString();
@@ -106,7 +107,8 @@ public class IdentifierInfo {
         return n.findValue("value").textValue();
     }
 
-    public static IdentifierInfo getIndentifierInfo(String identifier) throws ClientProtocolException, IOException, IIIFException, ResourceNotFoundException {
+    public static IdentifierInfo getIndentifierInfo(String identifier)
+            throws ClientProtocolException, IOException, IIIFException, ResourceNotFoundException {
         String volumeId = identifier.split("::")[0];
         IdentifierInfo info = (IdentifierInfo) ServerCache.getObjectFromCache("identifier", "ID_" + volumeId);
         if (info != null) {
@@ -273,8 +275,9 @@ public class IdentifierInfo {
 
     @Override
     public String toString() {
-        return "IdentifierInfo [identifier=" + identifier + ", work=" + work + ", asset=" + asset + ", access=" + access + ", volumeId=" + volumeId + ", imageList=" + imageList + ", imageId=" + imageId + ", imageGroup=" + imageGroup
-                + ", isChinaRestricted=" + isChinaRestricted + ", totalPages=" + totalPages + ", fair_use=" + fair_use + "]";
+        return "IdentifierInfo [identifier=" + identifier + ", work=" + work + ", asset=" + asset + ", access=" + access + ", volumeId=" + volumeId
+                + ", imageList=" + imageList + ", imageId=" + imageId + ", imageGroup=" + imageGroup + ", isChinaRestricted=" + isChinaRestricted
+                + ", totalPages=" + totalPages + ", fair_use=" + fair_use + "]";
     }
 
     public static void main(String[] args) throws ClientProtocolException, IOException, IIIFException, ResourceNotFoundException {

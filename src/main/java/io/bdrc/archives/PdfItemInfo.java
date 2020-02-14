@@ -77,7 +77,9 @@ public class PdfItemInfo {
             List<String> itemVols = getItemVolumes();
             for (String vol : itemVols) {
                 String shortName = vol.substring(vol.lastIndexOf('/') + 1);
-                String num = itemModel.listObjectsOfProperty(ResourceFactory.createResource(vol), ResourceFactory.createProperty(BDO + "volumeNumber")).next().asLiteral().getString();
+                String num = itemModel
+                        .listObjectsOfProperty(ResourceFactory.createResource(vol), ResourceFactory.createProperty(BDO + "volumeNumber")).next()
+                        .asLiteral().getString();
                 volNumbers.put(shortName, num);
             }
         }
@@ -90,7 +92,8 @@ public class PdfItemInfo {
 
     @Override
     public String toString() {
-        return "PdfItemInfo [itemId=" + itemId + ", itemVolumes=" + itemVolumes + ", volNumbers=" + volNumbers + ", itemAccess=" + itemAccess + ", itemModel=" + itemModel + "]";
+        return "PdfItemInfo [itemId=" + itemId + ", itemVolumes=" + itemVolumes + ", volNumbers=" + volNumbers + ", itemAccess=" + itemAccess
+                + ", itemModel=" + itemModel + "]";
     }
 
     public static void main(String[] args) throws MalformedURLException, IIIFException {
