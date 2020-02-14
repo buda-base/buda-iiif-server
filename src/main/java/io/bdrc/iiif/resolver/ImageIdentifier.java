@@ -24,25 +24,29 @@ public class ImageIdentifier {
     private HashMap<String, String> parseIdentifier(String id) throws IIIFException {
         try {
             parts = new HashMap<>();
-            String[] chunks = id.split("::");
-            String[] start = chunks[0].split(":");
-            boolean hasPrefix = false;
-            if (start.length == 3) {
-                parts.put("prefix", start[0]);
-                parts.put("imageGroup", start[1] + ":" + start[2]);
-                hasPrefix = true;
+            if (!id.contains("::")) {
+                parts.put("imageGroup", id);
             } else {
-                parts.put("imageGroup", chunks[0]);
-            }
-            if (hasPrefix) {
-                if (parts.get("prefix").equals(IGFN)) {
+                String[] chunks = id.split("::");
+                String[] start = chunks[0].split(":");
+                boolean hasPrefix = false;
+                if (start.length == 3) {
+                    parts.put("prefix", start[0]);
+                    parts.put("imageGroup", start[1] + ":" + start[2]);
+                    hasPrefix = true;
+                } else {
+                    parts.put("imageGroup", chunks[0]);
+                }
+                if (hasPrefix) {
+                    if (parts.get("prefix").equals(IGFN)) {
+                        parts.put("imageName", chunks[1]);
+                    }
+                    if (parts.get("prefix").equals(IGFI)) {
+                        parts.put("imageIndex", chunks[1]);
+                    }
+                } else {
                     parts.put("imageName", chunks[1]);
                 }
-                if (parts.get("prefix").equals(IGFI)) {
-                    parts.put("imageIndex", chunks[1]);
-                }
-            } else {
-                parts.put("imageName", chunks[1]);
             }
         } catch (Exception e) {
             throw new IIIFException(e);
