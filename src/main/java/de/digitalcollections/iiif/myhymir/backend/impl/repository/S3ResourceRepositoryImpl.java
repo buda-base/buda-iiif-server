@@ -58,22 +58,23 @@ public class S3ResourceRepositoryImpl implements ResourceRepository<Resource> {
 
     @Override
     public S3Resource create(String key, ResourcePersistenceType resourcePersistenceType, MimeType mimeType) throws ResourceIOException {
-        S3Resource resource = new S3Resource();
-        resource.setId(key);
-        if (mimeType != null) {
-            if (mimeType.getExtensions() != null && !mimeType.getExtensions().isEmpty()) {
-                resource.setFilenameExtension(mimeType.getExtensions().get(0));
-            }
-            resource.setMimeType(mimeType);
-        }
-        if (ResourcePersistenceType.REFERENCED.equals(resourcePersistenceType)) {
-            resource.setReadonly(true);
-        }
-        if (ResourcePersistenceType.MANAGED.equals(resourcePersistenceType)) {
-            resource.setUuid(UUID.fromString(key));
-        }
-        resource.setIdentifier(spt.getIdentifier(key));
-        return resource;
+        throw new UnsupportedOperationException("Not supported yet.");
+        //S3Resource resource = new S3Resource();
+        //resource.setId(key);
+        //if (mimeType != null) {
+        //    if (mimeType.getExtensions() != null && !mimeType.getExtensions().isEmpty()) {
+        //        resource.setFilenameExtension(mimeType.getExtensions().get(0));
+        //    }
+        //    resource.setMimeType(mimeType);
+        //}
+        //if (ResourcePersistenceType.REFERENCED.equals(resourcePersistenceType)) {
+        //    resource.setReadonly(true);
+        //}
+        //if (ResourcePersistenceType.MANAGED.equals(resourcePersistenceType)) {
+        //    resource.setUuid(UUID.fromString(key));
+        //}
+        //resource.setIdentifier(spt.getIdentifier(key));
+        //return resource;
     }
 
     @Override

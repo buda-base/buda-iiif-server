@@ -40,7 +40,7 @@ public class S3ResourcePersistenceTypeHandler implements ResourcePersistenceType
         List<URI> list=null;
         URI[] uri=new URI[1];
         try {            
-            S3Resolver resolver=(S3Resolver) Class.forName(s3Resolver).newInstance();
+            S3Resolver resolver=(S3Resolver) Class.forName(s3Resolver).getDeclaredConstructor().newInstance();
             uri[0]=new URI(resolver.getS3Identifier(resolvingKey));
             list=Arrays.asList(uri);
         }
@@ -53,7 +53,7 @@ public class S3ResourcePersistenceTypeHandler implements ResourcePersistenceType
     
     public String getIdentifier(String resolvingKey) throws ResourceIOException{
         try {
-            S3Resolver resolver=(S3Resolver) Class.forName(s3Resolver).newInstance();
+            S3Resolver resolver=(S3Resolver) Class.forName(s3Resolver).getDeclaredConstructor().newInstance();
             return resolver.getS3Identifier(resolvingKey);
         }
         catch(Exception ex) {
