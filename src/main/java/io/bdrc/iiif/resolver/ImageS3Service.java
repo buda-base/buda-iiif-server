@@ -39,11 +39,15 @@ public class ImageS3Service extends ConcurrentResourceService<byte[]> {
 	}
 	
     public static String getKey(final IdentifierInfo idf) {
+        return getKeyPrefix(idf) + idf.imageId;
+    }
+
+    public static String getKeyPrefix(final IdentifierInfo idf) {
         String w_id = idf.igi.imageInstanceId;
         w_id = w_id.substring(w_id.lastIndexOf('/')+1);
         final String md5firsttwo = ImageInfoListService.getFirstMd5Nums(w_id);
         String imageGroupId = ImageInfoListService.getS3ImageGroupId(idf.igi.imageGroup);
-        return "Works/" + md5firsttwo + "/" + w_id + "/images/" + w_id + "-" + imageGroupId + "/" + idf.imageId;
+        return "Works/" + md5firsttwo + "/" + w_id + "/images/" + w_id + "-" + imageGroupId + "/";
     }
 
 	@Override

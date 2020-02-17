@@ -32,9 +32,9 @@ public class AuthTest1 {
 	static String publicToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJodHRwczovL2Rldi1iZHJjLmF1dGgwLmNvbS9hcGkvdjIvIiwic3ViIjoiYXV0aDB8NWJlOTkyZDlkN2VjZTg3ZjE1OWM4YmVkIiwiYXpwIjoiRzBBam1DS3NwTm5nSnNUdFJuSGFBVUNENDRaeHdvTUoiLCJpc3MiOiJodHRwczovL2Rldi1iZHJjLmF1dGgwLmNvbS8iLCJleHAiOjE3MzU3MzgyNjR9.zqOALhi8Gz1io-B1pWIgHVvkSa0U6BuGmB18FnF3CIg\n";
 	static String adminToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJodHRwczovL2Rldi1iZHJjLmF1dGgwLmNvbS9hcGkvdjIvIiwic3ViIjoiYXV0aDB8NWJlOTkyMGJlYzMxMjMyMGY1NjI5NGRjIiwiYXpwIjoiRzBBam1DS3NwTm5nSnNUdFJuSGFBVUNENDRaeHdvTUoiLCJpc3MiOiJodHRwczovL2Rldi1iZHJjLmF1dGgwLmNvbS8iLCJleHAiOjE3MzU3Mzc1OTB9.m1V64-90tjNRMD18RQTF8SBlMFOcqgSuPwtALZBLd8U";
 	public static HashMap<String, String> map = new HashMap<>();
-	public static final String PUBLIC_RES = "/test/v2/bdr:V29329_I1KG15042::I1KG150420322.jpg/full/full/0/default.jpg";
-	public static final String RESTRICTED_CHINA = "/test/v2/bdr:V28810_I4644::46440001.tif/full/full/0/default.jpg";
-	public static final String FAIR_USE = "/test/v2/bdr:V1PD96945_I1PD96947::I1PD969470131.tif/full/full/0/default.jpg";
+	public static final String PUBLIC_RES = "/test/v2/bdr:I1KG15042::I1KG150420322.jpg/full/full/0/default.jpg";
+	public static final String RESTRICTED_CHINA = "/test/v2/bdr:I4644::46440001.tif/full/full/0/default.jpg";
+	public static final String FAIR_USE = "/test/v2/bdr:I1PD96947::I1PD969470131.tif/full/full/0/default.jpg";
 
 	@Autowired
 	Environment environment;

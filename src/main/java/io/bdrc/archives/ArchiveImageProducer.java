@@ -21,7 +21,6 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 
 import de.digitalcollections.iiif.myhymir.ServerCache;
-import de.digitalcollections.model.api.identifiable.resource.exceptions.ResourceNotFoundException;
 import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.iiif.metrics.ImageMetrics;
 import io.bdrc.iiif.resolver.IdentifierInfo;
@@ -42,13 +41,10 @@ public class ArchiveImageProducer implements Callable {
     Dimension d;
     boolean isTiff = false;
 
-    public ArchiveImageProducer(AmazonS3 s3, String iiifId, String archiveType, String origin) throws IIIFException {
+    public ArchiveImageProducer(AmazonS3 s3, String key, String archiveType, String origin) throws IIIFException {
         this.s3 = s3;
-        this.id = iiifId;
         this.archiveType = archiveType;
         this.origin = origin;
-        IdentifierInfo info = new IdentifierInfo(iiifId);
-        this.key = ImageS3Service.getKey(info);
         log.info("IDENTIFIER {}, ID {}", key, id);
         if (key.endsWith(".tif") || key.endsWith(".tiff")) {
             isTiff = true;

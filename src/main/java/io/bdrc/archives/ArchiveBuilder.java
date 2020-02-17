@@ -3,7 +3,6 @@ package io.bdrc.archives;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.Iterator;
 import java.util.List;
 import java.util.TreeMap;
 import java.util.concurrent.Callable;
@@ -42,21 +41,22 @@ public class ArchiveBuilder {
     public final static String ZIP_TYPE = "zip";
 
     public final static Logger log = LoggerFactory.getLogger(ArchiveBuilder.class.getName());
+    
+    private static ExecutorService service = Executors.newFixedThreadPool(50);
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
     public static void buildPdf(List<String> imageList, IdentifierInfo inf, String output, String origin) throws IIIFException, IOException {
         long deb = System.currentTimeMillis();
         try {
             Application.logPerf("Starting building pdf {}", inf.volumeId);
-            ExecutorService service = Executors.newFixedThreadPool(50);
+            
             AmazonS3 s3 = ImageS3Service.getClient();
             Application.logPerf("S3 client obtained in building pdf {} after {} ", inf.volumeId, System.currentTimeMillis() - deb);
             TreeMap<Integer, Future<?>> t_map = new TreeMap<>();
             int i = 1;
+            final String keyPrefix = ImageS3Service.getKeyPrefix(inf);
             for (String imageFileName : imageList) {
-                final String id = inf.volumeId + "::" + imageFileName;
-                ArchiveImageProducer tmp = null;
-                tmp = new ArchiveImageProducer(s3, id, PDF_TYPE, origin);
+                ArchiveImageProducer tmp = new ArchiveImageProducer(s3, keyPrefix+imageFileName, PDF_TYPE, origin);
                 Future<?> fut = service.submit((Callable) tmp);
                 t_map.put(i, fut);
                 i += 1;
@@ -66,6 +66,7 @@ public class ArchiveBuilder {
 
             // TODO: this should be completely reworked, it's not ready for production
             //doc.setDocumentInformation(ArchiveInfo.getInstance(inf).getDocInformation());
+
             Application.logPerf("building pdf writer and document opened {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
             for (int k = 1; k <= t_map.keySet().size(); k++) {
                 Future<?> tmp = t_map.get(k);
@@ -108,16 +109,14 @@ public class ArchiveBuilder {
         try {
             long deb = System.currentTimeMillis();
             Application.logPerf("Starting building zip {}", inf.volumeId);
-            ExecutorService service = Executors.newFixedThreadPool(50);
             AmazonS3 s3 = ImageS3Service.getClient();
             Application.logPerf("S3 client obtained in building pdf {} after {} ", inf.volumeId, System.currentTimeMillis() - deb);
             TreeMap<Integer, Future<?>> t_map = new TreeMap<>();
             TreeMap<Integer, String> images = new TreeMap<>();
             int i = 1;
+            final String keyPrefix = ImageS3Service.getKeyPrefix(inf);
             for (String imageFileName : imageList) {
-                final String id = inf.volumeId + "::" + imageFileName;
-                ArchiveImageProducer tmp = null;
-                tmp = new ArchiveImageProducer(s3, id, ZIP_TYPE, origin);
+                ArchiveImageProducer tmp = new ArchiveImageProducer(s3, keyPrefix+imageFileName, PDF_TYPE, origin);
                 Future<?> fut = service.submit((Callable) tmp);
                 t_map.put(i, fut);
                 images.put(i, imageFileName);

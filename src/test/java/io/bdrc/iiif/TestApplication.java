@@ -15,7 +15,6 @@ import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Primary;
 
 import de.digitalcollections.iiif.myhymir.IIIFRdfAuthFilter;
-import de.digitalcollections.iiif.myhymir.backend.impl.repository.S3ResourceRepositoryImpl;
 import io.bdrc.auth.rdf.RdfAuthModel;
 
 
@@ -51,7 +50,6 @@ public class TestApplication extends SpringBootServletInitializer{
             //do nothing, continue props initialization
         }
         AuthProps.init(props);*/
-        S3ResourceRepositoryImpl.initWithProps(props);
         SpringApplication.run(TestApplication.class, args);
         RdfAuthModel.init();
     }

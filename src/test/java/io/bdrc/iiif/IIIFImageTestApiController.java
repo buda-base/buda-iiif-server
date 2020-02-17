@@ -28,6 +28,10 @@ import de.digitalcollections.iiif.myhymir.ResourceAccessValidation;
 import io.bdrc.auth.Access;
 import io.bdrc.auth.TokenValidation;
 import io.bdrc.iiif.auth.AuthServiceInfo;
+import io.bdrc.iiif.exceptions.IIIFException;
+import io.bdrc.iiif.resolver.AccessType;
+import io.bdrc.iiif.resolver.IdentifierInfo;
+import io.bdrc.iiif.resolver.ImageGroupInfo;
 
 @Controller
 @RequestMapping("/test/v2/")
@@ -75,10 +79,15 @@ public class IIIFImageTestApiController {
 
     @RequestMapping(value = "{identifier}/{region}/{size}/{rotation}/{quality}.{format}")
     public ResponseEntity<byte[]> getImageRepresentation(@PathVariable String identifier, @PathVariable String region, @PathVariable String size, @PathVariable String rotation, @PathVariable String quality, @PathVariable String format,
-            HttpServletRequest request, HttpServletResponse response, WebRequest webRequest) throws UnsupportedFormatException, UnsupportedOperationException, IOException, InvalidParametersException {
+            HttpServletRequest request, HttpServletResponse response, WebRequest webRequest) throws UnsupportedFormatException, UnsupportedOperationException, IOException, InvalidParametersException, IIIFException {
         String pth = "/test/v2/" + identifier + "/" + region + "/" + size + "/" + rotation + "/" + quality + "." + format;
+        ImageGroupInfo igi = new ImageGroupInfo();
+        igi.access = AccessType.OPEN;
+        igi.restrictedInChina = false;
+        igi.statusUri = "http://purl.bdrc.io/admindata/StatusReleased";
+        IdentifierInfo idf = new IdentifierInfo(identifier, igi);
         System.out.println("PATH >>>>> " + pth);
-        ResourceAccessValidation accValidation = new ResourceAccessValidation((Access) request.getAttribute("access"), AuthTest1.map.get(pth));
+        ResourceAccessValidation accValidation = new ResourceAccessValidation((Access) request.getAttribute("access"), idf);
         identifier = URLDecoder.decode(identifier, "UTF-8");
         if (!accValidation.isAccessible(request)) {
             HttpHeaders headers1 = new HttpHeaders();
@@ -100,7 +109,12 @@ public class IIIFImageTestApiController {
     public ResponseEntity<String> getInfo(@PathVariable String identifier, HttpServletRequest req, HttpServletResponse res, WebRequest webRequest) throws Exception {
         String pth = "/test/v2/" + identifier + "/info.json";
         System.out.println("PATH >>>>> " + pth);
-        ResourceAccessValidation accValidation = new ResourceAccessValidation((Access) req.getAttribute("access"), AuthTest1.map.get(pth));
+        ImageGroupInfo igi = new ImageGroupInfo();
+        igi.access = AccessType.OPEN;
+        igi.restrictedInChina = false;
+        igi.statusUri = "http://purl.bdrc.io/admindata/StatusReleased";
+        IdentifierInfo idf = new IdentifierInfo(identifier, igi);
+        ResourceAccessValidation accValidation = new ResourceAccessValidation((Access) req.getAttribute("access"), idf);
         boolean unAuthorized = !accValidation.isAccessible(req);
         long modified = imageService.getImageModificationDate(identifier).toEpochMilli();
         webRequest.checkNotModified(modified);

@@ -52,6 +52,19 @@ public class IdentifierInfo {
         }
     }
 
+    public IdentifierInfo(String identifier, ImageGroupInfo igi) throws IIIFException {
+        log.info("Instanciating identifierInfo with {}", identifier);
+        this.identifier = identifier;
+        this.volumeId = identifier.split("::")[0];
+        if (identifier.split("::").length > 1) {
+            this.imageId = identifier.split("::")[1];
+        }
+        this.igi = igi;
+        if (igi.access.equals(AccessType.FAIR_USE)) {
+            this.accessibleInFairUse = this.igi.isAccessibleInFairUse(this.imageId);
+        }
+    }
+    
     @Override
     public String toString() {
         try {
