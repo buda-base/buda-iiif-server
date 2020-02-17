@@ -1,6 +1,8 @@
-
-tbrc/
-tbrc-ttl/
+application.yml
+iiifserv.properties
+pdf_cache/
+pdf_cache_test/
+pdf_cache_test_space/
 
 #
 # Maven
