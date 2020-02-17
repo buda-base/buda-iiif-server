@@ -6,10 +6,10 @@ import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.time.Instant;
 import java.util.Iterator;
+import java.util.concurrent.ExecutionException;
 
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
@@ -20,7 +20,6 @@ import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.jena.atlas.logging.Log;
 import org.imgscalr.Scalr;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,7 +39,6 @@ import de.digitalcollections.core.model.api.MimeType;
 import de.digitalcollections.core.model.api.resource.Resource;
 import de.digitalcollections.core.model.api.resource.enums.ResourcePersistenceType;
 import de.digitalcollections.core.model.api.resource.exceptions.ResourceIOException;
-import de.digitalcollections.core.model.impl.resource.S3Resource;
 import de.digitalcollections.iiif.hymir.image.business.api.ImageSecurityService;
 import de.digitalcollections.iiif.hymir.image.business.api.ImageService;
 import de.digitalcollections.iiif.hymir.model.exception.InvalidParametersException;
@@ -55,17 +53,16 @@ import de.digitalcollections.iiif.model.image.Size;
 import de.digitalcollections.iiif.model.image.SizeRequest;
 import de.digitalcollections.iiif.model.image.TileInfo;
 import de.digitalcollections.iiif.myhymir.Application;
-import de.digitalcollections.iiif.myhymir.ServerCache;
 import de.digitalcollections.model.api.identifiable.resource.exceptions.ResourceNotFoundException;
 import de.digitalcollections.turbojpeg.imageio.TurboJpegImageReadParam;
 import de.digitalcollections.turbojpeg.imageio.TurboJpegImageReader;
 import io.bdrc.iiif.exceptions.IIIFException;
+import io.bdrc.iiif.resolver.IdentifierInfo;
+import io.bdrc.iiif.resolver.ImageS3Service;
 
 @Service
 @Primary
 public class BDRCImageServiceImpl implements ImageService {
-
-    public static final String IIIF_IMG = "IIIF_IMG";
 
     @Autowired(required = false)
     private ImageSecurityService imageSecurityService;
@@ -172,40 +169,31 @@ public class BDRCImageServiceImpl implements ImageService {
      **/
     private ImageReader getReader(String identifier) throws UnsupportedFormatException, IOException, IIIFException, ResourceNotFoundException {
         long deb = System.currentTimeMillis();
-        byte[] bytes = (byte[]) ServerCache.getObjectFromCache(IIIF_IMG, identifier);
-        if (bytes != null) {
-            Application.logPerf("Image service image was cached {}", identifier);
-        } else {
-            Application.logPerf("Image service reading {}", identifier);
-            if (imageSecurityService != null && !imageSecurityService.isAccessAllowed(identifier)) {
-                throw new IIIFException();
-            }
-            S3Resource res;
-            try {
-                res = (S3Resource) resourceService.get(identifier, ResourcePersistenceType.RESOLVED, MimeType.MIME_IMAGE);
-                if (identifier.startsWith("static::")) {
-                    res.setStatic(true);
-                }
-            } catch (ResourceIOException e) {
-                throw new ResourceNotFoundException(e);
-            }
-            InputStream S3input = resourceService.getInputStream((S3Resource) res);
-            if (S3input == null) {
-                throw new ResourceNotFoundException("No S3 resource could be found for identifier: " + identifier);
-            }
-            try {
-                ServerCache.addToCache(IIIF_IMG, identifier, IOUtils.toByteArray(S3input));
-            } catch (IIIFException e) {
-                Log.error("Could not add bytearray image to cache", e.getMessage());
-            }
-            bytes = (byte[]) ServerCache.getObjectFromCache(IIIF_IMG, identifier);
-            Application.logPerf("Image service read {} from s3 {}", S3input, identifier);
+        if (imageSecurityService != null && !imageSecurityService.isAccessAllowed(identifier)) {
+            throw new IIIFException();
         }
+        final String s3key;
+        final ImageS3Service service;
+        if (identifier.startsWith("static::")) {
+            s3key = identifier.substring(8);
+            service = ImageS3Service.InstanceStatic;
+        } else {
+            IdentifierInfo idf = new IdentifierInfo(identifier);
+            s3key = ImageS3Service.getKey(idf);
+            service = ImageS3Service.InstanceArchive;
+        }
+        byte[] bytes = null;
+        try {
+            bytes = service.getAsync(s3key).get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new IIIFException(404, 5000, e);
+        }
+
         ImageInputStream iis = ImageIO.createImageInputStream(new ByteArrayInputStream(bytes));
         ImageReader reader = Streams.stream(ImageIO.getImageReaders(iis)).findFirst().orElseThrow(UnsupportedFormatException::new);
         reader.setInput(iis);
         Application.logPerf("S3 object IIIS READER >> {}", reader);
-        Application.logPerf("Image service return reader at " + (System.currentTimeMillis() - deb) + " ms " + identifier);
+        Application.logPerf("Image service return reader at {} ms {}", System.currentTimeMillis() - deb, identifier);
         return reader;
     }
 

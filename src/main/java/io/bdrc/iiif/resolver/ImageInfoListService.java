@@ -30,6 +30,7 @@ import io.bdrc.iiif.exceptions.IIIFException;
 public class ImageInfoListService extends ConcurrentResourceService<List<ImageInfo>> {
 
 	final static ObjectMapper mapper = new ObjectMapper();
+	// TODO: get from config
 	final static String bucketName = "archive.tbrc.org";
 	private static AmazonS3 s3Client = null;
 	static MessageDigest md;
@@ -51,7 +52,7 @@ public class ImageInfoListService extends ConcurrentResourceService<List<ImageIn
 		}
 	}
 
-	private static String getFirstMd5Nums(final String workLocalId) {
+	static String getFirstMd5Nums(final String workLocalId) {
 		final byte[] bytesOfMessage;
 		bytesOfMessage = workLocalId.getBytes(utf8);
 		final byte[] hashBytes = md.digest(bytesOfMessage);

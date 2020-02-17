@@ -64,8 +64,8 @@ public class ArchivesController {
         String html = "";
         int subType = idf.getSubType();
         switch (subType) {
-        // Case work item
-        case 4:
+        // Case work in item
+        case Identifier.MANIFEST_ID_WORK_IN_ITEM:
             PdfItemInfo item = PdfItemInfo.getPdfItemInfo(idf.getItemId());
             if (!acc.hasResourceAccess(item.getItemAccess())) {
                 return new ResponseEntity<>("Insufficient rights", HttpStatus.FORBIDDEN);
@@ -82,8 +82,8 @@ public class ArchivesController {
             }
             break;
         // Case volume imageRange
-        case 5:
-        case 6:
+        case Identifier.MANIFEST_ID_VOLUMEID:
+        case Identifier.MANIFEST_ID_WORK_IN_VOLUMEID:
             int bPage = idf.getBPageNum().intValue();
             int ePage = idf.getEPageNum().intValue();
             IdentifierInfo inf = new IdentifierInfo(idf.getVolumeId());
