@@ -6,8 +6,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -33,9 +33,11 @@ import de.digitalcollections.model.api.identifiable.resource.exceptions.Resource
 import io.bdrc.auth.Access;
 import io.bdrc.auth.Access.AccessLevel;
 import io.bdrc.iiif.exceptions.IIIFException;
+import io.bdrc.iiif.resolver.AppConstants;
 import io.bdrc.iiif.resolver.IdentifierInfo;
+import io.bdrc.iiif.resolver.ImageInfo;
+import io.bdrc.iiif.resolver.ImageInfoListService;
 import io.bdrc.libraries.Identifier;
-import io.bdrc.libraries.ImageListIterator;
 
 @Controller
 public class ArchivesController {
@@ -84,23 +86,22 @@ public class ArchivesController {
         case 6:
             int bPage = idf.getBPageNum().intValue();
             int ePage = idf.getEPageNum().intValue();
-            IdentifierInfo inf = new IdentifierInfo(idf.getVolumeId(), true;);
+            IdentifierInfo inf = new IdentifierInfo(idf.getVolumeId());
+            List<ImageInfo> ili = null;
+            try {
+                ili = ImageInfoListService.Instance.getAsync(inf.igi.imageInstanceId.substring(AppConstants.BDR_len), inf.igi.imageGroup).get();
+            } catch (InterruptedException | ExecutionException e) {
+                throw new IIIFException(404, 5000, e);
+            }
             ResourceAccessValidation accValidation = new ResourceAccessValidation((Access) request.getAttribute("access"), inf);
             AccessLevel al = accValidation.getAccess(request);
             if (al.equals(AccessLevel.NOACCESS) || al.equals(AccessLevel.MIXED)) {
                 return new ResponseEntity<>("Insufficient rights", HttpStatus.FORBIDDEN);
             }
-            Iterator<String> idIterator = null;
-            int introPages = inf.igi.pagesIntroTbrc;
+            List<String> imageList = getImageList(idf, inf, ili, al.equals(AccessLevel.FAIR_USE));
             if (al.equals(AccessLevel.FAIR_USE)) {
-                idIterator = getFairUseImgListIterator(bPage, ePage, inf);
                 output = idf.getVolumeId() + "FAIR_USE:" + bPage + "-" + ePage;// +"."+type;
             } else {
-                if (introPages > 0) {
-                    idIterator = inf.getImageListIterator(bPage + introPages, ePage);
-                } else {
-                    idIterator = inf.getImageListIterator(bPage, ePage);
-                }
                 output = idf.getVolumeId() + ":" + bPage + "-" + ePage;// +"."+type;
             }
             if (type.equals(ArchiveBuilder.PDF_TYPE)) {
@@ -108,7 +109,7 @@ public class ArchivesController {
                 log.debug("PDF " + id + " from IIIF cache >>" + pdf_cached);
                 if (pdf_cached == null) {
                     // Build pdf since the pdf file doesn't exist yet
-                    ArchiveBuilder.buildPdf(idIterator, inf, output, (String) request.getAttribute("origin"));
+                    ArchiveBuilder.buildPdf(imageList, inf, output, (String) request.getAttribute("origin"));
                 }
             }
             if (type.equals(ArchiveBuilder.ZIP_TYPE)) {
@@ -116,7 +117,7 @@ public class ArchivesController {
                 log.debug("ZIP " + id + " from IIIF_ZIP cache >>" + zip_cached);
                 if (zip_cached == null) {
                     // Build pdf since the pdf file doesn't exist yet
-                    ArchiveBuilder.buildZip(idIterator, inf, output, (String) request.getAttribute("origin"));
+                    ArchiveBuilder.buildZip(imageList, inf, output, (String) request.getAttribute("origin"));
                 }
             }
             // Create template and serve html link
@@ -205,10 +206,10 @@ public class ArchivesController {
     public String getVolumeDownLoadLinks(PdfItemInfo item, Identifier idf, String type) throws ClientProtocolException, IOException, IIIFException, ResourceNotFoundException {
         String links = "";
         List<String> vlist = item.getItemVolumes();
-        for (String s : vlist) {
+        for (int i = 0; i<vlist.size(); i++) {
+            String s = vlist.get(i);
             String shortName = getShortName(s);
-            IdentifierInfo vi = IdentifierInfo.getIndentifierInfo("bdr:" + shortName);
-            links = links + "<a type=\"application/" + type + "\" href=\"/download/" + type + "/v:" + "bdr:" + shortName + "::1-" + vi.getTotalPages() + "\">Vol." + vi.getVolumeNumber() + " (" + vi.getTotalPages() + " pages) - " + "bdr:" + shortName
+            links = links + "<a type=\"application/" + type + "\" href=\"/download/" + type + "/v:" + "bdr:" + shortName + "::1-" + "\">" + Integer.toString(i) +" - " + "bdr:" + shortName
                     + "." + type + "</a><br/>";
         }
         return links;
@@ -217,12 +218,12 @@ public class ArchivesController {
     public HashMap<String, HashMap<String, String>> getJsonVolumeLinks(PdfItemInfo item, String type) throws ClientProtocolException, IOException, IIIFException, ResourceNotFoundException {
         HashMap<String, HashMap<String, String>> map = new HashMap<>();
         List<String> vlist = item.getItemVolumes();
-        for (String s : vlist) {
+        for (int i = 0; i<vlist.size(); i++) {
+            String s = vlist.get(i);
             String shortName = getShortName(s);
-            IdentifierInfo vi = IdentifierInfo.getIndentifierInfo("bdr:" + shortName);
             HashMap<String, String> vol = new HashMap<>();
-            vol.put("link", "/download/" + type + "/v:" + "bdr:" + shortName + "::1-" + vi.getTotalPages());
-            vol.put("volume", Integer.toString(vi.getVolumeNumber()));
+            vol.put("link", "/download/" + type + "/v:" + "bdr:" + shortName + "::1-");
+            vol.put("volume", Integer.toString(i));
             map.put("bdr:" + shortName, vol);
         }
         return map;
@@ -231,26 +232,36 @@ public class ArchivesController {
     public static String getShortName(String st) {
         return st.substring(st.lastIndexOf("/") + 1);
     }
-
-    private Iterator<String> getFairUseImgListIterator(int bPage, int ePage, IdentifierInfo inf) {
-        ArrayList<String> img = new ArrayList<>();
-        int x = 0;
-        int introPages = inf.getPagesIntroTbrc();
-        ImageListIterator it1 = null;
-        if (bPage == 1 && introPages > 0) {
-            it1 = new ImageListIterator(inf.getImageList(), bPage + introPages, 20 + introPages);
-        } else {
-            it1 = new ImageListIterator(inf.getImageList(), bPage, 20);
+    
+    private List<String> getImageList(Identifier id, IdentifierInfo idf, List<ImageInfo> ili, boolean fairUse) {
+        final int totalPages = ili.size();
+        final List<String> res = new ArrayList<>();
+        int beginIndex = id.getBPageNum() == null ? 1 + idf.igi.pagesIntroTbrc : id.getBPageNum().intValue();
+        int endIndex = id.getEPageNum() == null ? totalPages : Math.min(totalPages, id.getEPageNum().intValue()); 
+        if (!fairUse) {
+            for (int imgSeqNum = beginIndex; imgSeqNum <= endIndex; imgSeqNum++) {
+                res.add(ili.get(imgSeqNum).filename);
+            }
+            return res;
         }
-        while (it1.hasNext()) {
-            img.add(x, it1.next());
-            x++;
+        final int firstUnaccessiblePage = AppConstants.FAIRUSE_PAGES_S + idf.igi.pagesIntroTbrc + 1;
+        final int lastUnaccessiblePage = totalPages - AppConstants.FAIRUSE_PAGES_E;
+        // first part: min(firstUnaccessiblePage+1,beginIndex) to
+        // min(endIndex,firstUnaccessiblePage+1)
+        for (int imgSeqNum = Math.min(firstUnaccessiblePage, beginIndex); imgSeqNum <= Math.min(endIndex, firstUnaccessiblePage - 1); imgSeqNum++) {
+            res.add(ili.get(imgSeqNum).filename);
         }
-        ImageListIterator it2 = new ImageListIterator(inf.getImageList(), inf.getTotalPages() - 19, ePage);
-        while (it2.hasNext()) {
-            img.add(x, it2.next());
-            x++;
+        // then copyright page, if either beginIndex or endIndex is
+        // > FAIRUSE_PAGES_S+tbrcintro and < vi.totalPages-FAIRUSE_PAGES_E
+        if ((beginIndex >= firstUnaccessiblePage && beginIndex <= lastUnaccessiblePage) || (endIndex >= firstUnaccessiblePage && endIndex <= lastUnaccessiblePage) || (beginIndex < firstUnaccessiblePage && endIndex > lastUnaccessiblePage)) {
+            // TODO: add copyright page
         }
-        return img.iterator();
+        // last part: max(beginIndex,lastUnaccessiblePage) to
+        // max(endIndex,lastUnaccessiblePage)
+        for (int imgSeqNum = Math.max(lastUnaccessiblePage + 1, beginIndex); imgSeqNum <= Math.max(endIndex, lastUnaccessiblePage); imgSeqNum++) {
+            res.add(ili.get(imgSeqNum).filename);
+        }
+        return res;
     }
+
 }

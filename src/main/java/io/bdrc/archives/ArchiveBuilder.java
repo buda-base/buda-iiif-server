@@ -4,6 +4,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.List;
 import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -43,7 +44,7 @@ public class ArchiveBuilder {
     public final static Logger log = LoggerFactory.getLogger(ArchiveBuilder.class.getName());
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
-    public static void buildPdf(Iterator<String> idList, IdentifierInfo inf, String output, String origin) throws IIIFException, IOException {
+    public static void buildPdf(List<String> imageList, IdentifierInfo inf, String output, String origin) throws IIIFException, IOException {
         long deb = System.currentTimeMillis();
         try {
             Application.logPerf("Starting building pdf {}", inf.volumeId);
@@ -52,8 +53,8 @@ public class ArchiveBuilder {
             Application.logPerf("S3 client obtained in building pdf {} after {} ", inf.volumeId, System.currentTimeMillis() - deb);
             TreeMap<Integer, Future<?>> t_map = new TreeMap<>();
             int i = 1;
-            while (idList.hasNext()) {
-                final String id = inf.volumeId + "::" + idList.next();
+            for (String imageFileName : imageList) {
+                final String id = inf.volumeId + "::" + imageFileName;
                 ArchiveImageProducer tmp = null;
                 tmp = new ArchiveImageProducer(s3, id, PDF_TYPE, origin);
                 Future<?> fut = service.submit((Callable) tmp);
@@ -63,7 +64,8 @@ public class ArchiveBuilder {
             ServerCache.addToCache("pdfjobs", output, false);
             PDDocument doc = new PDDocument();
 
-            doc.setDocumentInformation(ArchiveInfo.getInstance(inf).getDocInformation());
+            // TODO: this should be completely reworked, it's not ready for production
+            //doc.setDocumentInformation(ArchiveInfo.getInstance(inf).getDocInformation());
             Application.logPerf("building pdf writer and document opened {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
             for (int k = 1; k <= t_map.keySet().size(); k++) {
                 Future<?> tmp = t_map.get(k);
@@ -102,7 +104,7 @@ public class ArchiveBuilder {
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public static void buildZip(Iterator<String> idList, IdentifierInfo inf, String output, String origin) throws IIIFException {
+    public static void buildZip(List<String> imageList, IdentifierInfo inf, String output, String origin) throws IIIFException {
         try {
             long deb = System.currentTimeMillis();
             Application.logPerf("Starting building zip {}", inf.volumeId);
@@ -112,14 +114,13 @@ public class ArchiveBuilder {
             TreeMap<Integer, Future<?>> t_map = new TreeMap<>();
             TreeMap<Integer, String> images = new TreeMap<>();
             int i = 1;
-            while (idList.hasNext()) {
-                String img = idList.next();
-                final String id = inf.volumeId + "::" + img;
+            for (String imageFileName : imageList) {
+                final String id = inf.volumeId + "::" + imageFileName;
                 ArchiveImageProducer tmp = null;
                 tmp = new ArchiveImageProducer(s3, id, ZIP_TYPE, origin);
                 Future<?> fut = service.submit((Callable) tmp);
                 t_map.put(i, fut);
-                images.put(i, img);
+                images.put(i, imageFileName);
                 i += 1;
             }
             ServerCache.addToCache("zipjobs", output, false);
