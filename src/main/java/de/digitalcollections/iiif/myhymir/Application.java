@@ -20,7 +20,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.event.EventListener;
 
-import de.digitalcollections.iiif.myhymir.backend.impl.repository.S3ResourceRepositoryImpl;
 import io.bdrc.auth.AuthProps;
 import io.bdrc.auth.rdf.RdfAuthModel;
 import io.bdrc.iiif.metrics.ImageMetrics;
@@ -70,7 +69,6 @@ public class Application extends SpringBootServletInitializer {
         if (props.getProperty("logPerf") != null) {
             logPerf = Boolean.parseBoolean(props.getProperty("logPerf"));
         }
-        S3ResourceRepositoryImpl.initWithProps(props);
         SpringApplication.run(Application.class, args);
         logPerf("Application main", "Test PERF Log ");
     }

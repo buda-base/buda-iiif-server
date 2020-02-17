@@ -34,7 +34,7 @@ public class ImageS3Service extends ConcurrentResourceService<byte[]> {
 		this.bucketName = bucketName;
 	}
 
-	private static AmazonS3 getClient() {
+	public static AmazonS3 getClient() {
 		return clientBuilder.build();
 	}
 	

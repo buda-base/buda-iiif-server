@@ -30,9 +30,9 @@ import com.amazonaws.services.s3.AmazonS3;
 
 import de.digitalcollections.iiif.myhymir.Application;
 import de.digitalcollections.iiif.myhymir.ServerCache;
-import de.digitalcollections.iiif.myhymir.backend.impl.repository.S3ResourceRepositoryImpl;
 import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.iiif.resolver.IdentifierInfo;
+import io.bdrc.iiif.resolver.ImageS3Service;
 
 public class ArchiveBuilder {
 
@@ -49,7 +49,7 @@ public class ArchiveBuilder {
         try {
             Application.logPerf("Starting building pdf {}", inf.volumeId);
             ExecutorService service = Executors.newFixedThreadPool(50);
-            AmazonS3 s3 = S3ResourceRepositoryImpl.getClientInstance();
+            AmazonS3 s3 = ImageS3Service.getClient();
             Application.logPerf("S3 client obtained in building pdf {} after {} ", inf.volumeId, System.currentTimeMillis() - deb);
             TreeMap<Integer, Future<?>> t_map = new TreeMap<>();
             int i = 1;
@@ -109,7 +109,7 @@ public class ArchiveBuilder {
             long deb = System.currentTimeMillis();
             Application.logPerf("Starting building zip {}", inf.volumeId);
             ExecutorService service = Executors.newFixedThreadPool(50);
-            AmazonS3 s3 = S3ResourceRepositoryImpl.getClientInstance();
+            AmazonS3 s3 = ImageS3Service.getClient();
             Application.logPerf("S3 client obtained in building pdf {} after {} ", inf.volumeId, System.currentTimeMillis() - deb);
             TreeMap<Integer, Future<?>> t_map = new TreeMap<>();
             TreeMap<Integer, String> images = new TreeMap<>();

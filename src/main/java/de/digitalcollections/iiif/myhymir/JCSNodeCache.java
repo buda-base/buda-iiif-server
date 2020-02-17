@@ -11,6 +11,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.maxmind.db.NodeCache;
 
 public class JCSNodeCache implements NodeCache {
+    
+    // The raison d'être of this class is to be used by Geoloc's cache mechanism
 
     private CacheAccess<String, Object> jcscache;
     public final static Logger log = LoggerFactory.getLogger(JCSNodeCache.class.getName());
