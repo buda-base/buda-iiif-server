@@ -53,7 +53,7 @@ public class ArchiveBuilder {
             TreeMap<Integer, Future<?>> t_map = new TreeMap<>();
             int i = 1;
             while (idList.hasNext()) {
-                final String id = inf.getVolumeId() + "::" + idList.next();
+                final String id = inf.volumeId + "::" + idList.next();
                 ArchiveImageProducer tmp = null;
                 tmp = new ArchiveImageProducer(s3, id, PDF_TYPE, origin);
                 Future<?> fut = service.submit((Callable) tmp);
@@ -114,7 +114,7 @@ public class ArchiveBuilder {
             int i = 1;
             while (idList.hasNext()) {
                 String img = idList.next();
-                final String id = inf.getVolumeId() + "::" + img;
+                final String id = inf.volumeId + "::" + img;
                 ArchiveImageProducer tmp = null;
                 tmp = new ArchiveImageProducer(s3, id, ZIP_TYPE, origin);
                 Future<?> fut = service.submit((Callable) tmp);

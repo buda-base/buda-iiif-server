@@ -6,9 +6,13 @@ import javax.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import io.bdrc.auth.Access;
-import io.bdrc.auth.rdf.RdfConstants;
+import io.bdrc.auth.Access.AccessLevel;
 import io.bdrc.iiif.resolver.IdentifierInfo;
+import io.bdrc.iiif.resolver.ImageGroupInfo;
 
 public class ResourceAccessValidation {
 
@@ -16,37 +20,41 @@ public class ResourceAccessValidation {
     private static final Logger log = LoggerFactory.getLogger(ResourceAccessValidation.class);
 
     Access access;
-    String accessType;
-    boolean fairUse;
+    String accessShort;
+    String statusShort;
+    String imageInstanceUri;
+    String imageFileName = null;
+    ImageGroupInfo igi;
     boolean isRestrictedInChina;
 
-    public ResourceAccessValidation(Access access, IdentifierInfo idInfo, String img) {
+    public ResourceAccessValidation(Access access, IdentifierInfo idInfo, String imageFileName) {
         super();
         this.access = access;
-        accessType = idInfo.getAccessShortName();
-        this.isRestrictedInChina = idInfo.isChinaRestricted();
-        fairUse = RdfConstants.FAIR_USE.equals(accessType);
-        if (fairUse) {
-            fairUse = idInfo.isFairUsePublicImage(img);
-        }
+        final String accessUri = idInfo.igi.access.getUri();
+        accessShort = accessUri.substring(accessUri.lastIndexOf('/') + 1);
+        final String statusUri = idInfo.igi.statusUri;
+        statusShort = accessUri.substring(statusUri.lastIndexOf('/') + 1);
+        this.isRestrictedInChina = idInfo.igi.restrictedInChina;
+        this.imageInstanceUri = idInfo.igi.imageInstanceId;
+        this.igi = idInfo.igi;
+        this.imageFileName = imageFileName;
     }
 
-    public ResourceAccessValidation(Access access, String accessType) {
+    public ResourceAccessValidation(Access access, IdentifierInfo idInfo) {
         super();
         this.access = access;
-        this.accessType = accessType;
-        fairUse = RdfConstants.FAIR_USE.equals(accessType);
+        final String accessUri = idInfo.igi.access.getUri();
+        accessShort = accessUri.substring(accessUri.lastIndexOf('/') + 1);
+        final String statusUri = idInfo.igi.statusUri;
+        statusShort = accessUri.substring(statusUri.lastIndexOf('/') + 1);
+        this.isRestrictedInChina = idInfo.igi.restrictedInChina;
+        this.imageInstanceUri = idInfo.igi.imageInstanceId;
+        this.igi = idInfo.igi;
     }
 
-    public boolean isFairUse() {
-        return fairUse;
-    }
-
-    public boolean isAccessible(HttpServletRequest request) {
-        if (access == null) {
+    public AccessLevel getAccess(HttpServletRequest request) {
+        if (access == null)
             access = new Access();
-        }
-        boolean accessible = true;
         if (isRestrictedInChina) {
             String test = GeoLocation.getCountryName(request.getHeader("X-Real-IP"));
             log.info("TEST IP from X-Real-IP header: {} and country: {}", request.getHeader("X-Real-IP"), test);
@@ -54,19 +62,34 @@ public class ResourceAccessValidation {
                 // if Geolocation country name is null (i.e throws -for instance- an IP parsing
                 // exception)
                 // then access is denied
-                accessible = false;
+                return AccessLevel.NOACCESS;
             }
         }
-        return (accessible && access.hasResourceAccess(accessType) || fairUse);
+        return access.hasResourceAccess(accessShort, statusShort, imageInstanceUri);
     }
-
-    public boolean isOpenAccess() {
-        return accessType.equals(RdfConstants.OPEN);
+    
+    public boolean isAccessible(HttpServletRequest request) {
+        AccessLevel al = getAccess(request);
+        if (al.equals(AccessLevel.OPEN))
+            return true;
+        if (al.equals(AccessLevel.FAIR_USE)) {
+            try {
+                return this.igi.isAccessibleInFairUse(imageFileName);                
+            } catch (Exception e) {
+                log.error("error when looking at fair use case: ", e);
+                return false;
+            }
+        }
+        return false;
     }
 
     @Override
     public String toString() {
-        return "ResourceAccessValidation [access=" + access + ", accessType=" + accessType + ", fairUse=" + fairUse + ", isRestrictedInChina=" + isRestrictedInChina + "]";
+        try {
+            return new ObjectMapper().writeValueAsString(this);
+        } catch (JsonProcessingException e) {
+            return "toString objectmapper exception, this shouldn't happen";
+        }
     }
 
 }

@@ -48,16 +48,6 @@ jcs.region.info.cacheattributes.MemoryCacheName=org.apache.commons.jcs.engine.me
 jcs.region.info.elementattributes=org.apache.commons.jcs.engine.ElementAttributes
 jcs.region.info.elementattributes.IsEternal=false
 
-##### MEMORY ONLY - CACHE REGION for identifierInfo objects
-jcs.region.identifier=
-jcs.region.identifier.cacheattributes.UseDisk=false
-jcs.region.identifier.cacheattributes=org.apache.commons.jcs.engine.CompositeCacheAttributes
-jcs.region.identifier.cacheattributes.MaxObjects=2000
-jcs.region.identifier.cacheattributes.MemoryCacheName=org.apache.commons.jcs.engine.memory.lru.LRUMemoryCache
-jcs.region.identifier.elementattributes=org.apache.commons.jcs.engine.ElementAttributes
-jcs.region.identifier.elementattributes.MaxLife=60
-jcs.region.identifier.elementattributes.IsEternal=false
-
 # Indexed Disk Cache for pdf
 jcs.auxiliary.IIIF=org.apache.commons.jcs.auxiliary.disk.indexed.IndexedDiskCacheFactory
 jcs.auxiliary.IIIF.attributes=org.apache.commons.jcs.auxiliary.disk.indexed.IndexedDiskCacheAttributes
@@ -72,9 +62,9 @@ jcs.auxiliary.IIIF_IMG=org.apache.commons.jcs.auxiliary.disk.indexed.IndexedDisk
 jcs.auxiliary.IIIF_IMG.attributes=org.apache.commons.jcs.auxiliary.disk.indexed.IndexedDiskCacheAttributes
 #jcs.auxiliary.IIIF_IMG.attributes.DiskPath=img_cache
 jcs.auxiliary.IIIF_IMG.attributes.DiskPath=pdf_cache
-jcs.auxiliary.IIIF_IMG.attributes.MaxPurgatorySize=500
-            ##  10 Gig size limit
-jcs.auxiliary.IIIF_IMG.attributes.MaxKeySize=10000000
+jcs.auxiliary.IIIF_IMG.attributes.MaxPurgatorySize=5000
+            ##  50 Gig size limit
+jcs.auxiliary.IIIF_IMG.attributes.MaxKeySize=50000000
 jcs.auxiliary.IIIF_IMG.attributes.DiskLimitType=SIZE
 
 # Indexed Disk Cache for zip
@@ -142,6 +132,6 @@ jcs.iiifpres.cacheattributes.MemoryCacheName=org.apache.commons.jcs.engine.memor
 
 # GEO LOCATION DB
 jcs.region.geoloc=
-jcs.region.cacheattributes=org.apache.commons.jcs.engine.CompositeCacheAttributes
-jcs.region.cacheattributes.MaxObjects=500
-jcs.region.cacheattributes.MemoryCacheName=org.apache.commons.jcs.engine.memory.lru.LRUMemoryCache
+jcs.region.geoloc.cacheattributes=org.apache.commons.jcs.engine.CompositeCacheAttributes
+jcs.region.geoloc.cacheattributes.MaxObjects=100
+jcs.region.geoloc.cacheattributes.MemoryCacheName=org.apache.commons.jcs.engine.memory.lru.LRUMemoryCache

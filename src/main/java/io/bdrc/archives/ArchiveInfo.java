@@ -42,20 +42,20 @@ public class ArchiveInfo {
         langOrder.put("bo", 1);
         langOrder.put("en", 2);
         this.m = ModelFactory.createDefaultModel();
-        m.read(inf.getWork() + ".ttl", "TURTLE");
+        m.read(inf.igi.instanceId + ".ttl", "TURTLE");
     }
 
     public static ArchiveInfo getInstance(IdentifierInfo inf) throws IIIFException {
-        ArchiveInfo info = (ArchiveInfo) ServerCache.getObjectFromCache("default", inf.getVolumeId());
+        ArchiveInfo info = (ArchiveInfo) ServerCache.getObjectFromCache("default", inf.volumeId);
         if (info == null) {
             info = new ArchiveInfo(inf);
-            ServerCache.addToCache("default", inf.getVolumeId(), info);
+            ServerCache.addToCache("default", inf.volumeId, info);
         }
         return info;
     }
 
     private String getBiblioNote() {
-        String workId = inf.getWork();
+        String workId = inf.igi.instanceId;
         String id = workId.substring(workId.lastIndexOf("/") + 1);
         String ret = "";
         NodeIterator ni = m.listObjectsOfProperty(ResourceFactory.createResource("http://purl.bdrc.io/resource/" + id), PREF_LABEL);
@@ -67,7 +67,7 @@ public class ArchiveInfo {
     }
 
     private String getNumVolumes() {
-        String workId = inf.getWork();
+        String workId = inf.igi.instanceId;
         String id = workId.substring(workId.lastIndexOf("/") + 1);
         String ret = "";
         NodeIterator ni = m.listObjectsOfProperty(ResourceFactory.createResource("http://purl.bdrc.io/resource/" + id), NUM_VOLUMES);
@@ -79,7 +79,7 @@ public class ArchiveInfo {
     }
 
     private String getCatalogInfo() {
-        String workId = inf.getWork();
+        String workId = inf.igi.instanceId;
         String id = workId.substring(workId.lastIndexOf("/") + 1);
         String ret = "";
         NodeIterator ni = m.listObjectsOfProperty(ResourceFactory.createResource("http://purl.bdrc.io/resource/" + id), CATALOG_INFO);
@@ -91,7 +91,7 @@ public class ArchiveInfo {
     }
 
     private String getPublisherName() {
-        String workId = inf.getWork();
+        String workId = inf.igi.instanceId;
         String id = workId.substring(workId.lastIndexOf("/") + 1);
         String ret = "";
         NodeIterator ni = m.listObjectsOfProperty(ResourceFactory.createResource("http://purl.bdrc.io/resource/" + id), PUBLISHER_NAME);
@@ -103,7 +103,7 @@ public class ArchiveInfo {
     }
 
     private String getPublisherLocation() {
-        String workId = inf.getWork();
+        String workId = inf.igi.instanceId;
         String id = workId.substring(workId.lastIndexOf("/") + 1);
         String ret = "";
         NodeIterator ni = m.listObjectsOfProperty(ResourceFactory.createResource("http://purl.bdrc.io/resource/" + id), PUBLISHER_LOC);
@@ -115,7 +115,7 @@ public class ArchiveInfo {
     }
 
     private String getAuthor() {
-        String workId = inf.getWork();
+        String workId = inf.igi.instanceId;
         String id = workId.substring(workId.lastIndexOf("/") + 1);
         String ret = "";
         Resource agent = null;
@@ -142,7 +142,7 @@ public class ArchiveInfo {
     }
 
     private String getPrefLabel() throws ClientProtocolException, IOException {
-        String workId = inf.getWork();
+        String workId = inf.igi.instanceId;
         String id = workId.substring(workId.lastIndexOf("/") + 1);
         String ret = "";
         String tmp = "";
@@ -169,12 +169,13 @@ public class ArchiveInfo {
         PDDocumentInformation docInf = new PDDocumentInformation();
         docInf.setCreator("Buddhist Digital Resource Center");
         docInf.setCreationDate(Calendar.getInstance());
-        docInf.setCustomMetadataValue("license", inf.getLicense());
-        docInf.setCustomMetadataValue("URL", inf.getAsset());
+        // TODO
+        //docInf.setCustomMetadataValue("license", inf.getLicense());
+        //docInf.setCustomMetadataValue("URL", inf.getAsset());
         docInf.setCustomMetadataValue("Bibliographical note", getBiblioNote());
         docInf.setCustomMetadataValue("Catalog info", getCatalogInfo());
         docInf.setCustomMetadataValue("Number of volumes", getNumVolumes());
-        docInf.setCustomMetadataValue("Volume number", Integer.toString(inf.getVolumeNumber()));
+        docInf.setCustomMetadataValue("Volume number", Integer.toString(inf.igi.volumeNumber));
         docInf.setCustomMetadataValue("Publisher name", getPublisherName());
         docInf.setCustomMetadataValue("Publisher location", getPublisherLocation());
         docInf.setTitle(getPrefLabel());

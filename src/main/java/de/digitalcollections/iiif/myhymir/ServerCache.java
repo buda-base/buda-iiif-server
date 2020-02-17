@@ -12,19 +12,18 @@ public class ServerCache {
 
     public final static Logger log = LoggerFactory.getLogger(ServerCache.class.getName());
 
-    private static final CacheAccess<Object, Object> IIIF = JCS.getInstance("IIIF");
-    private static final CacheAccess<Object, Object> IIIF_IMG = JCS.getInstance("IIIF_IMG");
-    private static final CacheAccess<Object, Object> IIIF_ZIP = JCS.getInstance("IIIF_ZIP");
-    private static final CacheAccess<Object, Object> INFO = JCS.getInstance("info");
-    private static final CacheAccess<Object, Object> PDF_JOBS = JCS.getInstance("pdfjobs");
-    private static final CacheAccess<Object, Object> ZIP_JOBS = JCS.getInstance("zipjobs");
-    private static final CacheAccess<Object, Object> DEFAULT = JCS.getInstance("default");
-    private static final CacheAccess<Object, Object> IDENTIFIER = JCS.getInstance("identifier");
+    public static final CacheAccess<Object, Object> IIIF = JCS.getInstance("IIIF");
+    public static final CacheAccess<Object, Object> IIIF_IMG = JCS.getInstance("IIIF_IMG");
+    public static final CacheAccess<Object, Object> IIIF_ZIP = JCS.getInstance("IIIF_ZIP");
+    public static final CacheAccess<Object, Object> INFO = JCS.getInstance("info");
+    public static final CacheAccess<Object, Object> PDF_JOBS = JCS.getInstance("pdfjobs");
+    public static final CacheAccess<Object, Object> ZIP_JOBS = JCS.getInstance("zipjobs");
+    public static final CacheAccess<Object, Object> DEFAULT = JCS.getInstance("default");
 
     public static void addToCache(String cacheName, String name, Object res) throws IIIFException {
         try {
             CacheAccess<Object, Object> access = getCacheAccess(cacheName);
-            log.debug("Added " + res + " name :" + name + " to " + cacheName);
+            log.debug("Added {} name: {} to {}", res, name, cacheName);
             access.put(name, res);
             res = null;
         } catch (CacheException e) {
@@ -35,7 +34,7 @@ public class ServerCache {
 
     public static Object getObjectFromCache(String cacheName, String name) {
         CacheAccess<Object, Object> access = getCacheAccess(cacheName);
-        log.debug("Got " + access.get(name) + " with name : " + name + " from " + cacheName);
+        log.debug("Got {} with name: {} from {}", access.get(name), name, cacheName);
         return access.get(name);
     }
 
@@ -56,8 +55,6 @@ public class ServerCache {
             access = PDF_JOBS;
         case "zipjobs":
             access = ZIP_JOBS;
-        case "identifier":
-            access = IDENTIFIER;
         }
         return access;
     }
@@ -85,9 +82,6 @@ public class ServerCache {
             }
             if (ZIP_JOBS != null) {
                 ZIP_JOBS.clear();
-            }
-            if (IDENTIFIER != null) {
-                IDENTIFIER.clear();
             }
             return true;
         } catch (Exception e) {

@@ -31,6 +31,7 @@ import de.digitalcollections.iiif.myhymir.ResourceAccessValidation;
 import de.digitalcollections.iiif.myhymir.ServerCache;
 import de.digitalcollections.model.api.identifiable.resource.exceptions.ResourceNotFoundException;
 import io.bdrc.auth.Access;
+import io.bdrc.auth.Access.AccessLevel;
 import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 import io.bdrc.libraries.Identifier;
@@ -83,15 +84,15 @@ public class ArchivesController {
         case 6:
             int bPage = idf.getBPageNum().intValue();
             int ePage = idf.getEPageNum().intValue();
-            IdentifierInfo inf = IdentifierInfo.getIndentifierInfo(idf.getVolumeId());
-            String accessType = inf.getAccessShortName();
-            ResourceAccessValidation accValidation = new ResourceAccessValidation((Access) request.getAttribute("access"), accessType);
-            if (!accValidation.isAccessible(request)) {
+            IdentifierInfo inf = new IdentifierInfo(idf.getVolumeId(), true;);
+            ResourceAccessValidation accValidation = new ResourceAccessValidation((Access) request.getAttribute("access"), inf);
+            AccessLevel al = accValidation.getAccess(request);
+            if (al.equals(AccessLevel.NOACCESS) || al.equals(AccessLevel.MIXED)) {
                 return new ResponseEntity<>("Insufficient rights", HttpStatus.FORBIDDEN);
             }
             Iterator<String> idIterator = null;
-            int introPages = inf.getPagesIntroTbrc();
-            if (accValidation.isFairUse()) {
+            int introPages = inf.igi.pagesIntroTbrc;
+            if (al.equals(AccessLevel.FAIR_USE)) {
                 idIterator = getFairUseImgListIterator(bPage, ePage, inf);
                 output = idf.getVolumeId() + "FAIR_USE:" + bPage + "-" + ePage;// +"."+type;
             } else {

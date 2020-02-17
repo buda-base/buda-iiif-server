@@ -32,10 +32,10 @@ public class BdrcS3Resolver implements S3Resolver {
                 id = parts[1].trim();
             } else {
                 id = "Works/";
-                IdentifierInfo info = IdentifierInfo.getIndentifierInfo(identifier);
-                String work = info.getWork().substring(info.getWork().lastIndexOf('/') + 1);
+                IdentifierInfo info = new IdentifierInfo(identifier);
+                String w_id = info.igi.imageInstanceId.substring(info.igi.imageInstanceId.lastIndexOf('/') + 1);
                 // String imgGroup = parts[0].substring(parts[0].lastIndexOf('_') + 1);
-                String imgGroup = info.getImageGroup();
+                String i_id = info.igi.imageGroup;
                 MessageDigest md = null;
                 try {
                     md = MessageDigest.getInstance("MD5");
@@ -43,12 +43,12 @@ public class BdrcS3Resolver implements S3Resolver {
                     throw new IIIFException(e);
                 }
                 md.reset();
-                md.update(work.getBytes(Charset.forName("UTF8")));
+                md.update(w_id.getBytes(Charset.forName("UTF8")));
                 final String hash = new String(Hex.encodeHex(md.digest())).substring(0, 2);
-                if (oldImageGroupPattern.matcher(imgGroup).matches()) {
-                    imgGroup = imgGroup.substring(1);
+                if (oldImageGroupPattern.matcher(i_id).matches()) {
+                    i_id = i_id.substring(1);
                 }
-                id = id + hash + "/" + work + "/images/" + work + "-" + imgGroup + "/" + parts[1];
+                id = id + hash + "/" + w_id + "/images/" + w_id + "-" + i_id + "/" + parts[1];
             }
             return id;
         } catch (ResourceNotFoundException ex) {
