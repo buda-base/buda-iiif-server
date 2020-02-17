@@ -59,6 +59,7 @@ import io.bdrc.auth.TokenValidation;
 import io.bdrc.iiif.auth.AuthServiceInfo;
 import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.iiif.metrics.ImageMetrics;
+import io.bdrc.iiif.resolver.AccessType;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 
 @RestController
@@ -169,13 +170,9 @@ public class IIIFImageApiController {
             staticImg = identifier.split("::")[0].trim().equals("static");
         }
         ResourceAccessValidation accValidation = null;
+        IdentifierInfo idi = new IdentifierInfo(identifier);
         if (!staticImg) {
-            try {
-                accValidation = new ResourceAccessValidation((Access) request.getAttribute("access"), IdentifierInfo.getIndentifierInfo(identifier), img);
-            } catch (ResourceNotFoundException e) {
-                log.error("Resource was not found for identifier " + identifier + " Message: " + e.getMessage());
-                return new ResponseEntity<>(("Resource was not found for identifier " + identifier).getBytes(), HttpStatus.NOT_FOUND);
-            }
+            accValidation = new ResourceAccessValidation((Access) request.getAttribute("access"), idi, img);
             identifier = URLDecoder.decode(identifier, "UTF-8");
             if (!accValidation.isAccessible(request)) {
                 HttpHeaders headers1 = new HttpHeaders();
@@ -193,7 +190,7 @@ public class IIIFImageApiController {
             path = request.getPathInfo();
         }
         if (!staticImg) {
-            if (accValidation.isOpenAccess()) {
+            if (idi.igi.access.equals(AccessType.OPEN)) {
                 headers.setCacheControl(CacheControl.maxAge(maxAge, TimeUnit.MILLISECONDS).cachePublic());
             } else {
                 headers.setCacheControl(CacheControl.maxAge(maxAge, TimeUnit.MILLISECONDS).cachePrivate());
@@ -281,14 +278,10 @@ public class IIIFImageApiController {
         }
         Application.logPerf("Entering endpoint getInfo for {}", identifier);
         boolean unAuthorized = false;
+        IdentifierInfo idi = new IdentifierInfo(identifier);
         if (!staticImg) {
             ResourceAccessValidation accValidation = null;
-            try {
-                accValidation = new ResourceAccessValidation((Access) req.getAttribute("access"), IdentifierInfo.getIndentifierInfo(identifier), img);
-            } catch (ResourceNotFoundException e) {
-                log.error("Resource was not found for identifier " + identifier + " Message: " + e.getMessage());
-                return new ResponseEntity<>("Resource was not found for identifier " + identifier, HttpStatus.NOT_FOUND);
-            }
+            accValidation = new ResourceAccessValidation((Access) req.getAttribute("access"), idi, img);
             unAuthorized = !accValidation.isAccessible(req);
         }
         try {
@@ -331,14 +324,17 @@ public class IIIFImageApiController {
         Application.logPerf("getInfo ready to return after {} ms for {}", (System.currentTimeMillis() - deb), identifier);
         if (unAuthorized) {
             if (serviceInfo.hasValidProperties() && serviceInfo.authEnabled()) {
-                headers.setCacheControl(CacheControl.maxAge(maxAge, TimeUnit.MILLISECONDS).cachePublic());
                 return new ResponseEntity<>(objectMapper.writeValueAsString(info), headers, HttpStatus.UNAUTHORIZED);
             } else {
                 headers.setCacheControl(CacheControl.noCache());
                 return new ResponseEntity<>(objectMapper.writeValueAsString(info), headers, HttpStatus.FORBIDDEN);
             }
         } else {
-            headers.setCacheControl(CacheControl.maxAge(maxAge, TimeUnit.MILLISECONDS).cachePublic());
+            if (idi.igi.access.equals(AccessType.OPEN)) {
+                headers.setCacheControl(CacheControl.maxAge(maxAge, TimeUnit.MILLISECONDS).cachePublic());
+            } else {
+                headers.setCacheControl(CacheControl.maxAge(maxAge, TimeUnit.MILLISECONDS).cachePrivate());
+            }
             return new ResponseEntity<>(objectMapper.writeValueAsString(info), headers, HttpStatus.OK);
         }
     }
