@@ -40,7 +40,6 @@ import de.digitalcollections.core.business.api.ResourceService;
 import de.digitalcollections.core.model.api.MimeType;
 import de.digitalcollections.core.model.api.resource.enums.ResourcePersistenceType;
 import de.digitalcollections.core.model.api.resource.exceptions.ResourceIOException;
-import de.digitalcollections.core.model.impl.resource.S3Resource;
 import de.digitalcollections.iiif.hymir.model.exception.InvalidParametersException;
 import de.digitalcollections.iiif.hymir.model.exception.UnsupportedFormatException;
 import de.digitalcollections.iiif.model.PropertyValue;
