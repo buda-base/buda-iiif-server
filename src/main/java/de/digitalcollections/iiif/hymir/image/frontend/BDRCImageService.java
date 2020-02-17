@@ -8,6 +8,8 @@ import de.digitalcollections.iiif.model.image.ImageService;
 
 public class BDRCImageService extends ImageService {
 
+    // this class extends the info.json with preferredFormats property
+    
     @JsonProperty("preferredFormats")
     private PropertyValue preferredFormats;  
     

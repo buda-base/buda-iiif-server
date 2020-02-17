@@ -8,6 +8,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.Calendar;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import javax.imageio.ImageReader;
@@ -61,6 +62,7 @@ import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.iiif.metrics.ImageMetrics;
 import io.bdrc.iiif.resolver.AccessType;
 import io.bdrc.iiif.resolver.IdentifierInfo;
+import io.bdrc.iiif.resolver.ImageS3Service;
 
 @RestController
 @Component
@@ -74,9 +76,6 @@ public class IIIFImageApiController {
 
     @Autowired
     private AuthServiceInfo serviceInfo;
-
-    @Autowired
-    private ResourceService resourceService;
 
     @Autowired
     private IiifObjectMapper objectMapper;
@@ -189,47 +188,49 @@ public class IIIFImageApiController {
         if (request.getPathInfo() != null) {
             path = request.getPathInfo();
         }
-        if (!staticImg) {
-            if (idi.igi.access.equals(AccessType.OPEN)) {
-                headers.setCacheControl(CacheControl.maxAge(maxAge, TimeUnit.MILLISECONDS).cachePublic());
-            } else {
-                headers.setCacheControl(CacheControl.maxAge(maxAge, TimeUnit.MILLISECONDS).cachePrivate());
-            }
+        if (staticImg || idi.igi.access.equals(AccessType.OPEN)) {
+            headers.setCacheControl(CacheControl.maxAge(maxAge, TimeUnit.MILLISECONDS).cachePublic());
+        } else {
+            headers.setCacheControl(CacheControl.maxAge(maxAge, TimeUnit.MILLISECONDS).cachePrivate());
         }
-        try {
-            webRequest.checkNotModified(imageService.getImageModificationDate(identifier).toEpochMilli());
-            headers.setDate("Last-Modified", imageService.getImageModificationDate(identifier).toEpochMilli());
-        } catch (ResourceNotFoundException e1) {
-            log.error("Resource was not found for identifier " + identifier + " Message: " + e1.getMessage());
-            return new ResponseEntity<>(("Resource was not found for identifier " + identifier).getBytes(), HttpStatus.NOT_FOUND);
-        }
+//        try {
+//            webRequest.checkNotModified(imageService.getImageModificationDate(identifier).toEpochMilli());
+//            headers.setDate("Last-Modified", imageService.getImageModificationDate(identifier).toEpochMilli());
+//        } catch (ResourceNotFoundException e1) {
+//            log.error("Resource was not found for identifier " + identifier + " Message: " + e1.getMessage());
+//            return new ResponseEntity<>(("Resource was not found for identifier " + identifier).getBytes(), HttpStatus.NOT_FOUND);
+//        }
 
         ImageApiSelector selector = getImageApiSelector(identifier, region, size, rotation, quality, format);
         long deb1 = System.currentTimeMillis();
         final ImageApiProfile profile = ImageApiProfile.LEVEL_TWO;
-        ImageService info = new ImageService("http://foo.org/" + identifier, profile);
-        // TODO: what's this foo.org thing?
+        // TODO: the first part seems ignored?
+        ImageService info = new ImageService("https://iiif.bdrc.io/" + identifier, profile);
         headers.setContentType(MediaType.parseMediaType(selector.getFormat().getMimeType().getTypeName()));
         headers.set("Content-Disposition", "inline; filename=" + path.replaceFirst("/image/", "").replace('/', '_').replace(',', '_'));
         headers.add("Link", String.format("<%s>;rel=\"profile\"", profile.getIdentifier().toString()));
         // Now a shortcut:
         if (!BDRCImageServiceImpl.requestDiffersFromOriginal(identifier, selector)) {
             // let's get our hands dirty
-            final S3Resource res = (S3Resource) resourceService.get(identifier, ResourcePersistenceType.RESOLVED, MimeType.MIME_IMAGE);
-            if (staticImg) {
-                res.setStatic(true);
-            }
-            byte[] osbytes = (byte[]) ServerCache.getObjectFromCache(IIIF_IMG, identifier);
-            if (osbytes == null) {
-                final InputStream input = resourceService.getInputStream(res);
-                Application.logPerf("got the S3 inputstream in {} ms for {}", (System.currentTimeMillis() - deb1), identifier);
-                osbytes = StreamUtils.copyToByteArray(input);
+            final String s3key;
+            final ImageS3Service service;
+            if (identifier.startsWith("static::")) {
+                s3key = identifier.substring(8);
+                service = ImageS3Service.InstanceStatic;
             } else {
-                Application.logPerf("Not different from original, got byes from cache for {}", identifier);
+                IdentifierInfo idf = new IdentifierInfo(identifier);
+                s3key = ImageS3Service.getKey(idf);
+                service = ImageS3Service.InstanceArchive;
+            }
+            byte[] bytes = null;
+            try {
+                bytes = service.getAsync(s3key).get();
+            } catch (InterruptedException | ExecutionException e) {
+                throw new IIIFException(404, 5000, e);
             }
             Application.logPerf("got the bytes in {} ms for {}", (System.currentTimeMillis() - deb1), identifier);
             ImageMetrics.imageCount(ImageMetrics.IMG_CALLS_COMMON, (String) request.getAttribute("origin"));
-            return new ResponseEntity<>(osbytes, headers, HttpStatus.OK);
+            return new ResponseEntity<>(bytes, headers, HttpStatus.OK);
         }
         deb1 = System.currentTimeMillis();
         ImageReader imgReader = null;
@@ -284,14 +285,13 @@ public class IIIFImageApiController {
             accValidation = new ResourceAccessValidation((Access) req.getAttribute("access"), idi, img);
             unAuthorized = !accValidation.isAccessible(req);
         }
-        try {
-            webRequest.checkNotModified(imageService.getImageModificationDate(identifier).toEpochMilli());
-        } catch (ResourceNotFoundException e) {
-            log.error("Resource was not found for identifier " + identifier + " Message: " + e.getMessage());
-            return new ResponseEntity<>("Resource was not found for identifier " + identifier, HttpStatus.NOT_FOUND);
-        }
+//        try {
+//            webRequest.checkNotModified(imageService.getImageModificationDate(identifier).toEpochMilli());
+//        } catch (ResourceNotFoundException e) {
+//            log.error("Resource was not found for identifier " + identifier + " Message: " + e.getMessage());
+//            return new ResponseEntity<>("Resource was not found for identifier " + identifier, HttpStatus.NOT_FOUND);
+//        }
         String path = req.getServletPath();
-        ;
         if (req.getPathInfo() != null) {
             path = req.getPathInfo();
         }

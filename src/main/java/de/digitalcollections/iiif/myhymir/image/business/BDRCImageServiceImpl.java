@@ -34,10 +34,6 @@ import com.sun.media.jai.codec.ImageEncodeParam;
 import com.sun.media.jai.codec.ImageEncoder;
 import com.sun.media.jai.codec.PNGEncodeParam;
 
-import de.digitalcollections.core.business.api.ResourceService;
-import de.digitalcollections.core.model.api.MimeType;
-import de.digitalcollections.core.model.api.resource.Resource;
-import de.digitalcollections.core.model.api.resource.enums.ResourcePersistenceType;
 import de.digitalcollections.core.model.api.resource.exceptions.ResourceIOException;
 import de.digitalcollections.iiif.hymir.image.business.api.ImageSecurityService;
 import de.digitalcollections.iiif.hymir.image.business.api.ImageService;
@@ -66,9 +62,6 @@ public class BDRCImageServiceImpl implements ImageService {
 
     @Autowired(required = false)
     private ImageSecurityService imageSecurityService;
-
-    @Autowired
-    private ResourceService resourceService;
 
     @Value("${custom.iiif.image.maxWidth:65500}")
     private int maxWidth;
@@ -482,16 +475,7 @@ public class BDRCImageServiceImpl implements ImageService {
 
     @Override
     public Instant getImageModificationDate(String identifier) throws ResourceNotFoundException {
-        if (imageSecurityService != null && !imageSecurityService.isAccessAllowed(identifier)) {
-            Log.error("Could not get Image modification date for identifier " + identifier, "");
-            throw new ResourceNotFoundException();
-        }
-        try {
-            Resource res = resourceService.get(identifier, ResourcePersistenceType.RESOLVED, MimeType.MIME_IMAGE);
-            return Instant.ofEpochMilli(res.getLastModified());
-        } catch (ResourceIOException e) {
-            Log.error("Could not get Image modification date from resource for identifier " + identifier, "");
-            throw new ResourceNotFoundException();
-        }
+        // we don't support that for now
+        return Instant.ofEpochMilli(-1);
     }
 }
