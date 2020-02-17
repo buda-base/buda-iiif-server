@@ -1,6 +1,5 @@
 package de.digitalcollections.iiif.hymir.image.frontend;
 
-import java.awt.Dimension;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -62,6 +61,7 @@ import io.bdrc.iiif.metrics.ImageMetrics;
 import io.bdrc.iiif.resolver.AccessType;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 import io.bdrc.iiif.resolver.ImageS3Service;
+import io.bdrc.iiif.resolver.ImageIdentifier;
 
 @RestController
 @Component
@@ -111,7 +111,8 @@ public class IIIFImageApiController {
     }
 
     @RequestMapping(value = "/setcookie")
-    ResponseEntity<String> getCookie(HttpServletRequest req, HttpServletResponse response) throws JsonProcessingException, UnsupportedEncodingException {
+    ResponseEntity<String> getCookie(HttpServletRequest req, HttpServletResponse response)
+            throws JsonProcessingException, UnsupportedEncodingException {
         HttpHeaders headers = new HttpHeaders();
         headers.add("Content-Type", "application/json");
         ResponseEntity<String> resp = null;
@@ -158,8 +159,10 @@ public class IIIFImageApiController {
     }
 
     @RequestMapping(value = "{identifier}/{region}/{size}/{rotation}/{quality}.{format}")
-    public ResponseEntity<byte[]> getImageRepresentation(@PathVariable String identifier, @PathVariable String region, @PathVariable String size, @PathVariable String rotation, @PathVariable String quality, @PathVariable String format,
-            HttpServletRequest request, HttpServletResponse response, WebRequest webRequest) throws ClientProtocolException, IOException, IIIFException, InvalidParametersException, UnsupportedOperationException, UnsupportedFormatException {
+    public ResponseEntity<byte[]> getImageRepresentation(@PathVariable String identifier, @PathVariable String region, @PathVariable String size,
+            @PathVariable String rotation, @PathVariable String quality, @PathVariable String format, HttpServletRequest request,
+            HttpServletResponse response, WebRequest webRequest) throws ClientProtocolException, IOException, IIIFException,
+            InvalidParametersException, UnsupportedOperationException, UnsupportedFormatException, ResourceNotFoundException {
         long deb = System.currentTimeMillis();
         boolean staticImg = false;
         String img = "";
@@ -176,7 +179,8 @@ public class IIIFImageApiController {
                 HttpHeaders headers1 = new HttpHeaders();
                 headers1.setCacheControl(CacheControl.noCache());
                 if (serviceInfo.authEnabled() && serviceInfo.hasValidProperties()) {
-                    return new ResponseEntity<>("You must be authenticated before accessing this resource".getBytes(), headers1, HttpStatus.UNAUTHORIZED);
+                    return new ResponseEntity<>("You must be authenticated before accessing this resource".getBytes(), headers1,
+                            HttpStatus.UNAUTHORIZED);
                 } else {
                     return new ResponseEntity<>("Insufficient rights".getBytes(), headers1, HttpStatus.FORBIDDEN);
                 }
@@ -239,15 +243,13 @@ public class IIIFImageApiController {
             log.error("Resource was not found for identifier " + identifier + " Message: " + e.getMessage());
             return new ResponseEntity<>(("Resource was not found for identifier " + identifier).getBytes(), HttpStatus.NOT_FOUND);
         }
-        Application.logPerf("end reading from image service after {} ms for {} with reader {}", (System.currentTimeMillis() - deb1), identifier, imgReader);
-        final String canonicalForm;
-        try {
-            canonicalForm = selector.getCanonicalForm(new Dimension(info.getWidth(), info.getHeight()), profile, selector.getQuality());
-        } catch (ResolvingException e) {
-            log.error("Could not get a canonical form for identifier " + identifier + " Message:" + e.getMessage());
-            return new ResponseEntity<>(("Could not get a canonical form for identifier " + identifier).getBytes(), HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-        headers.add("Link", String.format("<%s>;rel=\"canonical\"", getUrlBase(request) + path.substring(0, path.indexOf(identifier)) + canonicalForm));
+        Application.logPerf("end reading from image service after {} ms for {} with reader {}", (System.currentTimeMillis() - deb1), identifier,
+                imgReader);
+        final String canonicalForm = idi.imgId.getCanonical();
+        headers.add("Link",
+                String.format("<%s>;rel=\"canonical\"", getUrlBase(request) + path.substring(0, path.indexOf(identifier)) + canonicalForm));
+        // headers.add("Location", getUrlBase(request) + path.substring(0,
+        // path.indexOf(identifier)) + canonicalForm);
         deb1 = System.currentTimeMillis();
         Application.logPerf("processing image output stream for {}", identifier);
         ByteArrayOutputStream os = new ByteArrayOutputStream();
@@ -314,7 +316,8 @@ public class IIIFImageApiController {
             headers.set("Content-Type", req.getHeader("Accept"));
         } else {
             headers.set("Content-Type", "application/json");
-            headers.add("Link", "<http://iiif.io/api/image/2/context.json>; " + "rel=\"http://www.w3.org/ns/json-ld#context\"; " + "type=\"application/ld+json\"");
+            headers.add("Link", "<http://iiif.io/api/image/2/context.json>; " + "rel=\"http://www.w3.org/ns/json-ld#context\"; "
+                    + "type=\"application/ld+json\"");
         }
         headers.add("Link", String.format("<%s>;rel=\"profile\"", info.getProfiles().get(0).getIdentifier().toString()));
         // We set the header ourselves, since using @CrossOrigin doesn't expose "*", but
@@ -363,7 +366,8 @@ public class IIIFImageApiController {
         return null;
     }
 
-    public ImageApiSelector getImageApiSelector(String identifier, String region, String size, String rotation, String quality, String format) throws InvalidParametersException {
+    public ImageApiSelector getImageApiSelector(String identifier, String region, String size, String rotation, String quality, String format)
+            throws InvalidParametersException {
         ImageApiSelector selector = new ImageApiSelector();
         try {
             selector.setIdentifier(identifier);

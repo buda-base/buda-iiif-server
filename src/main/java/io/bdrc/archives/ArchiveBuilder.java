@@ -87,16 +87,15 @@ public class ArchiveBuilder {
                 PDPageContentStream contents = new PDPageContentStream(doc, page);
                 contents.drawImage(pdImage, 0, 0);
                 contents.close();
-
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 COSWriter cw = new COSWriter(baos);
                 cw.write(doc);
                 Application.logPerf("pdf document finished and closed for {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
                 ServerCache.addToCache(IIIF, output.substring(4), baos.toByteArray());
                 cw.close();
-                doc.close();
-                ServerCache.addToCache("pdfjobs", output, true);
             }
+            doc.close();
+            ServerCache.addToCache("pdfjobs", output, true);
         } catch (ExecutionException | InterruptedException e) {
             log.error("Error while building pdf for identifier info " + inf.toString(), "");
             throw new IIIFException(500, IIIFException.GENERIC_APP_ERROR_CODE, e);

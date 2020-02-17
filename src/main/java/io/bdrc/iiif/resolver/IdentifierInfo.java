@@ -22,6 +22,7 @@ public class IdentifierInfo {
     public String imageId = "";
     public String imageGroup;
     public String volumeId;
+    public ImageIdentifier imgId;
     public int totalPages = 0;
     public boolean accessibleInFairUse = false;
     public ImageGroupInfo igi = null;
@@ -32,7 +33,8 @@ public class IdentifierInfo {
     public IdentifierInfo(String identifier) throws IIIFException {
         log.info("Instanciating identifierInfo with {}", identifier);
         this.identifier = identifier;
-        this.volumeId = identifier.split("::")[0];
+        this.imgId = new ImageIdentifier(identifier);
+        this.volumeId = imgId.imageGroup;
         if (identifier.split("::").length > 1) {
             this.imageId = identifier.split("::")[1];
         }
@@ -41,14 +43,19 @@ public class IdentifierInfo {
         } catch (InterruptedException | ExecutionException e) {
             throw new IIIFException(404, 5000, e);
         }
-        if (igi.access.equals(AccessType.FAIR_USE)) {
+        if (igi.access.equals(AccessType.FAIR_USE) || imgId.prefix.equals(ImageIdentifier.IGSI)) {
             try {
                 this.ili = ImageInfoListService.Instance.getAsync(igi.imageInstanceId.substring(AppConstants.BDR_len), igi.imageGroup).get();
             } catch (InterruptedException | ExecutionException e) {
                 throw new IIIFException(404, 5000, e);
             }
-            this.igi.initAccessibleInFairUse(this.ili);
-            this.accessibleInFairUse = this.igi.isAccessibleInFairUse(this.imageId);
+            if (igi.access.equals(AccessType.FAIR_USE)) {
+                this.igi.initAccessibleInFairUse(this.ili);
+                this.accessibleInFairUse = this.igi.isAccessibleInFairUse(this.imageId);
+            }
+            if (imgId.prefix.equals(ImageIdentifier.IGSI)) {
+                imgId.computeImageName(this.ili);
+            }
         }
     }
 
