@@ -15,6 +15,9 @@ public class AppConstants {
     public static final String ADM = "http://purl.bdrc.io/ontology/admin/";
     public static final String TMPPREFIX = "http://purl.bdrc.io/ontology/tmp/";
 
+    public final static String IGFN = "igfn";
+    public final static String IGSI = "igsi";
+
     // they should all be two characters long + colon
     public static final String CACHEPREFIX_WI = "wi:";
     public static final String CACHEPREFIX_WO = "wo:";
@@ -24,14 +27,14 @@ public class AppConstants {
 
     public static final String LDS_QUERYPREFIX = AuthProps.getProperty("dataserver");
     public static final String LDS_IMAGEINSTANCEGRAPH_QUERY = LDS_QUERYPREFIX + "query/graph/IIIFServ_imageInstanceGraph";
-   
+
     public static final String LDS_VOLUME_QUERY = LDS_QUERYPREFIX + "query/table/IIIFPres_volumeInfo";
     public static final String LDS_VOLUME_OUTLINE_QUERY = LDS_QUERYPREFIX + "query/graph/IIIFPres_volumeOutline";
 
     public static final int FAIRUSE_PAGES_S = 20;
     public static final int FAIRUSE_PAGES_E = 20;
-    
-     static {
+
+    static {
         IIIFMAPPER = new IiifObjectMapper();
     }
 

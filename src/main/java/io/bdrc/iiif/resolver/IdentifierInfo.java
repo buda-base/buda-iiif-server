@@ -20,21 +20,21 @@ public class IdentifierInfo {
 
     public String identifier;
     public String imageId = "";
-    public String imageGroup;
     public String volumeId;
-    public ImageIdentifier imgId;
+    public String prefix = null;
+    public String imageName = null;
     public int totalPages = 0;
     public boolean accessibleInFairUse = false;
     public ImageGroupInfo igi = null;
     public List<ImageInfo> ili = null;
+    public Integer imageIndex = null;
+    public String computedImageName = null;
 
     public final static Logger log = LoggerFactory.getLogger(IdentifierInfo.class.getName());
 
     public IdentifierInfo(String identifier) throws IIIFException {
         log.info("Instanciating identifierInfo with {}", identifier);
-        this.identifier = identifier;
-        this.imgId = new ImageIdentifier(identifier);
-        this.volumeId = imgId.imageGroup;
+        parseIdentifier(identifier);
         if (identifier.split("::").length > 1) {
             this.imageId = identifier.split("::")[1];
         }
@@ -43,7 +43,7 @@ public class IdentifierInfo {
         } catch (InterruptedException | ExecutionException e) {
             throw new IIIFException(404, 5000, e);
         }
-        if (igi.access.equals(AccessType.FAIR_USE) || imgId.prefix.equals(ImageIdentifier.IGSI)) {
+        if (igi.access.equals(AccessType.FAIR_USE) || prefix.equals(AppConstants.IGSI)) {
             try {
                 this.ili = ImageInfoListService.Instance.getAsync(igi.imageInstanceId.substring(AppConstants.BDR_len), igi.imageGroup).get();
             } catch (InterruptedException | ExecutionException e) {
@@ -53,10 +53,15 @@ public class IdentifierInfo {
                 this.igi.initAccessibleInFairUse(this.ili);
                 this.accessibleInFairUse = this.igi.isAccessibleInFairUse(this.imageId);
             }
-            if (imgId.prefix.equals(ImageIdentifier.IGSI)) {
-                imgId.computeImageName(this.ili);
+            if (prefix.equals(AppConstants.IGSI)) {
+                computeImageName(this.ili);
             }
         }
+    }
+
+    public String getCanonical() throws ClientProtocolException, IOException, IIIFException, ResourceNotFoundException {
+        String in = imageName == null ? computedImageName : imageName;
+        return AppConstants.IGFN + ":" + volumeId + ":" + in;
     }
 
     public IdentifierInfo(String identifier, ImageGroupInfo igi) throws IIIFException {
@@ -71,7 +76,59 @@ public class IdentifierInfo {
             this.accessibleInFairUse = this.igi.isAccessibleInFairUse(this.imageId);
         }
     }
-    
+
+    private void parseIdentifier(String id) throws IIIFException {
+        this.identifier = id;
+        try {
+            if (!id.contains("::")) {
+                volumeId = fixImageGroupId(id);
+            } else {
+                String[] chunks = id.split("::");
+                String[] start = chunks[0].split(":");
+                boolean hasPrefix = false;
+                if (start.length == 3) {
+                    prefix = start[0];
+                    volumeId = fixImageGroupId(start[1] + ":" + start[2]);
+                    hasPrefix = true;
+                } else {
+                    volumeId = fixImageGroupId(chunks[0]);
+                }
+                if (hasPrefix) {
+                    if (prefix.equals(AppConstants.IGFN)) {
+                        imageName = chunks[1];
+                    }
+                    if (prefix.equals(AppConstants.IGSI)) {
+                        try {
+                            imageIndex = Integer.parseInt(chunks[1]);
+                        } catch (Exception e) {
+                            throw new IIIFException(404, 5000, "cannot convert " + chunks[1] + " into integer");
+                        }
+                    }
+                } else {
+                    imageName = chunks[1];
+                }
+            }
+        } catch (Exception e) {
+            throw new IIIFException(e);
+        }
+    }
+
+    private String fixImageGroupId(final String igId) {
+        if (igId.startsWith("bdr:V")) {
+            int undIidx = igId.lastIndexOf("_I");
+            if (undIidx != -1) {
+                return igId.substring(undIidx + 1);
+            }
+        }
+        return igId;
+    }
+
+    public void computeImageName(List<ImageInfo> inf) {
+        if (imageIndex != null && imageIndex < inf.size()) {
+            computedImageName = inf.get(imageIndex).filename;
+        }
+    }
+
     @Override
     public String toString() {
         try {

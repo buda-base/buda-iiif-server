@@ -2,7 +2,6 @@ package de.digitalcollections.iiif.hymir.image.frontend;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
@@ -26,7 +25,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -35,9 +33,6 @@ import org.springframework.web.context.request.WebRequest;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
-import de.digitalcollections.core.business.api.ResourceService;
-import de.digitalcollections.core.model.api.MimeType;
-import de.digitalcollections.core.model.api.resource.enums.ResourcePersistenceType;
 import de.digitalcollections.core.model.api.resource.exceptions.ResourceIOException;
 import de.digitalcollections.iiif.hymir.model.exception.InvalidParametersException;
 import de.digitalcollections.iiif.hymir.model.exception.UnsupportedFormatException;
@@ -61,7 +56,6 @@ import io.bdrc.iiif.metrics.ImageMetrics;
 import io.bdrc.iiif.resolver.AccessType;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 import io.bdrc.iiif.resolver.ImageS3Service;
-import io.bdrc.iiif.resolver.ImageIdentifier;
 
 @RestController
 @Component
@@ -213,6 +207,7 @@ public class IIIFImageApiController {
         headers.set("Content-Disposition", "inline; filename=" + path.replaceFirst("/image/", "").replace('/', '_').replace(',', '_'));
         headers.add("Link", String.format("<%s>;rel=\"profile\"", profile.getIdentifier().toString()));
         // Now a shortcut:
+
         if (!BDRCImageServiceImpl.requestDiffersFromOriginal(identifier, selector)) {
             // let's get our hands dirty
             final String s3key;
@@ -221,8 +216,7 @@ public class IIIFImageApiController {
                 s3key = identifier.substring(8);
                 service = ImageS3Service.InstanceStatic;
             } else {
-                IdentifierInfo idf = new IdentifierInfo(identifier);
-                s3key = ImageS3Service.getKey(idf);
+                s3key = ImageS3Service.getKey(idi);
                 service = ImageS3Service.InstanceArchive;
             }
             byte[] bytes = null;
@@ -245,7 +239,7 @@ public class IIIFImageApiController {
         }
         Application.logPerf("end reading from image service after {} ms for {} with reader {}", (System.currentTimeMillis() - deb1), identifier,
                 imgReader);
-        final String canonicalForm = idi.imgId.getCanonical();
+        final String canonicalForm = idi.getCanonical();
         headers.add("Link",
                 String.format("<%s>;rel=\"canonical\"", getUrlBase(request) + path.substring(0, path.indexOf(identifier)) + canonicalForm));
         // headers.add("Location", getUrlBase(request) + path.substring(0,
