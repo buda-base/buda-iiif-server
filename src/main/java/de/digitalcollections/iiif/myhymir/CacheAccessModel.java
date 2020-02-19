@@ -18,6 +18,8 @@ import org.apache.commons.jcs.engine.control.CompositeCache;
 
 public class CacheAccessModel {
 
+    private final static String DEFAULT = "IIIF_IMG";
+
     public CacheAccessModel() {
         super();
     }
@@ -49,20 +51,40 @@ public class CacheAccessModel {
         return getConfig().getDiskUsagePattern();
     }
 
+    public ICompositeCacheAttributes.DiskUsagePattern getDiskUsagePattern(String cacheName) {
+        return getConfig(cacheName).getDiskUsagePattern();
+    }
+
     public long getMaxLife() {
         return getElementConfig().getMaxLife();
+    }
+
+    public long getMaxLife(String cacheName) {
+        return getElementConfig(cacheName).getMaxLife();
     }
 
     public long getMaxMemoryIdleTimeSeconds() {
         return getConfig().getMaxMemoryIdleTimeSeconds();
     }
 
+    public long getMaxMemoryIdleTimeSeconds(String cacheName) {
+        return getConfig(cacheName).getMaxMemoryIdleTimeSeconds();
+    }
+
     public int getMaxObjects() {
         return getConfig().getMaxObjects();
     }
 
+    public int getMaxObjects(String cacheName) {
+        return getConfig(cacheName).getMaxObjects();
+    }
+
     public int getMaxSpoolPerRun() {
         return getConfig().getMaxSpoolPerRun();
+    }
+
+    public int getMaxSpoolPerRun(String cacheName) {
+        return getConfig(cacheName).getMaxSpoolPerRun();
     }
 
     public String getMemoryCacheName() {
@@ -70,35 +92,60 @@ public class CacheAccessModel {
         return tmp.substring(tmp.lastIndexOf('.') + 1);
     }
 
+    public String getMemoryCacheName(String cacheName) {
+        String tmp = getConfig(cacheName).getMemoryCacheName();
+        return tmp.substring(tmp.lastIndexOf('.') + 1);
+    }
+
     public long getShrinkerIntervalSeconds() {
         return getConfig().getShrinkerIntervalSeconds();
+    }
+
+    public long getShrinkerIntervalSeconds(String cacheName) {
+        return getConfig(cacheName).getShrinkerIntervalSeconds();
     }
 
     public boolean isUseDisk() {
         return getConfig().isUseDisk();
     }
 
+    public boolean isUseDisk(String cacheName) {
+        return getConfig(cacheName).isUseDisk();
+    }
+
     public boolean isUseLateral() {
         return getConfig().isUseLateral();
+    }
+
+    public boolean isUseLateral(String cacheName) {
+        return getConfig(cacheName).isUseLateral();
     }
 
     public boolean isUseMemoryShrinker() {
         return getConfig().isUseMemoryShrinker();
     }
 
+    public boolean isUseMemoryShrinker(String cacheName) {
+        return getConfig(cacheName).isUseMemoryShrinker();
+    }
+
     public boolean isUseRemote() {
         return getConfig().isUseRemote();
+    }
+
+    public boolean isUseRemote(String cacheName) {
+        return getConfig(cacheName).isUseRemote();
     }
 
     /**
      * Cache stats
      */
     private IElementAttributes getRegionConfig() {
-        return ServerCache.getCacheAccess("IIIF_IMG").getDefaultElementAttributes();
+        return ServerCache.getCacheAccess(DEFAULT).getDefaultElementAttributes();
     }
 
     private CompositeCache<Object, Object> getCacheControl() {
-        return ServerCache.getCacheAccess("IIIF_IMG").getCacheControl();
+        return ServerCache.getCacheAccess(DEFAULT).getCacheControl();
     }
 
     private IElementAttributes getRegionConfig(String cacheName) {
@@ -113,9 +160,18 @@ public class CacheAccessModel {
         return getCacheControl().getStatus();
     }
 
+    public CacheStatus getStatus(String cacheName) {
+        return getCacheControl(cacheName).getStatus();
+    }
+
     public String getCreateTime() {
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd-MM-yyyy hh:mm:ss");
         return simpleDateFormat.format(getRegionConfig().getCreateTime());
+    }
+
+    public String getCreateTime(String cacheName) {
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd-MM-yyyy hh:mm:ss");
+        return simpleDateFormat.format(getRegionConfig(cacheName).getCreateTime());
     }
 
     public String getLastAccessTime() {
@@ -123,24 +179,49 @@ public class CacheAccessModel {
         return simpleDateFormat.format(getRegionConfig().getLastAccessTime());
     }
 
+    public String getLastAccessTime(String cacheName) {
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd-MM-yyyy hh:mm:ss");
+        return simpleDateFormat.format(getRegionConfig(cacheName).getLastAccessTime());
+    }
+
     public int getSize() {
         return getCacheControl().getSize();
+    }
+
+    public int getSize(String cacheName) {
+        return getCacheControl(cacheName).getSize();
     }
 
     public int getMissCountExpired() {
         return getCacheControl().getMissCountExpired();
     }
 
+    public int getMissCountExpired(String cacheName) {
+        return getCacheControl(cacheName).getMissCountExpired();
+    }
+
     public int getHitCountAux() {
         return getCacheControl().getHitCountAux();
+    }
+
+    public int getHitCountAux(String cacheName) {
+        return getCacheControl(cacheName).getHitCountAux();
     }
 
     public int getHitCountRam() {
         return getCacheControl().getHitCountRam();
     }
 
+    public int getHitCountRam(String cacheName) {
+        return getCacheControl(cacheName).getHitCountRam();
+    }
+
     public int getMissCountNotFound() {
         return getCacheControl().getMissCountNotFound();
+    }
+
+    public int getMissCountNotFound(String cacheName) {
+        return getCacheControl(cacheName).getMissCountNotFound();
     }
 
     /**

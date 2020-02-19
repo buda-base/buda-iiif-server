@@ -25,11 +25,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.ModelAndView;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
@@ -43,6 +45,7 @@ import de.digitalcollections.iiif.model.image.ImageService;
 import de.digitalcollections.iiif.model.image.ResolvingException;
 import de.digitalcollections.iiif.model.jackson.IiifObjectMapper;
 import de.digitalcollections.iiif.myhymir.Application;
+import de.digitalcollections.iiif.myhymir.CacheAccessModel;
 import de.digitalcollections.iiif.myhymir.ResourceAccessValidation;
 import de.digitalcollections.iiif.myhymir.ServerCache;
 import de.digitalcollections.iiif.myhymir.image.business.BDRCImageServiceImpl;
@@ -340,6 +343,16 @@ public class IIIFImageApiController {
             resp = new ResponseEntity<>("ERROR", HttpStatus.OK);
         }
         return resp;
+    }
+
+    @GetMapping(value = "cache/view", produces = MediaType.TEXT_HTML_VALUE)
+    public ModelAndView getCacheInfo() {
+        log.info("Call to getCacheInfo()");
+        ModelAndView model = new ModelAndView();
+        CacheAccessModel cam = new CacheAccessModel();
+        model.addObject("model", cam);
+        model.setViewName("cache");
+        return model;
     }
 
     public int computeExpires(TokenValidation tkVal) {

@@ -1,5 +1,8 @@
 package de.digitalcollections.iiif.myhymir;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+
 import org.apache.commons.jcs.JCS;
 import org.apache.commons.jcs.access.CacheAccess;
 import org.apache.commons.jcs.access.exception.CacheException;
@@ -19,6 +22,9 @@ public class ServerCache {
     public static final CacheAccess<Object, Object> PDF_JOBS = JCS.getInstance("pdfjobs");
     public static final CacheAccess<Object, Object> ZIP_JOBS = JCS.getInstance("zipjobs");
     public static final CacheAccess<Object, Object> DEFAULT = JCS.getInstance("default");
+
+    public static final ArrayList<String> NAMES = new ArrayList<>(
+            Arrays.asList("IIIF", "IIIF_IMG", "IIIF_ZIP", "info", "pdfjobs", "zipjobs", "default"));
 
     public static void addToCache(String cacheName, String name, Object res) throws IIIFException {
         try {
