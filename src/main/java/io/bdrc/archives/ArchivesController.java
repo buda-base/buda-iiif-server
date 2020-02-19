@@ -21,12 +21,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.servlet.ModelAndView;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import de.digitalcollections.iiif.myhymir.CacheAccessModel;
 import de.digitalcollections.iiif.myhymir.ResourceAccessValidation;
 import de.digitalcollections.iiif.myhymir.ServerCache;
 import de.digitalcollections.model.api.identifiable.resource.exceptions.ResourceNotFoundException;
@@ -156,13 +159,25 @@ public class ArchivesController {
         HttpHeaders headers = new HttpHeaders();
         if (array == null) {
             headers.setContentType(MediaType.parseMediaType("text/plain"));
-            array = new String("The link is wrong or has expired: please retry loading the archive and proceed to its download within 10 mn").getBytes();
+            array = new String("The link is wrong or has expired: please retry loading the archive and proceed to its download within 10 mn")
+                    .getBytes();
             return new ResponseEntity<ByteArrayResource>(new ByteArrayResource(array), headers, HttpStatus.NOT_FOUND);
         }
         headers.setContentType(MediaType.parseMediaType("application/" + type));
         headers.setContentDispositionFormData("attachment", name.substring(4) + "." + type);
         ResponseEntity<ByteArrayResource> response = new ResponseEntity<ByteArrayResource>(new ByteArrayResource(array), headers, HttpStatus.OK);
         return response;
+    }
+
+    @GetMapping(value = "cache/view", produces = MediaType.TEXT_HTML_VALUE)
+    public ModelAndView getCacheInfo() {
+        log.info("Call to getCacheInfo()");
+        ModelAndView model = new ModelAndView();
+        CacheAccessModel cam = new CacheAccessModel();
+        model.addObject("model", cam);
+        System.out.println("CACHE ACCESS MODEL : " + cam);
+        model.setViewName("cache");
+        return model;
     }
 
     @RequestMapping(value = "/download/job/{type}/{id}", method = { RequestMethod.GET, RequestMethod.HEAD })
@@ -203,22 +218,24 @@ public class ArchivesController {
         return sb.toString();
     }
 
-    public String getVolumeDownLoadLinks(PdfItemInfo item, Identifier idf, String type) throws ClientProtocolException, IOException, IIIFException, ResourceNotFoundException {
+    public String getVolumeDownLoadLinks(PdfItemInfo item, Identifier idf, String type)
+            throws ClientProtocolException, IOException, IIIFException, ResourceNotFoundException {
         String links = "";
         List<String> vlist = item.getItemVolumes();
-        for (int i = 0; i<vlist.size(); i++) {
+        for (int i = 0; i < vlist.size(); i++) {
             String s = vlist.get(i);
             String shortName = getShortName(s);
-            links = links + "<a type=\"application/" + type + "\" href=\"/download/" + type + "/v:" + "bdr:" + shortName + "::1-" + "\">" + Integer.toString(i) +" - " + "bdr:" + shortName
-                    + "." + type + "</a><br/>";
+            links = links + "<a type=\"application/" + type + "\" href=\"/download/" + type + "/v:" + "bdr:" + shortName + "::1-" + "\">"
+                    + Integer.toString(i) + " - " + "bdr:" + shortName + "." + type + "</a><br/>";
         }
         return links;
     }
 
-    public HashMap<String, HashMap<String, String>> getJsonVolumeLinks(PdfItemInfo item, String type) throws ClientProtocolException, IOException, IIIFException, ResourceNotFoundException {
+    public HashMap<String, HashMap<String, String>> getJsonVolumeLinks(PdfItemInfo item, String type)
+            throws ClientProtocolException, IOException, IIIFException, ResourceNotFoundException {
         HashMap<String, HashMap<String, String>> map = new HashMap<>();
         List<String> vlist = item.getItemVolumes();
-        for (int i = 0; i<vlist.size(); i++) {
+        for (int i = 0; i < vlist.size(); i++) {
             String s = vlist.get(i);
             String shortName = getShortName(s);
             HashMap<String, String> vol = new HashMap<>();
@@ -232,12 +249,12 @@ public class ArchivesController {
     public static String getShortName(String st) {
         return st.substring(st.lastIndexOf("/") + 1);
     }
-    
+
     private List<String> getImageList(Identifier id, IdentifierInfo idf, List<ImageInfo> ili, boolean fairUse) {
         final int totalPages = ili.size();
         final List<String> res = new ArrayList<>();
         int beginIndex = id.getBPageNum() == null ? 1 + idf.igi.pagesIntroTbrc : id.getBPageNum().intValue();
-        int endIndex = id.getEPageNum() == null ? totalPages : Math.min(totalPages, id.getEPageNum().intValue()); 
+        int endIndex = id.getEPageNum() == null ? totalPages : Math.min(totalPages, id.getEPageNum().intValue());
         if (!fairUse) {
             for (int imgSeqNum = beginIndex; imgSeqNum <= endIndex; imgSeqNum++) {
                 res.add(ili.get(imgSeqNum).filename);
@@ -253,7 +270,9 @@ public class ArchivesController {
         }
         // then copyright page, if either beginIndex or endIndex is
         // > FAIRUSE_PAGES_S+tbrcintro and < vi.totalPages-FAIRUSE_PAGES_E
-        if ((beginIndex >= firstUnaccessiblePage && beginIndex <= lastUnaccessiblePage) || (endIndex >= firstUnaccessiblePage && endIndex <= lastUnaccessiblePage) || (beginIndex < firstUnaccessiblePage && endIndex > lastUnaccessiblePage)) {
+        if ((beginIndex >= firstUnaccessiblePage && beginIndex <= lastUnaccessiblePage)
+                || (endIndex >= firstUnaccessiblePage && endIndex <= lastUnaccessiblePage)
+                || (beginIndex < firstUnaccessiblePage && endIndex > lastUnaccessiblePage)) {
             // TODO: add copyright page
         }
         // last part: max(beginIndex,lastUnaccessiblePage) to

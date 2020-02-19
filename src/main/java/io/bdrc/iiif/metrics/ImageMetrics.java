@@ -33,9 +33,11 @@ public class ImageMetrics {
     }
 
     public static void imageCount(String countName, String origin) throws IIIFException {
-        Counter cnt = Metrics.counter("image.calls", "context", origin);
-        cnt.increment();
-        log.debug("Incremented image counter {}; it's value is now {}", cnt.getId(), cnt.count());
+        if ("true".equals(Application.getProperty("metricsEnabled"))) {
+            Counter cnt = Metrics.counter("image.calls", "context", origin);
+            cnt.increment();
+            log.debug("Incremented image counter {}; it's value is now {}", cnt.getId(), cnt.count());
+        }
     }
 
     public static void init() throws ClientProtocolException, IOException {

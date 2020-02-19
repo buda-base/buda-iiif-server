@@ -99,7 +99,9 @@ public class Application extends SpringBootServletInitializer {
 
     @EventListener(ApplicationReadyEvent.class)
     public void postStartup() throws ClientProtocolException, IOException {
-        ImageMetrics.init();
+        if ("true".equals(props.getProperty("metricsEnabled"))) {
+            ImageMetrics.init();
+        }
     }
 
     public static void initForTests() throws IOException {

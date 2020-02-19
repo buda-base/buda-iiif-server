@@ -141,17 +141,6 @@ public class IIIFImageApiController {
         return resp;
     }
 
-    @RequestMapping(value = "/clearcache", method = RequestMethod.POST)
-    ResponseEntity<String> clearCache(HttpServletRequest req, HttpServletResponse response) {
-        ResponseEntity<String> resp = null;
-        if (ServerCache.clearCache()) {
-            resp = new ResponseEntity<>("OK", HttpStatus.OK);
-        } else {
-            resp = new ResponseEntity<>("ERROR", HttpStatus.OK);
-        }
-        return resp;
-    }
-
     @RequestMapping(value = "{identifier}/{region}/{size}/{rotation}/{quality}.{format}")
     public ResponseEntity<byte[]> getImageRepresentation(@PathVariable String identifier, @PathVariable String region, @PathVariable String size,
             @PathVariable String rotation, @PathVariable String quality, @PathVariable String format, HttpServletRequest request,
@@ -340,6 +329,17 @@ public class IIIFImageApiController {
         // response.setHeader("Access-Control-Allow-Origin", "*");
         // return "redirect:/image/" + VERSION + "/" + identifier + "/info.json";
         return "redirect:/" + identifier + "/info.json";
+    }
+
+    @RequestMapping(value = "cache/clear", method = RequestMethod.POST)
+    ResponseEntity<String> clearCache(HttpServletRequest req, HttpServletResponse response) {
+        ResponseEntity<String> resp = null;
+        if (ServerCache.clearCache()) {
+            resp = new ResponseEntity<>("OK", HttpStatus.OK);
+        } else {
+            resp = new ResponseEntity<>("ERROR", HttpStatus.OK);
+        }
+        return resp;
     }
 
     public int computeExpires(TokenValidation tkVal) {

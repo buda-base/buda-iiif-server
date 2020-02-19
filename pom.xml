@@ -32,6 +32,10 @@
         <artifactId>spring-boot-starter-test</artifactId>
         <scope>test</scope>
     </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-web</artifactId>            
+    </dependency>
     <!-- https://mvnrepository.com/artifact/de.digitalcollections/iiif-server-hymir -->
     <dependency>
         <groupId>de.digitalcollections</groupId>
@@ -41,7 +45,7 @@
             <exclusion>
                 <groupId>de.digitalcollections.imageio</groupId>
                 <artifactId>imageio-jnr</artifactId>
-            </exclusion>
+            </exclusion>                    
             <exclusion>
                 <groupId>net.bull.javamelody</groupId>
                 <artifactId>javamelody-spring-boot-starter</artifactId>
@@ -152,6 +156,15 @@
         <groupId>iiif.bdrc.io</groupId>  
         <artifactId>webp-imageio</artifactId>  
         <version>0.1.0</version> 
+    </dependency>
+    <dependency>
+        <groupId>org.apache.tomcat.embed</groupId>
+        <artifactId>tomcat-embed-jasper</artifactId>
+        <scope>provided</scope>
+    </dependency>
+    <dependency>
+        <groupId>javax.servlet</groupId>
+        <artifactId>jstl</artifactId>
     </dependency>
   </dependencies>
   <build>
