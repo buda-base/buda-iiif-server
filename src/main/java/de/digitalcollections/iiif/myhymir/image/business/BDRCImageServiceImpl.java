@@ -419,7 +419,7 @@ public class BDRCImageServiceImpl implements ImageService {
     public void processImage(String identifier, ImageApiSelector selector, ImageApiProfile profile, OutputStream os, ImageReader imgReader,
             String uri) throws InvalidParametersException, UnsupportedOperationException, UnsupportedFormatException, IOException {
         long deb = System.currentTimeMillis();
-        IIOMetadata streamMetadata = imgReader.getStreamMetadata();
+        // IIOMetadata streamMetadata = imgReader.getStreamMetadata();
         IIOMetadata imageMetadata = imgReader.getImageMetadata(0);
         try {
             Application.logPerf("Entering Processimage.... with reader {} ", imgReader);
@@ -465,7 +465,8 @@ public class BDRCImageServiceImpl implements ImageService {
                     wtr = ImageIO.getImageWritersByMIMEType("image/jpeg").next();
                 }
                 Application.logPerf("USING JPEG WRITER {} for {}", wtr, identifier);
-                Application.logPerf("use jpg writer vendor {}, version {}", wtr.getOriginatingProvider().getVendorName(), wtr.getOriginatingProvider().getVersion());
+                Application.logPerf("use jpg writer vendor {}, version {}", wtr.getOriginatingProvider().getVendorName(),
+                        wtr.getOriginatingProvider().getVersion());
                 // This setting, using 0.75f as compression quality produces the same
                 // as the default setting, with no writeParam --> writer.write(outImg)
 
@@ -475,7 +476,7 @@ public class BDRCImageServiceImpl implements ImageService {
 
                 ImageOutputStream is = ImageIO.createImageOutputStream(os);
                 wtr.setOutput(is);
-                Application.logPerf("JPG WRITER WITH METADATA---> image: {}, stream: {}", imageMetadata, streamMetadata);
+                Application.logPerf("JPG WRITER WITH METADATA---> image: {}, stream: {}", imageMetadata, imageMetadata);
                 wtr.write(null, new IIOImage(outImg, null, imageMetadata), jpgWriteParam);
                 wtr.dispose();
                 is.flush();
