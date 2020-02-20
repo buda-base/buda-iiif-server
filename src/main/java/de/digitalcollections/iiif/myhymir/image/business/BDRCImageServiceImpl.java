@@ -473,6 +473,7 @@ public class BDRCImageServiceImpl implements ImageService {
 
                 ImageOutputStream is = ImageIO.createImageOutputStream(os);
                 wtr.setOutput(is);
+                Application.logPerf("JPG WRITER WITH METADATA--->  {}", meta);
                 wtr.write(null, new IIOImage(outImg, null, meta), jpgWriteParam);
                 wtr.dispose();
                 is.flush();
