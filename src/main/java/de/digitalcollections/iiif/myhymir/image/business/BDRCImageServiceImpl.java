@@ -17,6 +17,7 @@ import javax.imageio.ImageReadParam;
 import javax.imageio.ImageReader;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
+import javax.imageio.metadata.IIOMetadata;
 import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
 
@@ -102,9 +103,12 @@ public class BDRCImageServiceImpl implements ImageService {
     private void enrichInfo(ImageReader reader, de.digitalcollections.iiif.model.image.ImageService info) throws IOException {
 
         ImageApiProfile profile = new ImageApiProfile();
-        profile.addFeature(ImageApiProfile.Feature.BASE_URI_REDIRECT, ImageApiProfile.Feature.CORS, ImageApiProfile.Feature.JSONLD_MEDIA_TYPE, ImageApiProfile.Feature.PROFILE_LINK_HEADER, ImageApiProfile.Feature.CANONICAL_LINK_HEADER,
-                ImageApiProfile.Feature.REGION_BY_PCT, ImageApiProfile.Feature.REGION_BY_PX, ImageApiProfile.Feature.REGION_SQUARE, ImageApiProfile.Feature.ROTATION_BY_90S, ImageApiProfile.Feature.MIRRORING,
-                ImageApiProfile.Feature.SIZE_BY_CONFINED_WH, ImageApiProfile.Feature.SIZE_BY_DISTORTED_WH, ImageApiProfile.Feature.SIZE_BY_H, ImageApiProfile.Feature.SIZE_BY_PCT, ImageApiProfile.Feature.SIZE_BY_W, ImageApiProfile.Feature.SIZE_BY_WH);
+        profile.addFeature(ImageApiProfile.Feature.BASE_URI_REDIRECT, ImageApiProfile.Feature.CORS, ImageApiProfile.Feature.JSONLD_MEDIA_TYPE,
+                ImageApiProfile.Feature.PROFILE_LINK_HEADER, ImageApiProfile.Feature.CANONICAL_LINK_HEADER, ImageApiProfile.Feature.REGION_BY_PCT,
+                ImageApiProfile.Feature.REGION_BY_PX, ImageApiProfile.Feature.REGION_SQUARE, ImageApiProfile.Feature.ROTATION_BY_90S,
+                ImageApiProfile.Feature.MIRRORING, ImageApiProfile.Feature.SIZE_BY_CONFINED_WH, ImageApiProfile.Feature.SIZE_BY_DISTORTED_WH,
+                ImageApiProfile.Feature.SIZE_BY_H, ImageApiProfile.Feature.SIZE_BY_PCT, ImageApiProfile.Feature.SIZE_BY_W,
+                ImageApiProfile.Feature.SIZE_BY_WH);
 
         // Indicate to the client if we cannot deliver full resolution versions of the
         // image
@@ -210,7 +214,8 @@ public class BDRCImageServiceImpl implements ImageService {
     }
 
     @Override
-    public void readImageInfo(String identifier, de.digitalcollections.iiif.model.image.ImageService info) throws UnsupportedFormatException, UnsupportedOperationException, IOException {
+    public void readImageInfo(String identifier, de.digitalcollections.iiif.model.image.ImageService info)
+            throws UnsupportedFormatException, UnsupportedOperationException, IOException {
         try {
             enrichInfo(getReader(identifier), info);
         } catch (IIIFException | ResourceNotFoundException e) {
@@ -219,7 +224,8 @@ public class BDRCImageServiceImpl implements ImageService {
         }
     }
 
-    public ImageReader readImageInfo(String identifier, de.digitalcollections.iiif.model.image.ImageService info, ImageReader imgReader) throws UnsupportedFormatException, UnsupportedOperationException, IOException {
+    public ImageReader readImageInfo(String identifier, de.digitalcollections.iiif.model.image.ImageService info, ImageReader imgReader)
+            throws UnsupportedFormatException, UnsupportedOperationException, IOException {
         try {
             imgReader = getReader(identifier);
             enrichInfo(imgReader, info);
@@ -234,7 +240,8 @@ public class BDRCImageServiceImpl implements ImageService {
      * Determine parameters for image reading based on the IIIF selector and a given
      * scaling factor
      **/
-    private ImageReadParam getReadParam(ImageReader reader, ImageApiSelector selector, double decodeScaleFactor) throws IOException, InvalidParametersException {
+    private ImageReadParam getReadParam(ImageReader reader, ImageApiSelector selector, double decodeScaleFactor)
+            throws IOException, InvalidParametersException {
         ImageReadParam readParam = reader.getDefaultReadParam();
         Application.logPerf("Entering ReadParam with ImageReadParam {}", readParam);
         Dimension nativeDimensions = new Dimension(reader.getWidth(0), reader.getHeight(0));
@@ -248,7 +255,8 @@ public class BDRCImageServiceImpl implements ImageService {
         // IIIF regions are always relative to the native size, while ImageIO regions
         // are always relative to the decoded
         // image size, hence the conversion
-        Rectangle decodeRegion = new Rectangle((int) Math.ceil(targetRegion.getX() * decodeScaleFactor), (int) Math.ceil(targetRegion.getY() * decodeScaleFactor), (int) Math.ceil(targetRegion.getWidth() * decodeScaleFactor),
+        Rectangle decodeRegion = new Rectangle((int) Math.ceil(targetRegion.getX() * decodeScaleFactor),
+                (int) Math.ceil(targetRegion.getY() * decodeScaleFactor), (int) Math.ceil(targetRegion.getWidth() * decodeScaleFactor),
                 (int) Math.ceil(targetRegion.getHeight() * decodeScaleFactor));
         readParam.setSourceRegion(decodeRegion);
         // TurboJpegImageReader can rotate during decoding
@@ -258,7 +266,8 @@ public class BDRCImageServiceImpl implements ImageService {
         return readParam;
     }
 
-    private DecodedImage readImage(String identifier, ImageApiSelector selector, ImageApiProfile profile, ImageReader reader) throws IOException, UnsupportedFormatException, InvalidParametersException {
+    private DecodedImage readImage(String identifier, ImageApiSelector selector, ImageApiProfile profile, ImageReader reader)
+            throws IOException, UnsupportedFormatException, InvalidParametersException {
         long deb = System.currentTimeMillis();
         Application.logPerf("Entering readImage for creating DecodedImage");
         if ((selector.getRotation().getRotation() % 90) != 0) {
@@ -311,7 +320,8 @@ public class BDRCImageServiceImpl implements ImageService {
     }
 
     /** Apply transformations to an decoded image **/
-    private BufferedImage transformImage(Format format, BufferedImage inputImage, Dimension targetSize, int rotation, boolean mirror, ImageApiProfile.Quality quality) {
+    private BufferedImage transformImage(Format format, BufferedImage inputImage, Dimension targetSize, int rotation, boolean mirror,
+            ImageApiProfile.Quality quality) {
         BufferedImage img = inputImage;
         int inType = img.getType();
         boolean needsAdditionalScaling = !new Dimension(img.getWidth(), img.getHeight()).equals(targetSize);
@@ -367,7 +377,8 @@ public class BDRCImageServiceImpl implements ImageService {
     }
 
     @Override
-    public void processImage(String identifier, ImageApiSelector selector, ImageApiProfile profile, OutputStream os) throws InvalidParametersException, UnsupportedOperationException, UnsupportedFormatException, IOException {
+    public void processImage(String identifier, ImageApiSelector selector, ImageApiProfile profile, OutputStream os)
+            throws InvalidParametersException, UnsupportedOperationException, UnsupportedFormatException, IOException {
         // unused
     }
 
@@ -405,14 +416,16 @@ public class BDRCImageServiceImpl implements ImageService {
         return false;
     }
 
-    public void processImage(String identifier, ImageApiSelector selector, ImageApiProfile profile, OutputStream os, ImageReader imgReader, String uri)
-            throws InvalidParametersException, UnsupportedOperationException, UnsupportedFormatException, IOException {
+    public void processImage(String identifier, ImageApiSelector selector, ImageApiProfile profile, OutputStream os, ImageReader imgReader,
+            String uri) throws InvalidParametersException, UnsupportedOperationException, UnsupportedFormatException, IOException {
         long deb = System.currentTimeMillis();
+        IIOMetadata meta = imgReader.getStreamMetadata();
         try {
             Application.logPerf("Entering Processimage.... with reader {} ", imgReader);
             DecodedImage img = readImage(identifier, selector, profile, imgReader);
             Application.logPerf("Done readingImage DecodedImage created");
-            BufferedImage outImg = transformImage(selector.getFormat(), img.img, img.targetSize, img.rotation, selector.getRotation().isMirror(), selector.getQuality());
+            BufferedImage outImg = transformImage(selector.getFormat(), img.img, img.targetSize, img.rotation, selector.getRotation().isMirror(),
+                    selector.getQuality());
             ImageWriter writer = null;
             Iterator<ImageWriter> writers = ImageIO.getImageWritersByMIMEType(selector.getFormat().getMimeType().getTypeName());
             while (writers.hasNext()) {
@@ -426,8 +439,10 @@ public class BDRCImageServiceImpl implements ImageService {
             switch (selector.getFormat()) {
 
             case PNG:
+                IIOImage iio = new IIOImage(outImg, null, meta);
                 Application.logPerf("USING JAI PNG for {} ", identifier);
-                ImageEncodeParam param = PNGEncodeParam.getDefaultEncodeParam(outImg);
+                // ImageEncodeParam param = PNGEncodeParam.getDefaultEncodeParam(outImg);
+                ImageEncodeParam param = PNGEncodeParam.getDefaultEncodeParam(iio.getRenderedImage());
                 String format = "PNG";
                 ImageEncoder encoder = ImageCodec.createImageEncoder(format, os, param);
                 encoder.encode(outImg);
@@ -458,7 +473,7 @@ public class BDRCImageServiceImpl implements ImageService {
 
                 ImageOutputStream is = ImageIO.createImageOutputStream(os);
                 wtr.setOutput(is);
-                wtr.write(null, new IIOImage(outImg, null, null), jpgWriteParam);
+                wtr.write(null, new IIOImage(outImg, null, meta), jpgWriteParam);
                 wtr.dispose();
                 is.flush();
                 break;
@@ -472,16 +487,17 @@ public class BDRCImageServiceImpl implements ImageService {
                 ImageOutputStream iss = ImageIO.createImageOutputStream(os);
                 writer.setOutput(iss);
                 // writer.write(outImg);
-                writer.write(null, new IIOImage(outImg, null, null), writeParam);
+                writer.write(null, new IIOImage(outImg, null, meta), writeParam);
                 writer.dispose();
                 iss.flush();
                 break;
 
             default:
+                IIOImage iii = new IIOImage(outImg, null, meta);
                 Application.logPerf("USING NON NULL WRITER {}", writer);
                 ImageOutputStream ios = ImageIO.createImageOutputStream(os);
                 writer.setOutput(ios);
-                writer.write(outImg);
+                writer.write(iii.getRenderedImage());
                 writer.dispose();
                 ios.flush();
             }
