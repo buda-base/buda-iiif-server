@@ -419,7 +419,8 @@ public class BDRCImageServiceImpl implements ImageService {
     public void processImage(String identifier, ImageApiSelector selector, ImageApiProfile profile, OutputStream os, ImageReader imgReader,
             String uri) throws InvalidParametersException, UnsupportedOperationException, UnsupportedFormatException, IOException {
         long deb = System.currentTimeMillis();
-        IIOMetadata meta = imgReader.getStreamMetadata();
+        IIOMetadata streamMetadata = imgReader.getStreamMetadata();
+        IIOMetadata imageMetadata = imgReader.getImageMetadata(0);
         try {
             Application.logPerf("Entering Processimage.... with reader {} ", imgReader);
             DecodedImage img = readImage(identifier, selector, profile, imgReader);
@@ -439,7 +440,7 @@ public class BDRCImageServiceImpl implements ImageService {
             switch (selector.getFormat()) {
 
             case PNG:
-                IIOImage iio = new IIOImage(outImg, null, meta);
+                IIOImage iio = new IIOImage(outImg, null, imageMetadata);
                 Application.logPerf("USING JAI PNG for {} ", identifier);
                 // ImageEncodeParam param = PNGEncodeParam.getDefaultEncodeParam(outImg);
                 ImageEncodeParam param = PNGEncodeParam.getDefaultEncodeParam(iio.getRenderedImage());
@@ -464,6 +465,7 @@ public class BDRCImageServiceImpl implements ImageService {
                     wtr = ImageIO.getImageWritersByMIMEType("image/jpeg").next();
                 }
                 Application.logPerf("USING JPEG WRITER {} for {}", wtr, identifier);
+                Application.logPerf("use jpg writer vendor {}, version {}", wtr.getOriginatingProvider().getVendorName(), wtr.getOriginatingProvider().getVersion());
                 // This setting, using 0.75f as compression quality produces the same
                 // as the default setting, with no writeParam --> writer.write(outImg)
 
@@ -473,8 +475,8 @@ public class BDRCImageServiceImpl implements ImageService {
 
                 ImageOutputStream is = ImageIO.createImageOutputStream(os);
                 wtr.setOutput(is);
-                Application.logPerf("JPG WRITER WITH METADATA--->  {}", meta);
-                wtr.write(null, new IIOImage(outImg, null, meta), jpgWriteParam);
+                Application.logPerf("JPG WRITER WITH METADATA---> image: {}, stream: {}", imageMetadata, streamMetadata);
+                wtr.write(null, new IIOImage(outImg, null, imageMetadata), jpgWriteParam);
                 wtr.dispose();
                 is.flush();
                 break;
@@ -488,13 +490,13 @@ public class BDRCImageServiceImpl implements ImageService {
                 ImageOutputStream iss = ImageIO.createImageOutputStream(os);
                 writer.setOutput(iss);
                 // writer.write(outImg);
-                writer.write(null, new IIOImage(outImg, null, meta), writeParam);
+                writer.write(null, new IIOImage(outImg, null, imageMetadata), writeParam);
                 writer.dispose();
                 iss.flush();
                 break;
 
             default:
-                IIOImage iii = new IIOImage(outImg, null, meta);
+                IIOImage iii = new IIOImage(outImg, null, imageMetadata);
                 Application.logPerf("USING NON NULL WRITER {}", writer);
                 ImageOutputStream ios = ImageIO.createImageOutputStream(os);
                 writer.setOutput(ios);
