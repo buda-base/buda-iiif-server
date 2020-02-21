@@ -15,6 +15,7 @@ import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReadParam;
 import javax.imageio.ImageReader;
+import javax.imageio.ImageTypeSpecifier;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
 import javax.imageio.metadata.IIOMetadata;
@@ -205,8 +206,14 @@ public class BDRCImageServiceImpl implements ImageService {
             bytes = (byte[]) ServerCache.getObjectFromCache(IIIF_IMG, identifier);
             Application.logPerf("Image service read {} from s3 {}", S3input, identifier);
         }
+
         ImageInputStream iis = ImageIO.createImageInputStream(new ByteArrayInputStream(bytes));
+        Iterator<ImageReader> itr = ImageIO.getImageReaders(iis);
+        while (itr.hasNext()) {
+            System.out.println("FOUND READER >> " + itr.next());
+        }
         ImageReader reader = Streams.stream(ImageIO.getImageReaders(iis)).findFirst().orElseThrow(UnsupportedFormatException::new);
+        // reader.setInput(iis, false, false);
         reader.setInput(iis);
         Application.logPerf("S3 object IIIS READER >> {}", reader);
         Application.logPerf("Image service return reader at " + (System.currentTimeMillis() - deb) + " ms " + identifier);
@@ -306,6 +313,14 @@ public class BDRCImageServiceImpl implements ImageService {
             }
         }
         ImageReadParam readParam = getReadParam(reader, selector, decodeScaleFactor);
+        System.out.println("READER " + reader);
+        Iterator<ImageTypeSpecifier> it = reader.getImageTypes(imageIndex);
+        while (it.hasNext()) {
+            System.out.println("FOUND IMG TYPE SPECIFIER " + it.next());
+        }
+        System.out.println("IMG TYPE SPECIFIER " + reader.getImageTypes(imageIndex).next());
+        System.out.println("RAW IMG TYPE SPECIFIER " + reader.getRawImageType(imageIndex));
+        // readParam.setDestinationType(reader.getImageTypes(imageIndex).next());
         int rotation = (int) selector.getRotation().getRotation();
         if (readParam instanceof TurboJpegImageReadParam && ((TurboJpegImageReadParam) readParam).getRotationDegree() != 0) {
             if (rotation == 90 || rotation == 270) {

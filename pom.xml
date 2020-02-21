@@ -47,7 +47,7 @@
                 <artifactId>javamelody-spring-boot-starter</artifactId>
             </exclusion>
         </exclusions>       
-    </dependency>    
+    </dependency>
     <!-- https://mvnrepository.com/artifact/de.digitalcollections/digitalcollections-core-business-api -->
     <dependency>
         <groupId>de.digitalcollections</groupId>
