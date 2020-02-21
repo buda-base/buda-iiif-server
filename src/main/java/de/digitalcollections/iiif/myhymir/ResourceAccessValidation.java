@@ -6,9 +6,6 @@ import javax.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import io.bdrc.auth.Access;
 import io.bdrc.auth.Access.AccessLevel;
 import io.bdrc.iiif.resolver.IdentifierInfo;
@@ -33,7 +30,7 @@ public class ResourceAccessValidation {
         final String accessUri = idInfo.igi.access.getUri();
         accessShort = accessUri.substring(accessUri.lastIndexOf('/') + 1);
         final String statusUri = idInfo.igi.statusUri;
-        statusShort = accessUri.substring(statusUri.lastIndexOf('/') + 1);
+        statusShort = statusUri.substring(statusUri.lastIndexOf('/') + 1);
         this.isRestrictedInChina = idInfo.igi.restrictedInChina;
         this.imageInstanceUri = idInfo.igi.imageInstanceId;
         this.igi = idInfo.igi;
@@ -46,7 +43,7 @@ public class ResourceAccessValidation {
         final String accessUri = idInfo.igi.access.getUri();
         accessShort = accessUri.substring(accessUri.lastIndexOf('/') + 1);
         final String statusUri = idInfo.igi.statusUri;
-        statusShort = accessUri.substring(statusUri.lastIndexOf('/') + 1);
+        statusShort = statusUri.substring(statusUri.lastIndexOf('/') + 1);
         this.isRestrictedInChina = idInfo.igi.restrictedInChina;
         this.imageInstanceUri = idInfo.igi.imageInstanceId;
         this.igi = idInfo.igi;
@@ -67,14 +64,14 @@ public class ResourceAccessValidation {
         }
         return access.hasResourceAccess(accessShort, statusShort, imageInstanceUri);
     }
-    
+
     public boolean isAccessible(HttpServletRequest request) {
         AccessLevel al = getAccess(request);
         if (al.equals(AccessLevel.OPEN))
             return true;
         if (al.equals(AccessLevel.FAIR_USE)) {
             try {
-                return this.igi.isAccessibleInFairUse(imageFileName);                
+                return this.igi.isAccessibleInFairUse(imageFileName);
             } catch (Exception e) {
                 log.error("error when looking at fair use case: ", e);
                 return false;
@@ -85,11 +82,14 @@ public class ResourceAccessValidation {
 
     @Override
     public String toString() {
-        try {
-            return new ObjectMapper().writeValueAsString(this);
-        } catch (JsonProcessingException e) {
-            return "toString objectmapper exception, this shouldn't happen";
-        }
+        return "ResourceAccessValidation [access=" + access + ", accessShort=" + accessShort + ", statusShort=" + statusShort + ", imageInstanceUri="
+                + imageInstanceUri + ", imageFileName=" + imageFileName + ", igi=" + igi + ", isRestrictedInChina=" + isRestrictedInChina + "]";
     }
+
+    /*
+     * @Override public String toString() { try { return new
+     * ObjectMapper().writeValueAsString(this); } catch (JsonProcessingException e)
+     * { return "toString objectmapper exception, this shouldn't happen"; } }
+     */
 
 }

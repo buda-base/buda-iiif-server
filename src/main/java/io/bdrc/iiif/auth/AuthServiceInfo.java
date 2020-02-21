@@ -48,7 +48,6 @@ public class AuthServiceInfo extends Service {
         super(new URI(AUTH_CONTEXT));
         try {
             loginSvc = AuthProps.getProperty("authLoginSvc");
-
             tokenSvc = AuthProps.getProperty("authTokenSvc");
             logoutSvc = AuthProps.getProperty("authLogoutSvc");
             boolean useExternal = Boolean.parseBoolean(AuthProps.getProperty("authExternal"));
