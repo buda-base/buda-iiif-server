@@ -43,7 +43,7 @@ public class IdentifierInfo {
         } catch (InterruptedException | ExecutionException e) {
             throw new IIIFException(404, 5000, e);
         }
-        if (igi.access.equals(AccessType.FAIR_USE) || prefix.equals(AppConstants.IGSI)) {
+        if (igi.access.equals(AccessType.FAIR_USE) || AppConstants.IGSI.equals(prefix)) {
             try {
                 this.ili = ImageInfoListService.Instance.getAsync(igi.imageInstanceId.substring(AppConstants.BDR_len), igi.imageGroup).get();
             } catch (InterruptedException | ExecutionException e) {
@@ -53,7 +53,7 @@ public class IdentifierInfo {
                 this.igi.initAccessibleInFairUse(this.ili);
                 this.accessibleInFairUse = this.igi.isAccessibleInFairUse(this.imageId);
             }
-            if (prefix.equals(AppConstants.IGSI)) {
+            if (AppConstants.IGSI.equals(prefix)) {
                 computeImageName(this.ili);
             }
         }
