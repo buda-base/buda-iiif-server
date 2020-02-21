@@ -117,7 +117,7 @@ public class IdentifierInfo {
         if (igId.startsWith("bdr:V")) {
             int undIidx = igId.lastIndexOf("_I");
             if (undIidx != -1) {
-                return igId.substring(undIidx + 1);
+                return "bdr:"+igId.substring(undIidx + 1);
             }
         }
         return igId;
