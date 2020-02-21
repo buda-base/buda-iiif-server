@@ -50,7 +50,7 @@ public class ImageGroupInfo {
         this.statusUri = sol.getResource("status").getURI();
         this.license = LicenseType.fromString(sol.getResource("license").getURI());
         this.instanceId = sol.getResource("instanceId").getURI();
-        this.imageInstanceId = sol.getResource("imageInstanceId").getURI();
+        this.imageInstanceId = sol.getResource("iinstanceId").getURI();
         if (sol.contains("?ric")) {
             this.restrictedInChina = sol.get("?ric").asLiteral().getBoolean();
         }
