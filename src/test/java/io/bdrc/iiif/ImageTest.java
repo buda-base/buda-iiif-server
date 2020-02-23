@@ -1,6 +1,7 @@
 package io.bdrc.iiif;
 
 import java.awt.color.ColorSpace;
+import java.awt.color.ICC_ProfileRGB;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -17,6 +18,7 @@ import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
 import javax.imageio.event.IIOReadWarningListener;
 import javax.imageio.metadata.IIOMetadata;
+import javax.imageio.metadata.IIOMetadataNode;
 import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
 import javax.xml.transform.OutputKeys;
@@ -28,6 +30,7 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import com.twelvemonkeys.imageio.plugins.jpeg.JPEGImageWriter;
 import com.twelvemonkeys.imageio.plugins.jpeg.JPEGImageWriterSpi;
@@ -53,7 +56,10 @@ public class ImageTest {
         InputStream is = ImageTest.class.getClassLoader().getResourceAsStream(filename);
         ImageInputStream iis = ImageIO.createImageInputStream(is);
         Iterator<ImageReader> itr = ImageIO.getImageReaders(iis);
+        //ICCProfile icc = new ICCProfile(iis);
         ImageReader r = itr.next();
+        //r = itr.next();
+        System.out.println(r.toString());
         is = ImageTest.class.getClassLoader().getResourceAsStream(filename);
         iis = ImageIO.createImageInputStream(is);
         
@@ -62,7 +68,8 @@ public class ImageTest {
         r.setInput(iis);
         
         // empty <app2ICC/>
-        printMetadata(r.getImageMetadata(0));
+        IIOMetadata meta = r.getImageMetadata(0);
+        printIcc(meta);
         
         ImageTypeSpecifier its = r.getRawImageType(0);
         ImageReadParam p = r.getDefaultReadParam();
@@ -83,6 +90,7 @@ public class ImageTest {
         // nor do I when I try to get a writer for the output of the read:
         Iterator<ImageWriter> itw2 = ImageIO.getImageWriters(new ImageTypeSpecifier(bi), "jpeg");
         ImageWriter iw2 = itw2.next();
+        //System.out.println(iw2.toString());
         if (iw2 == null) {
             System.out.println("no writer for the image type of the buffered image");
         } else {
@@ -90,31 +98,26 @@ public class ImageTest {
             wp.setDestinationType(its);
             ImageOutputStream out = ImageIO.createImageOutputStream(new File("test-regularjpg.jpg"));
             iw2.setOutput(out);
-            iw2.write(bi);
+            iw2.write(null, new IIOImage(bi, null, meta), wp);
+            //iw2.write(bi);
         }
         
         is.close();
         iis.close();
     }
     
-    public static void printMetadata(IIOMetadata meta) {
+    public static void printIcc(IIOMetadata meta) {
         String[] names = meta.getMetadataFormatNames();
         // Print image metadata
-        System.out.println("image metadata:");
+        System.out.println("image icc:");
         for (String s : names) {
-            Node inode = meta.getAsTree(s);
-            StringWriter writer = new StringWriter();
-            Transformer transformer;
-            try {
-                transformer = TransformerFactory.newInstance().newTransformer();
-                transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-                transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
-                transformer.transform(new DOMSource(inode), new StreamResult(writer));
-            } catch (TransformerFactoryConfigurationError | TransformerException e) {
-                e.printStackTrace();
-                return;
+            IIOMetadataNode inode = (IIOMetadataNode) meta.getAsTree(s);
+            IIOMetadataNode app2iccl = (IIOMetadataNode) inode.getElementsByTagName("app2ICC").item(0);
+            if (app2iccl != null) {
+                ICC_ProfileRGB icc = (ICC_ProfileRGB) app2iccl.getUserObject();
+                System.out.println(icc.getData().toString());
             }
-            System.out.println(writer.toString());        }
+        }
     }
 
     public static void main(String[] args) throws IOException, UnsupportedFormatException {
