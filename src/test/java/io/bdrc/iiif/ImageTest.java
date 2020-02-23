@@ -70,7 +70,7 @@ public class ImageTest {
         
         // color space is RGB (not sRGB), not sure if it's relevant
         System.out.println("is ColorSpace RGB? "+(its.getColorModel().getColorSpace().getType() == ColorSpace.TYPE_RGB));
-                
+
         BufferedImage bi = r.read(0, p);
         
         // if I try to find a writer handling the raw image type, I don't get any:
