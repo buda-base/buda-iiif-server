@@ -314,12 +314,6 @@ public class BDRCImageServiceImpl implements ImageService {
         }
         ImageReadParam readParam = getReadParam(reader, selector, decodeScaleFactor);
         System.out.println("READER " + reader);
-        Iterator<ImageTypeSpecifier> it = reader.getImageTypes(imageIndex);
-        while (it.hasNext()) {
-            System.out.println("FOUND IMG TYPE SPECIFIER " + it.next());
-        }
-        System.out.println("IMG TYPE SPECIFIER " + reader.getImageTypes(imageIndex).next());
-        System.out.println("RAW IMG TYPE SPECIFIER " + reader.getRawImageType(imageIndex));
         // readParam.setDestinationType(reader.getImageTypes(imageIndex).next());
         int rotation = (int) selector.getRotation().getRotation();
         if (readParam instanceof TurboJpegImageReadParam && ((TurboJpegImageReadParam) readParam).getRotationDegree() != 0) {

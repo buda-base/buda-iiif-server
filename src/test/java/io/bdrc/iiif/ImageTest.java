@@ -4,6 +4,7 @@ import java.awt.color.ColorSpace;
 import java.awt.color.ICC_Profile;
 import java.awt.color.ICC_ProfileRGB;
 import java.awt.image.BufferedImage;
+import java.awt.image.Raster;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -57,16 +58,9 @@ public class ImageTest {
         InputStream is = ImageTest.class.getClassLoader().getResourceAsStream(filename);
         ImageInputStream iis = ImageIO.createImageInputStream(is);
         Iterator<ImageReader> itr = ImageIO.getImageReaders(iis);
-        //ICCProfile icc = new ICCProfile(iis);
         ImageReader r = itr.next();
-        r = itr.next();
+        //r = itr.next();
         System.out.println("using reader: "+r.toString());
-        is = ImageTest.class.getClassLoader().getResourceAsStream(filename);
-        iis = ImageIO.createImageInputStream(is);
-        
-        // no visible warning
-        r.addIIOReadWarningListener(new MyIIOReadWarningListener());
-        r.setInput(iis);
 
         IIOMetadata meta = r.getImageMetadata(0);
         IIOMetadata meta_stream = r.getStreamMetadata();
@@ -77,6 +71,12 @@ public class ImageTest {
         p.setDestinationType(its);
 
         BufferedImage bi = r.read(0, p);
+        
+        // original pixel 100,100 is (127, 109, 89), while when the image
+        // is transformed into sRGB, it is (135,109,87), which is the case here
+        int pixel100 = bi.getRGB(100,100);
+        System.out.println("("+((pixel100 & 0xff0000) >> 16) +","+((pixel100 & 0xff00) >> 8)+","+(pixel100 & 0xff)+")");
+        //pixel100 = ((Raster) bi.getRaster()).getRGB(100, 100, pixel100);
         
         // color space is RGB (not sRGB), not sure if it's relevant
         System.out.println("is ColorSpace of reader ImageType RGB? "+(its.getColorModel().getColorSpace().getType() == ColorSpace.TYPE_RGB));
@@ -90,7 +90,7 @@ public class ImageTest {
         } else {
             System.out.println("using writer: "+iw2.toString());
             ImageWriteParam wp = iw2.getDefaultWriteParam();
-            wp.setDestinationType(its);
+            //wp.setDestinationType(its);
             ImageOutputStream out = ImageIO.createImageOutputStream(new File("test-regularjpg.jpg"));
             iw2.setOutput(out);
             iw2.write(meta_stream, new IIOImage(bi, null, meta), wp);
@@ -112,6 +112,7 @@ public class ImageTest {
     }
     
     public static void printIcc(IIOMetadata meta) {
+        if (meta == null) return;
         String[] names = meta.getMetadataFormatNames();
         // Print image metadata
         System.out.println("image icc:");
