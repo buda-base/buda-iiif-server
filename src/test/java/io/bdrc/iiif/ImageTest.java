@@ -75,11 +75,12 @@ public class ImageTest {
         ImageTypeSpecifier its = r.getRawImageType(0);
         ImageReadParam p = r.getDefaultReadParam();
         p.setDestinationType(its);
-        
-        // color space is RGB (not sRGB), not sure if it's relevant
-        System.out.println("is ColorSpace RGB? "+(its.getColorModel().getColorSpace().getType() == ColorSpace.TYPE_RGB));
 
         BufferedImage bi = r.read(0, p);
+        
+        // color space is RGB (not sRGB), not sure if it's relevant
+        System.out.println("is ColorSpace of reader ImageType RGB? "+(its.getColorModel().getColorSpace().getType() == ColorSpace.TYPE_RGB));
+        System.out.println("is ColorSpace of bufferedImage RGB? "+(bi.getColorModel().getColorSpace().getType() == ColorSpace.TYPE_RGB));
         
         // nor do I when I try to get a writer for the output of the read:
         Iterator<ImageWriter> itw2 = ImageIO.getImageWriters(new ImageTypeSpecifier(bi), "jpeg");
