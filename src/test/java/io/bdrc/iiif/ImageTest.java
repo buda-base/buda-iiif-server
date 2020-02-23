@@ -1,6 +1,7 @@
 package io.bdrc.iiif;
 
 import java.awt.color.ColorSpace;
+import java.awt.color.ICC_Profile;
 import java.awt.color.ICC_ProfileRGB;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -58,17 +59,17 @@ public class ImageTest {
         Iterator<ImageReader> itr = ImageIO.getImageReaders(iis);
         //ICCProfile icc = new ICCProfile(iis);
         ImageReader r = itr.next();
-        //r = itr.next();
-        System.out.println(r.toString());
+        r = itr.next();
+        System.out.println("using reader: "+r.toString());
         is = ImageTest.class.getClassLoader().getResourceAsStream(filename);
         iis = ImageIO.createImageInputStream(is);
         
         // no visible warning
         r.addIIOReadWarningListener(new MyIIOReadWarningListener());
         r.setInput(iis);
-        
-        // empty <app2ICC/>
+
         IIOMetadata meta = r.getImageMetadata(0);
+        IIOMetadata meta_stream = r.getStreamMetadata();
         printIcc(meta);
         
         ImageTypeSpecifier its = r.getRawImageType(0);
@@ -80,30 +81,33 @@ public class ImageTest {
 
         BufferedImage bi = r.read(0, p);
         
-        // if I try to find a writer handling the raw image type, I don't get any:
-        Iterator<ImageWriter> itw = ImageIO.getImageWriters(its, "jpeg");
-        ImageWriter iw = itw.next();
-        if (iw == null) {
-            System.out.println("no writer for the raw image type of the input");
-        }
-        
         // nor do I when I try to get a writer for the output of the read:
         Iterator<ImageWriter> itw2 = ImageIO.getImageWriters(new ImageTypeSpecifier(bi), "jpeg");
         ImageWriter iw2 = itw2.next();
-        //System.out.println(iw2.toString());
         if (iw2 == null) {
             System.out.println("no writer for the image type of the buffered image");
         } else {
+            System.out.println("using writer: "+iw2.toString());
             ImageWriteParam wp = iw2.getDefaultWriteParam();
             wp.setDestinationType(its);
             ImageOutputStream out = ImageIO.createImageOutputStream(new File("test-regularjpg.jpg"));
             iw2.setOutput(out);
-            iw2.write(null, new IIOImage(bi, null, meta), wp);
-            //iw2.write(bi);
+            iw2.write(meta_stream, new IIOImage(bi, null, meta), wp);
         }
         
         is.close();
         iis.close();
+    }
+    
+    private static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
+    public static String bytesToHex(byte[] bytes) {
+        char[] hexChars = new char[bytes.length * 2];
+        for (int j = 0; j < bytes.length; j++) {
+            int v = bytes[j] & 0xFF;
+            hexChars[j * 2] = HEX_ARRAY[v >>> 4];
+            hexChars[j * 2 + 1] = HEX_ARRAY[v & 0x0F];
+        }
+        return new String(hexChars);
     }
     
     public static void printIcc(IIOMetadata meta) {
@@ -114,8 +118,10 @@ public class ImageTest {
             IIOMetadataNode inode = (IIOMetadataNode) meta.getAsTree(s);
             IIOMetadataNode app2iccl = (IIOMetadataNode) inode.getElementsByTagName("app2ICC").item(0);
             if (app2iccl != null) {
-                ICC_ProfileRGB icc = (ICC_ProfileRGB) app2iccl.getUserObject();
-                System.out.println(icc.getData().toString());
+                ICC_Profile icc = (ICC_Profile) app2iccl.getUserObject();
+                byte[] iccData = icc.getData();
+                System.out.println("   length: "+iccData.length+" bytes (Adobe RGB is 560 bytes and starts with 0000 0230)");
+                System.out.println("   bytes:  "+bytesToHex(iccData).substring(0,8)+"...");
             }
         }
     }
