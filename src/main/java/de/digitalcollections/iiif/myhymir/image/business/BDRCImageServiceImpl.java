@@ -3,6 +3,7 @@ package de.digitalcollections.iiif.myhymir.image.business;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.color.ICC_Profile;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -15,16 +16,20 @@ import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReadParam;
 import javax.imageio.ImageReader;
-import javax.imageio.ImageTypeSpecifier;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
 import javax.imageio.metadata.IIOMetadata;
 import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
 
+import org.apache.commons.imaging.ColorTools;
+import org.apache.commons.imaging.ImageReadException;
+import org.apache.commons.imaging.Imaging;
 import org.apache.commons.io.IOUtils;
 import org.apache.jena.atlas.logging.Log;
 import org.imgscalr.Scalr;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Primary;
@@ -57,6 +62,7 @@ import de.digitalcollections.iiif.model.image.Size;
 import de.digitalcollections.iiif.model.image.SizeRequest;
 import de.digitalcollections.iiif.model.image.TileInfo;
 import de.digitalcollections.iiif.myhymir.Application;
+import de.digitalcollections.iiif.myhymir.ImageReader_ICC;
 import de.digitalcollections.iiif.myhymir.ServerCache;
 import de.digitalcollections.model.api.identifiable.resource.exceptions.ResourceNotFoundException;
 import de.digitalcollections.turbojpeg.imageio.TurboJpegImageReadParam;
@@ -68,6 +74,7 @@ import io.bdrc.iiif.exceptions.IIIFException;
 public class BDRCImageServiceImpl implements ImageService {
 
     public static final String IIIF_IMG = "IIIF_IMG";
+    private static final Logger log = LoggerFactory.getLogger(BDRCImageServiceImpl.class);
 
     @Autowired(required = false)
     private ImageSecurityService imageSecurityService;
@@ -174,10 +181,13 @@ public class BDRCImageServiceImpl implements ImageService {
      * 
      * @throws IIIFException
      * @throws ResourceNotFoundException
+     * @throws ImageReadException
      **/
-    private ImageReader getReader(String identifier) throws UnsupportedFormatException, IOException, IIIFException, ResourceNotFoundException {
+    private /* ImageReader */ ImageReader_ICC getReader(String identifier)
+            throws UnsupportedFormatException, IOException, IIIFException, ResourceNotFoundException {
         long deb = System.currentTimeMillis();
         byte[] bytes = (byte[]) ServerCache.getObjectFromCache(IIIF_IMG, identifier);
+        ICC_Profile icc = null;
         if (bytes != null) {
             Application.logPerf("Image service image was cached {}", identifier);
         } else {
@@ -204,6 +214,13 @@ public class BDRCImageServiceImpl implements ImageService {
                 Log.error("Could not add bytearray image to cache", e.getMessage());
             }
             bytes = (byte[]) ServerCache.getObjectFromCache(IIIF_IMG, identifier);
+            try {
+                icc = Imaging.getICCProfile(bytes);
+                log.info("INITIAL ICC BEFORE TRANSFORM >> {}", icc);
+            } catch (ImageReadException e1) {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
+            }
             Application.logPerf("Image service read {} from s3 {}", S3input, identifier);
         }
 
@@ -217,25 +234,26 @@ public class BDRCImageServiceImpl implements ImageService {
         reader.setInput(iis);
         Application.logPerf("S3 object IIIS READER >> {}", reader);
         Application.logPerf("Image service return reader at " + (System.currentTimeMillis() - deb) + " ms " + identifier);
-        return reader;
+        // return reader;
+        return new ImageReader_ICC(reader, icc);
     }
 
     @Override
     public void readImageInfo(String identifier, de.digitalcollections.iiif.model.image.ImageService info)
             throws UnsupportedFormatException, UnsupportedOperationException, IOException {
         try {
-            enrichInfo(getReader(identifier), info);
+            enrichInfo(getReader(identifier).getReader(), info);
         } catch (IIIFException | ResourceNotFoundException e) {
             Log.error("Could not get Image Info", e.getMessage());
             throw new ResourceIOException(e);
         }
     }
 
-    public ImageReader readImageInfo(String identifier, de.digitalcollections.iiif.model.image.ImageService info, ImageReader imgReader)
+    public ImageReader_ICC readImageInfo(String identifier, de.digitalcollections.iiif.model.image.ImageService info, ImageReader_ICC imgReader)
             throws UnsupportedFormatException, UnsupportedOperationException, IOException {
         try {
             imgReader = getReader(identifier);
-            enrichInfo(imgReader, info);
+            enrichInfo(imgReader.getReader(), info);
         } catch (IIIFException | ResourceNotFoundException e) {
             Log.error("Could not get Image Info", e.getMessage());
             throw new ResourceIOException(e);
@@ -274,7 +292,7 @@ public class BDRCImageServiceImpl implements ImageService {
     }
 
     private DecodedImage readImage(String identifier, ImageApiSelector selector, ImageApiProfile profile, ImageReader reader)
-            throws IOException, UnsupportedFormatException, InvalidParametersException {
+            throws IOException, UnsupportedFormatException, InvalidParametersException, ImageReadException {
         long deb = System.currentTimeMillis();
         Application.logPerf("Entering readImage for creating DecodedImage");
         if ((selector.getRotation().getRotation() % 90) != 0) {
@@ -312,6 +330,9 @@ public class BDRCImageServiceImpl implements ImageService {
                 imageIndex = idx;
             }
         }
+        // BufferedImage bImg = reader.read(imageIndex);
+        // byte[] buff = ((DataBufferByte) bImg.getRaster().getDataBuffer()).getData();
+        // System.out.println("ICC PROFILE >>" + Imaging.getICCProfile(buff));
         ImageReadParam readParam = getReadParam(reader, selector, decodeScaleFactor);
         System.out.println("READER " + reader);
         // readParam.setDestinationType(reader.getImageTypes(imageIndex).next());
@@ -325,6 +346,7 @@ public class BDRCImageServiceImpl implements ImageService {
             rotation = 0;
         }
         Application.logPerf("Done readingImage computing DecodedImage after {} ms", System.currentTimeMillis() - deb);
+
         return new DecodedImage(reader.read(imageIndex, readParam), targetSize, rotation);
     }
 
@@ -425,17 +447,25 @@ public class BDRCImageServiceImpl implements ImageService {
         return false;
     }
 
-    public void processImage(String identifier, ImageApiSelector selector, ImageApiProfile profile, OutputStream os, ImageReader imgReader,
-            String uri) throws InvalidParametersException, UnsupportedOperationException, UnsupportedFormatException, IOException {
+    public void processImage(String identifier, ImageApiSelector selector, ImageApiProfile profile, OutputStream os, ImageReader_ICC imgReader,
+            String uri)
+            throws InvalidParametersException, UnsupportedOperationException, UnsupportedFormatException, IOException, ImageReadException {
         long deb = System.currentTimeMillis();
         // IIOMetadata streamMetadata = imgReader.getStreamMetadata();
-        IIOMetadata imageMetadata = imgReader.getImageMetadata(0);
+        IIOMetadata imageMetadata = imgReader.getReader().getImageMetadata(0);
         try {
             Application.logPerf("Entering Processimage.... with reader {} ", imgReader);
-            DecodedImage img = readImage(identifier, selector, profile, imgReader);
+            DecodedImage img = readImage(identifier, selector, profile, imgReader.getReader());
             Application.logPerf("Done readingImage DecodedImage created");
-            BufferedImage outImg = transformImage(selector.getFormat(), img.img, img.targetSize, img.rotation, selector.getRotation().isMirror(),
+            BufferedImage img1 = transformImage(selector.getFormat(), img.img, img.targetSize, img.rotation, selector.getRotation().isMirror(),
                     selector.getQuality());
+            BufferedImage outImg = null;
+            ColorTools ct = new ColorTools();
+            if (imgReader.getIcc() != null) {
+                outImg = ct.convertToICCProfile(img1, imgReader.getIcc());
+            } else {
+                outImg = img1;
+            }
             ImageWriter writer = null;
             Iterator<ImageWriter> writers = ImageIO.getImageWritersByMIMEType(selector.getFormat().getMimeType().getTypeName());
             while (writers.hasNext()) {
