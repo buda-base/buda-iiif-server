@@ -14,7 +14,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.imaging.ImageReadException;
-import org.apache.commons.imaging.Imaging;
 import org.apache.http.client.ClientProtocolException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -240,11 +239,7 @@ public class IIIFImageApiController {
             }
             Application.logPerf("got the bytes in {} ms for {}", (System.currentTimeMillis() - deb1), identifier);
             ImageMetrics.imageCount(ImageMetrics.IMG_CALLS_COMMON, (String) request.getAttribute("origin"));
-            ByteArrayOutputStream baos = new ByteArrayOutputStream(osbytes.length);
-            baos.write(osbytes, 0, osbytes.length);
-            log.info("INITIAL ICC FULL IMAGE >> {}", Imaging.getICCProfile(baos.toByteArray()));
-            return new ResponseEntity<>(baos.toByteArray(), headers, HttpStatus.OK);
-            // return new ResponseEntity<>(osbytes, headers, HttpStatus.OK);
+            return new ResponseEntity<>(osbytes, headers, HttpStatus.OK);
 
         }
         deb1 = System.currentTimeMillis();

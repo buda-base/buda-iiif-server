@@ -214,8 +214,10 @@ public class BDRCImageServiceImpl implements ImageService {
             }
             bytes = (byte[]) ServerCache.getObjectFromCache(IIIF_IMG, identifier);
             try {
+                long deb1 = System.currentTimeMillis();
                 icc = Imaging.getICCProfile(bytes);
-                log.info("INITIAL ICC BEFORE TRANSFORM >> {}", icc);
+                long end1 = System.currentTimeMillis();
+                log.info("INITIAL ICC BEFORE TRANSFORM >> {} in {} ms", icc, (end1 - deb1));
             } catch (ImageReadException e1) {
                 // TODO Auto-generated catch block
                 e1.printStackTrace();
@@ -460,7 +462,11 @@ public class BDRCImageServiceImpl implements ImageService {
             ColorTools ct = new ColorTools();
             Application.logPerf("Output ICC profile >>" + imgReader.getIcc());
             if (imgReader.getIcc() != null) {
+                long deb1 = System.currentTimeMillis();
                 outImg = ct.convertToICCProfile(img1, imgReader.getIcc());
+                long end1 = System.currentTimeMillis();
+                log.info("CONVERSION WRITING ICC TOOK {} ms", (end1 - deb1));
+
             } else {
                 outImg = img1;
             }
