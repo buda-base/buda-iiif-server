@@ -59,9 +59,11 @@ public class ImageTest {
         ImageInputStream iis = ImageIO.createImageInputStream(is);
         Iterator<ImageReader> itr = ImageIO.getImageReaders(iis);
         ImageReader r = itr.next();
-        //r = itr.next();
+        r = itr.next();
         System.out.println("using reader: "+r.toString());
 
+        r.setInput(iis);
+        
         IIOMetadata meta = r.getImageMetadata(0);
         IIOMetadata meta_stream = r.getStreamMetadata();
         printIcc(meta);
@@ -118,9 +120,10 @@ public class ImageTest {
         System.out.println("image icc:");
         for (String s : names) {
             IIOMetadataNode inode = (IIOMetadataNode) meta.getAsTree(s);
-            IIOMetadataNode app2iccl = (IIOMetadataNode) inode.getElementsByTagName("app2ICC").item(0);
-            if (app2iccl != null) {
-                ICC_Profile icc = (ICC_Profile) app2iccl.getUserObject();
+            NodeList app2iccl = inode.getElementsByTagName("app2ICC");
+            if (app2iccl.getLength() > 0) {
+                IIOMetadataNode app2icc = (IIOMetadataNode) app2iccl.item(0);
+                ICC_Profile icc = (ICC_Profile) app2icc.getUserObject();
                 byte[] iccData = icc.getData();
                 System.out.println("   length: "+iccData.length+" bytes (Adobe RGB is 560 bytes and starts with 0000 0230)");
                 System.out.println("   bytes:  "+bytesToHex(iccData).substring(0,8)+"...");
