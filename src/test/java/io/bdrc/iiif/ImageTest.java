@@ -1,12 +1,18 @@
 package io.bdrc.iiif;
 
+import java.awt.RenderingHints;
+import java.awt.Transparency;
 import java.awt.color.ColorSpace;
+import java.awt.color.ICC_ColorSpace;
 import java.awt.color.ICC_Profile;
 import java.awt.image.BufferedImage;
+import java.awt.image.ColorConvertOp;
+import java.awt.image.ColorModel;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.Iterator;
 
 import javax.imageio.IIOImage;
@@ -21,6 +27,9 @@ import javax.imageio.metadata.IIOMetadata;
 import javax.imageio.metadata.IIOMetadataNode;
 import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
+import java.awt.image.ComponentColorModel;
+import java.awt.image.Raster;
+import java.awt.image.SampleModel;
 
 import org.apache.commons.imaging.ColorTools;
 import org.apache.commons.imaging.ImageReadException;
@@ -35,6 +44,15 @@ import de.digitalcollections.turbojpeg.imageio.TurboJpegImageReader;
 
 public class ImageTest {
 
+    final static RenderingHints hints = new RenderingHints(RenderingHints.KEY_RENDERING,
+            RenderingHints.VALUE_RENDER_QUALITY);
+    static {
+        hints.put(RenderingHints.KEY_COLOR_RENDERING,
+                RenderingHints.VALUE_COLOR_RENDER_QUALITY);
+        hints.put(RenderingHints.KEY_DITHERING,
+                RenderingHints.VALUE_DITHER_ENABLE);
+    }
+    
     public ImageTest() {
         // TODO Auto-generated constructor stub
     }
@@ -47,7 +65,20 @@ public class ImageTest {
         }
 
     }
+<<<<<<< HEAD
 
+=======
+    
+    public static void printPixel100(BufferedImage bi, String message) {
+        System.out.println(message);
+        int[] pixel100Arr = new int[4];
+        int pixel100 = bi.getRGB(100, 100);
+        System.out.println("    (" + ((pixel100 & 0xff0000) >> 16) + "," + ((pixel100 & 0xff00) >> 8) + "," + (pixel100 & 0xff) + ")");
+        pixel100Arr = bi.getRaster().getPixel(100, 100, pixel100Arr);
+        System.out.println("    "+Arrays.toString(pixel100Arr));
+    }
+    
+>>>>>>> cc6a43e87b02a394f893082880ab95aeacd96c5f
     public static void readAndWriteTurboPipeline(String filename) throws IOException, UnsupportedFormatException {
         InputStream is = ImageTest.class.getClassLoader().getResourceAsStream(filename);
         // to emulate the live conditions, we put the image into a byte[]:
@@ -79,24 +110,50 @@ public class ImageTest {
         long endRead = System.currentTimeMillis();
         System.out.println("read image in " + (endRead - endIcc));
 
+        SampleModel sm = bi.getSampleModel();
+        
         // original pixel 100,100 is (127, 109, 89), while when the image
         // is transformed into sRGB, it is (135,109,87), which is the case here
-        int pixel100 = bi.getRGB(100, 100);
-        System.out.println("(" + ((pixel100 & 0xff0000) >> 16) + "," + ((pixel100 & 0xff00) >> 8) + "," + (pixel100 & 0xff) + ")");
-
+        printPixel100(bi, "after read");
+        
         // color space is RGB (not sRGB), not sure if it's relevant
         System.out.println("is ColorSpace of bufferedImage RGB? " + (bi.getColorModel().getColorSpace().getType() == ColorSpace.TYPE_RGB));
 
         ICC_Profile srgb = ICC_Profile.getInstance(ColorSpace.CS_sRGB);
 
         long beginConvert = System.currentTimeMillis();
-        bi = new ColorTools().convertBetweenICCProfiles(bi, icc, srgb);
-        long endConvert = System.currentTimeMillis();
-        System.out.println("convert icc in " + (endConvert - beginConvert));
-        System.out.println("total read in " + (endConvert - deb1));
+        
+        //bi = new ColorTools().relabelColorSpace(bi, icc);
+        ColorModel origCm = bi.getColorModel();
+        final ICC_ColorSpace newCs = new ICC_ColorSpace(icc);
+        ColorModel newCm = new ComponentColorModel(newCs, false, false, Transparency.OPAQUE, origCm.getTransferType());
+        
+        ImageTypeSpecifier its = new ImageTypeSpecifier(newCm, sm);
+        ImageReadParam p = r.getDefaultReadParam();
+        p.setDestinationType(its);
+        
+        int[] pixel100Arr = new int[4];
+        final ColorConvertOp op = new ColorConvertOp(origCm.getColorSpace(), newCs, hints);
 
-        pixel100 = bi.getRGB(100, 100);
-        System.out.println("(" + ((pixel100 & 0xff0000) >> 16) + "," + ((pixel100 & 0xff00) >> 8) + "," + (pixel100 & 0xff) + ")");
+        BufferedImage filteredBi = op.filter(bi, null);
+        printPixel100(filteredBi, "after convert op");
+        
+        
+        BufferedImage filteredBiNew = new BufferedImage(newCm, filteredBi.getRaster(), false, null);
+        printPixel100(filteredBiNew, "after convert op and relabel");
+        
+        BufferedImage biNew = new BufferedImage(newCm, bi.getRaster(), false, null);
+        printPixel100(biNew, "after relabel");
+        
+        //bi = new ColorTools().convertBetweenICCProfiles(bi, icc, srgb);
+        //bi = new ColorTools().convertToICCProfile(bi, icc);
+        long endConvert = System.currentTimeMillis();
+
+        System.out.println("convert icc in "+(endConvert-beginConvert));
+        System.out.println("total read in "+(endConvert-deb1));
+        
+        printPixel100(bi, "final");
+        
 
         // nor do I when I try to get a writer for the output of the read:
         Iterator<ImageWriter> itw2 = ImageIO.getImageWriters(new ImageTypeSpecifier(bi), "jpeg");
@@ -106,8 +163,8 @@ public class ImageTest {
         } else {
             System.out.println("using writer: " + iw2.toString());
             ImageWriteParam wp = iw2.getDefaultWriteParam();
-            // wp.setDestinationType(its);
-            ImageOutputStream out = ImageIO.createImageOutputStream(new File("test-regularjpg.jpg"));
+            wp.setDestinationType(its);
+            ImageOutputStream out = ImageIO.createImageOutputStream(new File("test-turbo.jpg"));
             iw2.setOutput(out);
             iw2.write(null, new IIOImage(bi, null, null), wp);
         }
@@ -150,8 +207,7 @@ public class ImageTest {
 
         // original pixel 100,100 is (127, 109, 89), while when the image
         // is transformed into sRGB, it is (135,109,87), which is the case here
-        int pixel100 = bi.getRGB(100, 100);
-        System.out.println("(" + ((pixel100 & 0xff0000) >> 16) + "," + ((pixel100 & 0xff00) >> 8) + "," + (pixel100 & 0xff) + ")");
+        printPixel100(bi, "after read");
 
         // color space is RGB (not sRGB), not sure if it's relevant
         // System.out.println("is ColorSpace of reader ImageType RGB? " +
@@ -167,7 +223,7 @@ public class ImageTest {
             System.out.println("using writer: " + iw2.toString());
             ImageWriteParam wp = iw2.getDefaultWriteParam();
             // wp.setDestinationType(its);
-            ImageOutputStream out = ImageIO.createImageOutputStream(new File("test-regularjpg.jpg"));
+            ImageOutputStream out = ImageIO.createImageOutputStream(new File("test-twelvemonkeys.jpg"));
             iw2.setOutput(out);
             iw2.write(meta_stream, new IIOImage(bi, null, meta), wp);
         }
