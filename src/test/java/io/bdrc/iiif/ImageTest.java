@@ -29,7 +29,6 @@ import org.apache.commons.io.IOUtils;
 import org.w3c.dom.NodeList;
 
 import com.twelvemonkeys.imageio.plugins.jpeg.JPEGImageReader;
-import com.twelvemonkeys.imageio.plugins.jpeg.JPEGImageWriter;
 
 import de.digitalcollections.iiif.hymir.model.exception.UnsupportedFormatException;
 import de.digitalcollections.turbojpeg.imageio.TurboJpegImageReader;
@@ -70,7 +69,8 @@ public class ImageTest {
         while (itr.hasNext()) {
             r = itr.next();
             System.out.println(r.getClass());
-            if (r.getClass().equals(TurboJpegImageReader.class)) break;
+            if (r.getClass().equals(TurboJpegImageReader.class))
+                break;
         }
         System.out.println("using reader: " + r.toString());
         r.setInput(iis);
@@ -88,7 +88,7 @@ public class ImageTest {
         System.out.println("is ColorSpace of bufferedImage RGB? " + (bi.getColorModel().getColorSpace().getType() == ColorSpace.TYPE_RGB));
 
         ICC_Profile srgb = ICC_Profile.getInstance(ColorSpace.CS_sRGB);
-        
+
         long beginConvert = System.currentTimeMillis();
         bi = new ColorTools().convertBetweenICCProfiles(bi, icc, srgb);
         long endConvert = System.currentTimeMillis();
@@ -130,9 +130,10 @@ public class ImageTest {
         while (itr.hasNext()) {
             r = itr.next();
             System.out.println(r.getClass());
-            if (r.getClass().equals(JPEGImageReader.class)) break;
+            if (r.getClass().equals(JPEGImageReader.class))
+                break;
         }
-        
+
         System.out.println("using reader: " + r.toString());
         r.setInput(iis);
 
@@ -153,7 +154,8 @@ public class ImageTest {
         System.out.println("(" + ((pixel100 & 0xff0000) >> 16) + "," + ((pixel100 & 0xff00) >> 8) + "," + (pixel100 & 0xff) + ")");
 
         // color space is RGB (not sRGB), not sure if it's relevant
-        System.out.println("is ColorSpace of reader ImageType RGB? " + (its.getColorModel().getColorSpace().getType() == ColorSpace.TYPE_RGB));
+        // System.out.println("is ColorSpace of reader ImageType RGB? " +
+        // (its.getColorModel().getColorSpace().getType() == ColorSpace.TYPE_RGB));
         System.out.println("is ColorSpace of bufferedImage RGB? " + (bi.getColorModel().getColorSpace().getType() == ColorSpace.TYPE_RGB));
 
         // nor do I when I try to get a writer for the output of the read:
