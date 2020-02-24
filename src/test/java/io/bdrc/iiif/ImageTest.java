@@ -86,8 +86,10 @@ public class ImageTest {
         // color space is RGB (not sRGB), not sure if it's relevant
         System.out.println("is ColorSpace of bufferedImage RGB? " + (bi.getColorModel().getColorSpace().getType() == ColorSpace.TYPE_RGB));
 
+        ICC_Profile srgb = ICC_Profile.getInstance(ColorSpace.CS_sRGB);
+        
         long beginConvert = System.currentTimeMillis();
-        bi = new ColorTools().convertToICCProfile(bi, icc);
+        bi = new ColorTools().convertBetweenICCProfiles(bi, icc, srgb);
         long endConvert = System.currentTimeMillis();
         System.out.println("convert icc in "+(endConvert-beginConvert));
         System.out.println("total read in "+(endConvert-deb1));
