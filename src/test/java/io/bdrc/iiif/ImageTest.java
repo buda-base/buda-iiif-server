@@ -44,10 +44,11 @@ public class ImageTest {
         }
 
     }
+
     public static void readAndWriteTurboPipeline(String filename) throws IOException, UnsupportedFormatException {
         InputStream is = ImageTest.class.getClassLoader().getResourceAsStream(filename);
         // to emulate the live conditions, we put the image into a byte[]:
-        
+
         byte[] bytes = IOUtils.toByteArray(is);
         long deb1 = System.currentTimeMillis();
         ICC_Profile icc = null;
@@ -57,9 +58,9 @@ public class ImageTest {
             e.printStackTrace();
         }
         long endIcc = System.currentTimeMillis();
-        System.out.println("read icc in "+(endIcc - deb1));
+        System.out.println("read icc in " + (endIcc - deb1));
         ImageInputStream iis = ImageIO.createImageInputStream(new ByteArrayInputStream(bytes));
-        
+
         Iterator<ImageReader> itr = ImageIO.getImageReaders(iis);
         ImageReader r = itr.next();
         System.out.println("using reader: " + r.toString());
@@ -67,7 +68,7 @@ public class ImageTest {
 
         BufferedImage bi = r.read(0);
         long endRead = System.currentTimeMillis();
-        System.out.println("read image in "+(endRead-endIcc));
+        System.out.println("read image in " + (endRead - endIcc));
 
         // original pixel 100,100 is (127, 109, 89), while when the image
         // is transformed into sRGB, it is (135,109,87), which is the case here
@@ -80,12 +81,12 @@ public class ImageTest {
         long beginConvert = System.currentTimeMillis();
         bi = new ColorTools().convertToICCProfile(bi, icc);
         long endConvert = System.currentTimeMillis();
-        System.out.println("convert icc in "+(endConvert-beginConvert));
-        System.out.println("total read in "+(endConvert-deb1));
-        
+        System.out.println("convert icc in " + (endConvert - beginConvert));
+        System.out.println("total read in " + (endConvert - deb1));
+
         pixel100 = bi.getRGB(100, 100);
         System.out.println("(" + ((pixel100 & 0xff0000) >> 16) + "," + ((pixel100 & 0xff00) >> 8) + "," + (pixel100 & 0xff) + ")");
-        
+
         // nor do I when I try to get a writer for the output of the read:
         Iterator<ImageWriter> itw2 = ImageIO.getImageWriters(new ImageTypeSpecifier(bi), "jpeg");
         ImageWriter iw2 = itw2.next();
@@ -103,16 +104,16 @@ public class ImageTest {
         is.close();
         iis.close();
     }
-    
+
     public static void readAndWriteTwelveMonkeysPipeline(String filename) throws IOException, UnsupportedFormatException {
         InputStream is = ImageTest.class.getClassLoader().getResourceAsStream(filename);
         // to emulate the live conditions, we put the image into a byte[]:
-        
+
         byte[] bytes = IOUtils.toByteArray(is);
         long deb1 = System.currentTimeMillis();
 
         ImageInputStream iis = ImageIO.createImageInputStream(new ByteArrayInputStream(bytes));
-        
+
         Iterator<ImageReader> itr = ImageIO.getImageReaders(iis);
         ImageReader r = itr.next();
         r = itr.next();
@@ -128,7 +129,7 @@ public class ImageTest {
         p.setDestinationType(its);
 
         BufferedImage bi = r.read(0, p);
-        System.out.println("reading in "+(System.currentTimeMillis()-deb1));
+        System.out.println("reading in " + (System.currentTimeMillis() - deb1));
 
         // original pixel 100,100 is (127, 109, 89), while when the image
         // is transformed into sRGB, it is (135,109,87), which is the case here

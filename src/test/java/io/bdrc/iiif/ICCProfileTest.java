@@ -92,10 +92,13 @@ public class ICCProfileTest {
     public static void main(String[] args) throws IOException, UnsupportedFormatException, ImageReadException {
         readICCFromImage("ORIGINAL_S3.jpg");
         readICCFromImage("S3_1500.jpg");
-        writeAndReadICCToImage("S3_1500.jpg", readICCFromImage("ORIGINAL_S3.jpg"));
-        checkinPixel100("S3_1500.jpg", readICCFromImage("ORIGINAL_S3.jpg"), "com.twelvemonkeys.imageio.plugins.jpeg.JPEGImageReader");
-        checkinPixel100("S3_1500.jpg", readICCFromImage("ORIGINAL_S3.jpg"), "de.digitalcollections.turbojpeg.imageio.TurboJpegImageReader");
-        checkinPixel100("S3_1500.jpg", readICCFromImage("ORIGINAL_S3.jpg"), "com.sun.imageio.plugins.jpeg.JPEGImageReader");
+        // writeAndReadICCToImage("S3_1500.jpg", readICCFromImage("ORIGINAL_S3.jpg"));
+        // checkinPixel100("S3_1500.jpg", readICCFromImage("ORIGINAL_S3.jpg"),
+        // "com.twelvemonkeys.imageio.plugins.jpeg.JPEGImageReader");
+        // checkinPixel100("S3_1500.jpg", readICCFromImage("ORIGINAL_S3.jpg"),
+        // "de.digitalcollections.turbojpeg.imageio.TurboJpegImageReader");
+        // checkinPixel100("S3_1500.jpg", readICCFromImage("ORIGINAL_S3.jpg"),
+        // "com.sun.imageio.plugins.jpeg.JPEGImageReader");
         // Apply the ICC of the image to itself, after having read it with twelvemonkeys
         checkinPixel100("ORIGINAL_S3.jpg", readICCFromImage("ORIGINAL_S3.jpg"), "com.twelvemonkeys.imageio.plugins.jpeg.JPEGImageReader");
         checkinPixel100("ORIGINAL_S3.jpg", readICCFromImage("ORIGINAL_S3.jpg"), "de.digitalcollections.turbojpeg.imageio.TurboJpegImageReader");

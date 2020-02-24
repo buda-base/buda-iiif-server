@@ -212,7 +212,6 @@ public class BDRCImageServiceImpl implements ImageService {
                 Log.error("Could not add bytearray image to cache", e.getMessage());
             }
             bytes = (byte[]) ServerCache.getObjectFromCache(IIIF_IMG, identifier);
-
             Application.logPerf("Image service read {} from s3 {}", S3input, identifier);
         }
         try {
