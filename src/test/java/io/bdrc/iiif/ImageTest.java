@@ -28,7 +28,11 @@ import org.apache.commons.imaging.Imaging;
 import org.apache.commons.io.IOUtils;
 import org.w3c.dom.NodeList;
 
+import com.twelvemonkeys.imageio.plugins.jpeg.JPEGImageReader;
+import com.twelvemonkeys.imageio.plugins.jpeg.JPEGImageWriter;
+
 import de.digitalcollections.iiif.hymir.model.exception.UnsupportedFormatException;
+import de.digitalcollections.turbojpeg.imageio.TurboJpegImageReader;
 
 public class ImageTest {
 
@@ -61,7 +65,12 @@ public class ImageTest {
         ImageInputStream iis = ImageIO.createImageInputStream(new ByteArrayInputStream(bytes));
         
         Iterator<ImageReader> itr = ImageIO.getImageReaders(iis);
-        ImageReader r = itr.next();
+        ImageReader r = null;
+        while (itr.hasNext()) {
+            r = itr.next();
+            System.out.println(r.getClass());
+            if (r.getClass().equals(TurboJpegImageReader.class)) break;
+        }
         System.out.println("using reader: " + r.toString());
         r.setInput(iis);
 
@@ -114,8 +123,13 @@ public class ImageTest {
         ImageInputStream iis = ImageIO.createImageInputStream(new ByteArrayInputStream(bytes));
         
         Iterator<ImageReader> itr = ImageIO.getImageReaders(iis);
-        ImageReader r = itr.next();
-        r = itr.next();
+        ImageReader r = null;
+        while (itr.hasNext()) {
+            r = itr.next();
+            System.out.println(r.getClass());
+            if (r.getClass().equals(JPEGImageReader.class)) break;
+        }
+        
         System.out.println("using reader: " + r.toString());
         r.setInput(iis);
 
