@@ -3,6 +3,7 @@ package io.bdrc.iiif;
 import java.awt.color.ColorSpace;
 import java.awt.color.ICC_Profile;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -21,6 +22,10 @@ import javax.imageio.metadata.IIOMetadataNode;
 import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
 
+import org.apache.commons.imaging.ColorTools;
+import org.apache.commons.imaging.ImageReadException;
+import org.apache.commons.imaging.Imaging;
+import org.apache.commons.io.IOUtils;
 import org.w3c.dom.NodeList;
 
 import de.digitalcollections.iiif.hymir.model.exception.UnsupportedFormatException;
@@ -39,10 +44,75 @@ public class ImageTest {
         }
 
     }
-
-    public static void readAndWriteTwelveMonkeys(String filename) throws IOException, UnsupportedFormatException {
+    public static void readAndWriteTurboPipeline(String filename) throws IOException, UnsupportedFormatException {
         InputStream is = ImageTest.class.getClassLoader().getResourceAsStream(filename);
-        ImageInputStream iis = ImageIO.createImageInputStream(is);
+        // to emulate the live conditions, we put the image into a byte[]:
+        
+        byte[] bytes = IOUtils.toByteArray(is);
+        long deb1 = System.currentTimeMillis();
+        ICC_Profile icc = null;
+        try {
+            icc = Imaging.getICCProfile(bytes);
+        } catch (ImageReadException e) {
+            e.printStackTrace();
+        }
+        long endIcc = System.currentTimeMillis();
+        System.out.println("read icc in "+(endIcc - deb1));
+        ImageInputStream iis = ImageIO.createImageInputStream(new ByteArrayInputStream(bytes));
+        
+        Iterator<ImageReader> itr = ImageIO.getImageReaders(iis);
+        ImageReader r = itr.next();
+        System.out.println("using reader: " + r.toString());
+        r.setInput(iis);
+
+        BufferedImage bi = r.read(0);
+        long endRead = System.currentTimeMillis();
+        System.out.println("read image in "+(endRead-endIcc));
+
+        // original pixel 100,100 is (127, 109, 89), while when the image
+        // is transformed into sRGB, it is (135,109,87), which is the case here
+        int pixel100 = bi.getRGB(100, 100);
+        System.out.println("(" + ((pixel100 & 0xff0000) >> 16) + "," + ((pixel100 & 0xff00) >> 8) + "," + (pixel100 & 0xff) + ")");
+
+        // color space is RGB (not sRGB), not sure if it's relevant
+        System.out.println("is ColorSpace of bufferedImage RGB? " + (bi.getColorModel().getColorSpace().getType() == ColorSpace.TYPE_RGB));
+
+        long beginConvert = System.currentTimeMillis();
+        bi = new ColorTools().convertToICCProfile(bi, icc);
+        long endConvert = System.currentTimeMillis();
+        System.out.println("convert icc in "+(endConvert-beginConvert));
+        System.out.println("total read in "+(endConvert-deb1));
+        
+        pixel100 = bi.getRGB(100, 100);
+        System.out.println("(" + ((pixel100 & 0xff0000) >> 16) + "," + ((pixel100 & 0xff00) >> 8) + "," + (pixel100 & 0xff) + ")");
+        
+        // nor do I when I try to get a writer for the output of the read:
+        Iterator<ImageWriter> itw2 = ImageIO.getImageWriters(new ImageTypeSpecifier(bi), "jpeg");
+        ImageWriter iw2 = itw2.next();
+        if (iw2 == null) {
+            System.out.println("no writer for the image type of the buffered image");
+        } else {
+            System.out.println("using writer: " + iw2.toString());
+            ImageWriteParam wp = iw2.getDefaultWriteParam();
+            // wp.setDestinationType(its);
+            ImageOutputStream out = ImageIO.createImageOutputStream(new File("test-regularjpg.jpg"));
+            iw2.setOutput(out);
+            iw2.write(null, new IIOImage(bi, null, null), wp);
+        }
+
+        is.close();
+        iis.close();
+    }
+    
+    public static void readAndWriteTwelveMonkeysPipeline(String filename) throws IOException, UnsupportedFormatException {
+        InputStream is = ImageTest.class.getClassLoader().getResourceAsStream(filename);
+        // to emulate the live conditions, we put the image into a byte[]:
+        
+        byte[] bytes = IOUtils.toByteArray(is);
+        long deb1 = System.currentTimeMillis();
+
+        ImageInputStream iis = ImageIO.createImageInputStream(new ByteArrayInputStream(bytes));
+        
         Iterator<ImageReader> itr = ImageIO.getImageReaders(iis);
         ImageReader r = itr.next();
         r = itr.next();
@@ -58,12 +128,12 @@ public class ImageTest {
         p.setDestinationType(its);
 
         BufferedImage bi = r.read(0, p);
+        System.out.println("reading in "+(System.currentTimeMillis()-deb1));
 
         // original pixel 100,100 is (127, 109, 89), while when the image
         // is transformed into sRGB, it is (135,109,87), which is the case here
         int pixel100 = bi.getRGB(100, 100);
         System.out.println("(" + ((pixel100 & 0xff0000) >> 16) + "," + ((pixel100 & 0xff00) >> 8) + "," + (pixel100 & 0xff) + ")");
-        // pixel100 = ((Raster) bi.getRaster()).getRGB(100, 100, pixel100);
 
         // color space is RGB (not sRGB), not sure if it's relevant
         System.out.println("is ColorSpace of reader ImageType RGB? " + (its.getColorModel().getColorSpace().getType() == ColorSpace.TYPE_RGB));
@@ -119,7 +189,10 @@ public class ImageTest {
     }
 
     public static void main(String[] args) throws IOException, UnsupportedFormatException {
-        readAndWriteTwelveMonkeys("ORIGINAL_S3.jpg");
+        readAndWriteTwelveMonkeysPipeline("ORIGINAL_S3.jpg");
+        readAndWriteTurboPipeline("ORIGINAL_S3.jpg");
+        readAndWriteTwelveMonkeysPipeline("ORIGINAL_S3.jpg");
+        readAndWriteTurboPipeline("ORIGINAL_S3.jpg");
     }
 
 }
