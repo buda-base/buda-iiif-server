@@ -47,7 +47,6 @@ public class ImageTest {
         ImageReader r = itr.next();
         r = itr.next();
         System.out.println("using reader: " + r.toString());
-
         r.setInput(iis);
 
         IIOMetadata meta = r.getImageMetadata(0);
