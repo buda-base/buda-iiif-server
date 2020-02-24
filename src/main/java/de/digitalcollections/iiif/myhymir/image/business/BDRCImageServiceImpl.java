@@ -18,7 +18,6 @@ import javax.imageio.ImageReadParam;
 import javax.imageio.ImageReader;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
-import javax.imageio.metadata.IIOMetadata;
 import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
 
@@ -451,8 +450,6 @@ public class BDRCImageServiceImpl implements ImageService {
             String uri)
             throws InvalidParametersException, UnsupportedOperationException, UnsupportedFormatException, IOException, ImageReadException {
         long deb = System.currentTimeMillis();
-        // IIOMetadata streamMetadata = imgReader.getStreamMetadata();
-        IIOMetadata imageMetadata = imgReader.getReader().getImageMetadata(0);
         try {
             Application.logPerf("Entering Processimage.... with reader {} ", imgReader);
             DecodedImage img = readImage(identifier, selector, profile, imgReader.getReader());
@@ -461,6 +458,7 @@ public class BDRCImageServiceImpl implements ImageService {
                     selector.getQuality());
             BufferedImage outImg = null;
             ColorTools ct = new ColorTools();
+            Application.logPerf("Output ICC profile >>" + imgReader.getIcc());
             if (imgReader.getIcc() != null) {
                 outImg = ct.convertToICCProfile(img1, imgReader.getIcc());
             } else {
@@ -479,10 +477,8 @@ public class BDRCImageServiceImpl implements ImageService {
             switch (selector.getFormat()) {
 
             case PNG:
-                IIOImage iio = new IIOImage(outImg, null, imageMetadata);
                 Application.logPerf("USING JAI PNG for {} ", identifier);
-                // ImageEncodeParam param = PNGEncodeParam.getDefaultEncodeParam(outImg);
-                ImageEncodeParam param = PNGEncodeParam.getDefaultEncodeParam(iio.getRenderedImage());
+                ImageEncodeParam param = PNGEncodeParam.getDefaultEncodeParam(outImg);
                 String format = "PNG";
                 ImageEncoder encoder = ImageCodec.createImageEncoder(format, os, param);
                 encoder.encode(outImg);
@@ -515,8 +511,7 @@ public class BDRCImageServiceImpl implements ImageService {
 
                 ImageOutputStream is = ImageIO.createImageOutputStream(os);
                 wtr.setOutput(is);
-                Application.logPerf("JPG WRITER WITH METADATA---> image: {}, stream: {}", imageMetadata, imageMetadata);
-                wtr.write(null, new IIOImage(outImg, null, imageMetadata), jpgWriteParam);
+                wtr.write(null, new IIOImage(outImg, null, null), jpgWriteParam);
                 wtr.dispose();
                 is.flush();
                 break;
@@ -530,17 +525,16 @@ public class BDRCImageServiceImpl implements ImageService {
                 ImageOutputStream iss = ImageIO.createImageOutputStream(os);
                 writer.setOutput(iss);
                 // writer.write(outImg);
-                writer.write(null, new IIOImage(outImg, null, imageMetadata), writeParam);
+                writer.write(null, new IIOImage(outImg, null, null), writeParam);
                 writer.dispose();
                 iss.flush();
                 break;
 
             default:
-                IIOImage iii = new IIOImage(outImg, null, imageMetadata);
                 Application.logPerf("USING NON NULL WRITER {}", writer);
                 ImageOutputStream ios = ImageIO.createImageOutputStream(os);
                 writer.setOutput(ios);
-                writer.write(iii.getRenderedImage());
+                writer.write(outImg);
                 writer.dispose();
                 ios.flush();
             }
