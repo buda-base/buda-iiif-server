@@ -182,8 +182,7 @@ public class BDRCImageServiceImpl implements ImageService {
      * @throws ResourceNotFoundException
      * @throws ImageReadException
      **/
-    private /* ImageReader */ ImageReader_ICC getReader(String identifier)
-            throws UnsupportedFormatException, IOException, IIIFException, ResourceNotFoundException {
+    private ImageReader_ICC getReader(String identifier) throws UnsupportedFormatException, IOException, IIIFException, ResourceNotFoundException {
         long deb = System.currentTimeMillis();
         byte[] bytes = (byte[]) ServerCache.getObjectFromCache(IIIF_IMG, identifier);
         ICC_Profile icc = null;
@@ -213,18 +212,18 @@ public class BDRCImageServiceImpl implements ImageService {
                 Log.error("Could not add bytearray image to cache", e.getMessage());
             }
             bytes = (byte[]) ServerCache.getObjectFromCache(IIIF_IMG, identifier);
-            try {
-                long deb1 = System.currentTimeMillis();
-                icc = Imaging.getICCProfile(bytes);
-                long end1 = System.currentTimeMillis();
-                log.info("INITIAL ICC BEFORE TRANSFORM >> {} in {} ms", icc, (end1 - deb1));
-            } catch (ImageReadException e1) {
-                // TODO Auto-generated catch block
-                e1.printStackTrace();
-            }
+
             Application.logPerf("Image service read {} from s3 {}", S3input, identifier);
         }
-
+        try {
+            long deb1 = System.currentTimeMillis();
+            icc = Imaging.getICCProfile(bytes);
+            long end1 = System.currentTimeMillis();
+            log.info("INITIAL ICC BEFORE TRANSFORM >> {} in {} ms", icc, (end1 - deb1));
+        } catch (ImageReadException e1) {
+            // TODO Auto-generated catch block
+            e1.printStackTrace();
+        }
         ImageInputStream iis = ImageIO.createImageInputStream(new ByteArrayInputStream(bytes));
         Iterator<ImageReader> itr = ImageIO.getImageReaders(iis);
         while (itr.hasNext()) {
