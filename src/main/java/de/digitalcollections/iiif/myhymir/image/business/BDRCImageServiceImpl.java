@@ -214,20 +214,19 @@ public class BDRCImageServiceImpl implements ImageService {
             bytes = (byte[]) ServerCache.getObjectFromCache(IIIF_IMG, identifier);
             Application.logPerf("Image service read {} from s3 {}", S3input, identifier);
         }
-        // Wherever the bytes are coming from, they are parsed in order to get the ICC
-        // profile, if any
-        try {
-            long deb1 = System.currentTimeMillis();
-            icc = Imaging.getICCProfile(bytes);
-            long end1 = System.currentTimeMillis();
-            log.info("INITIAL ICC BEFORE TRANSFORM >> {} in {} ms", icc, (end1 - deb1));
-        } catch (ImageReadException e1) {
-            // TODO Auto-generated catch block
-            e1.printStackTrace();
-        }
         ImageInputStream iis = ImageIO.createImageInputStream(new ByteArrayInputStream(bytes));
         ImageReader reader = Streams.stream(ImageIO.getImageReaders(iis)).findFirst().orElseThrow(UnsupportedFormatException::new);
         reader.setInput(iis);
+        if (reader.getClass().equals(TurboJpegImageReader.class)) {
+            long deb1 = System.currentTimeMillis();
+            try {
+                icc = Imaging.getICCProfile(bytes);
+            } catch (ImageReadException e) {
+                e.printStackTrace();
+            }
+            long endIcc = System.currentTimeMillis();
+            System.out.println("read icc in " + (endIcc - deb1));
+        }
         Application.logPerf("S3 object IIIS READER >> {}", reader);
         Application.logPerf("S3 object Associated ICC >> {}", icc);
         Application.logPerf("Image service return reader in " + (System.currentTimeMillis() - deb) + " ms for " + identifier);
@@ -287,7 +286,7 @@ public class BDRCImageServiceImpl implements ImageService {
         return readParam;
     }
 
-    private DecodedImage readImage(String identifier, ImageApiSelector selector, ImageApiProfile profile, ImageReader reader)
+    private DecodedImage readImage(String identifier, ImageApiSelector selector, ImageApiProfile profile, ImageReader_ICC imgReader)
             throws IOException, UnsupportedFormatException, InvalidParametersException, ImageReadException {
         long deb = System.currentTimeMillis();
         Application.logPerf("Entering readImage for creating DecodedImage");
@@ -295,7 +294,7 @@ public class BDRCImageServiceImpl implements ImageService {
             Log.error("Rotation is not a multiple of 90 degrees for selector " + selector.toString(), "");
             throw new UnsupportedOperationException("Can only rotate by multiples of 90 degrees.");
         }
-        Dimension nativeDimensions = new Dimension(reader.getWidth(0), reader.getHeight(0));
+        Dimension nativeDimensions = new Dimension(imgReader.getReader().getWidth(0), imgReader.getReader().getHeight(0));
         Rectangle targetRegion;
         try {
             targetRegion = selector.getRegion().resolve(nativeDimensions);
@@ -316,8 +315,8 @@ public class BDRCImageServiceImpl implements ImageService {
         double targetScaleFactor = targetSize.width / targetRegion.getWidth();
         double decodeScaleFactor = 1.0;
         int imageIndex = 0;
-        for (int idx = 0; idx < reader.getNumImages(true); idx++) {
-            double factor = (double) reader.getWidth(idx) / nativeDimensions.width;
+        for (int idx = 0; idx < imgReader.getReader().getNumImages(true); idx++) {
+            double factor = (double) imgReader.getReader().getWidth(idx) / nativeDimensions.width;
             if (factor < targetScaleFactor) {
                 continue;
             }
@@ -329,8 +328,8 @@ public class BDRCImageServiceImpl implements ImageService {
         // BufferedImage bImg = reader.read(imageIndex);
         // byte[] buff = ((DataBufferByte) bImg.getRaster().getDataBuffer()).getData();
         // System.out.println("ICC PROFILE >>" + Imaging.getICCProfile(buff));
-        ImageReadParam readParam = getReadParam(reader, selector, decodeScaleFactor);
-        System.out.println("READER " + reader);
+        ImageReadParam readParam = getReadParam(imgReader.getReader(), selector, decodeScaleFactor);
+        System.out.println("READER " + imgReader.getReader());
         // readParam.setDestinationType(reader.getImageTypes(imageIndex).next());
         int rotation = (int) selector.getRotation().getRotation();
         if (readParam instanceof TurboJpegImageReadParam && ((TurboJpegImageReadParam) readParam).getRotationDegree() != 0) {
@@ -342,8 +341,14 @@ public class BDRCImageServiceImpl implements ImageService {
             rotation = 0;
         }
         Application.logPerf("Done readingImage computing DecodedImage after {} ms", System.currentTimeMillis() - deb);
-
-        return new DecodedImage(reader.read(imageIndex, readParam), targetSize, rotation);
+        DecodedImage dimg = null;
+        if (imgReader.getIcc() == null) {
+            return new DecodedImage(imgReader.getReader().read(imageIndex, readParam), targetSize, rotation);
+        } else {
+            BufferedImage bi = imgReader.getReader().read(imageIndex);
+            bi = new ColorTools().relabelColorSpace(bi, imgReader.getIcc());
+            return new DecodedImage(bi, targetSize, rotation);
+        }
     }
 
     /** Apply transformations to an decoded image **/
@@ -449,22 +454,10 @@ public class BDRCImageServiceImpl implements ImageService {
         long deb = System.currentTimeMillis();
         try {
             Application.logPerf("Entering Processimage.... with reader {} ", imgReader);
-            DecodedImage img = readImage(identifier, selector, profile, imgReader.getReader());
+            DecodedImage img = readImage(identifier, selector, profile, imgReader);
             Application.logPerf("Done readingImage DecodedImage created");
-            BufferedImage img1 = transformImage(selector.getFormat(), img.img, img.targetSize, img.rotation, selector.getRotation().isMirror(),
+            BufferedImage outImg = transformImage(selector.getFormat(), img.img, img.targetSize, img.rotation, selector.getRotation().isMirror(),
                     selector.getQuality());
-            BufferedImage outImg = null;
-            ColorTools ct = new ColorTools();
-            Application.logPerf("Output ICC profile >>" + imgReader.getIcc());
-            if (imgReader.getIcc() != null) {
-                long deb1 = System.currentTimeMillis();
-                outImg = ct.convertToICCProfile(img1, imgReader.getIcc());
-                long end1 = System.currentTimeMillis();
-                log.info("CONVERSION WRITING ICC TOOK {} ms", (end1 - deb1));
-
-            } else {
-                outImg = img1;
-            }
             ImageWriter writer = null;
             Iterator<ImageWriter> writers = ImageIO.getImageWritersByMIMEType(selector.getFormat().getMimeType().getTypeName());
             while (writers.hasNext()) {

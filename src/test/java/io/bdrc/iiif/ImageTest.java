@@ -142,7 +142,6 @@ public class ImageTest {
         iw2.setOutput(out);
         iw2.write(null, new IIOImage(bi, null, null), null);
         System.out.println("writing in " + (System.currentTimeMillis() - startWrite));
-
         is.close();
         iis.close();
     }
