@@ -27,6 +27,8 @@ import org.apache.commons.imaging.Imaging;
 import org.apache.commons.io.IOUtils;
 import org.apache.jena.atlas.logging.Log;
 import org.imgscalr.Scalr;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Primary;
@@ -71,6 +73,7 @@ import io.bdrc.iiif.exceptions.IIIFException;
 public class BDRCImageServiceImpl implements ImageService {
 
     public static final String IIIF_IMG = "IIIF_IMG";
+    private static final Logger log = LoggerFactory.getLogger(BDRCImageServiceImpl.class);
 
     @Autowired(required = false)
     private ImageSecurityService imageSecurityService;
@@ -338,13 +341,7 @@ public class BDRCImageServiceImpl implements ImageService {
             rotation = 0;
         }
         Application.logPerf("Done readingImage computing DecodedImage after {} ms", System.currentTimeMillis() - deb);
-        if (imgReader.getIcc() == null) {
-            return new DecodedImage(imgReader.getReader().read(imageIndex, readParam), targetSize, rotation);
-        } else {
-            BufferedImage bi = imgReader.getReader().read(imageIndex);
-            bi = new ColorTools().relabelColorSpace(bi, imgReader.getIcc());
-            return new DecodedImage(bi, targetSize, rotation);
-        }
+        return new DecodedImage(imgReader.getReader().read(imageIndex, readParam), targetSize, rotation);
     }
 
     /** Apply transformations to an decoded image **/
@@ -454,6 +451,9 @@ public class BDRCImageServiceImpl implements ImageService {
             Application.logPerf("Done readingImage DecodedImage created");
             BufferedImage outImg = transformImage(selector.getFormat(), img.img, img.targetSize, img.rotation, selector.getRotation().isMirror(),
                     selector.getQuality());
+            if (imgReader.getIcc() != null) {
+                outImg = new ColorTools().relabelColorSpace(outImg, imgReader.getIcc());
+            }
             ImageWriter writer = null;
             Iterator<ImageWriter> writers = ImageIO.getImageWritersByMIMEType(selector.getFormat().getMimeType().getTypeName());
             while (writers.hasNext()) {
@@ -483,15 +483,21 @@ public class BDRCImageServiceImpl implements ImageService {
                     if (w.getClass().getName().equals("com.twelvemonkeys.imageio.plugins.jpeg.JPEGImageWriter")) {
                         wtr = w;
                     }
+                    log.info("WRITER for JPEG >> {} with quality {}", wtr, outImg.getType());
                     Application.logPerf("Should use WRITERS for JPEG >> {} with quality {}", wtr, outImg.getType());
                     Application.logPerf("WRITERS---> in list {}", w.getClass().getName());
                 }
-                if (outImg.getType() != BufferedImage.TYPE_BYTE_GRAY) {
-                    wtr = ImageIO.getImageWritersByMIMEType("image/jpeg").next();
-                }
-                Application.logPerf("USING JPEG WRITER {} for {}", wtr, identifier);
-                Application.logPerf("use jpg writer vendor {}, version {}", wtr.getOriginatingProvider().getVendorName(),
-                        wtr.getOriginatingProvider().getVersion());
+                /*** This test might not be relevant anymore ***/
+                /** we keep twelve monkey writer in all cases ***/
+                // if (outImg.getType() != BufferedImage.TYPE_BYTE_GRAY) {
+                // wtr = ImageIO.getImageWritersByMIMEType("image/jpeg").next();
+                // }
+                // log.info("WRITER for JPEG COLOR >> {} with quality {}", wtr,
+                // outImg.getType());
+                // Application.logPerf("USING JPEG WRITER {} for {}", wtr, identifier);
+                // Application.logPerf("use jpg writer vendor {}, version {}",
+                // wtr.getOriginatingProvider().getVendorName(),
+                // wtr.getOriginatingProvider().getVersion());
                 // This setting, using 0.75f as compression quality produces the same
                 // as the default setting, with no writeParam --> writer.write(outImg)
 

@@ -277,7 +277,8 @@ public class ImageTest {
         printPixel100(bi, "after read");
 
         // color space is RGB (not sRGB), not sure if it's relevant
-        System.out.println("is ColorSpace of reader ImageType RGB? " + (its.getColorModel().getColorSpace().getType() == ColorSpace.TYPE_RGB));
+        // System.out.println("is ColorSpace of reader ImageType RGB? " +
+        // (its.getColorModel().getColorSpace().getType() == ColorSpace.TYPE_RGB));
         System.out.println("is ColorSpace of bufferedImage RGB? " + (bi.getColorModel().getColorSpace().getType() == ColorSpace.TYPE_RGB));
 
         // nor do I when I try to get a writer for the output of the read:
@@ -340,8 +341,8 @@ public class ImageTest {
     }
 
     public static void main(String[] args) throws IOException, UnsupportedFormatException {
-        readAndWriteTwelveMonkeysPipeline("ORIGINAL_S3.jpg");
-        readAndWritePerfectPipeline("ORIGINAL_S3.jpg");
+        // readAndWriteTwelveMonkeysPipeline("ORIGINAL_S3.jpg");
+        // readAndWritePerfectPipeline("ORIGINAL_S3.jpg");
         readAndWritePerfectPipeline("ORIGINAL_S3.jpg");
         // readAndWriteTurboPipeline("ORIGINAL_S3.jpg");
         // readAndWriteTwelveMonkeysPipeline("ORIGINAL_S3.jpg");
