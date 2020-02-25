@@ -27,8 +27,6 @@ import org.apache.commons.imaging.Imaging;
 import org.apache.commons.io.IOUtils;
 import org.apache.jena.atlas.logging.Log;
 import org.imgscalr.Scalr;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Primary;
@@ -73,7 +71,6 @@ import io.bdrc.iiif.exceptions.IIIFException;
 public class BDRCImageServiceImpl implements ImageService {
 
     public static final String IIIF_IMG = "IIIF_IMG";
-    private static final Logger log = LoggerFactory.getLogger(BDRCImageServiceImpl.class);
 
     @Autowired(required = false)
     private ImageSecurityService imageSecurityService;
@@ -341,7 +338,6 @@ public class BDRCImageServiceImpl implements ImageService {
             rotation = 0;
         }
         Application.logPerf("Done readingImage computing DecodedImage after {} ms", System.currentTimeMillis() - deb);
-        DecodedImage dimg = null;
         if (imgReader.getIcc() == null) {
             return new DecodedImage(imgReader.getReader().read(imageIndex, readParam), targetSize, rotation);
         } else {
