@@ -76,6 +76,82 @@ public class ImageTest {
         System.out.println("    "+Arrays.toString(pixel100Arr));
     }
     
+    public static void readAndWritePerfectPipeline(String filename) throws IOException, UnsupportedFormatException {
+        InputStream is = ImageTest.class.getClassLoader().getResourceAsStream(filename);
+        // to emulate the live conditions, we put the image into a byte[]:
+        
+        byte[] bytes = IOUtils.toByteArray(is);
+
+        ImageInputStream iis = ImageIO.createImageInputStream(new ByteArrayInputStream(bytes));
+        
+        // forcing the TurboJpeg reader. If it's absent and we have to use
+        // another reader, don't 
+        Iterator<ImageReader> itr = ImageIO.getImageReaders(iis);
+        ImageReader r = null;
+        boolean inTurboMode = false;
+        while (itr.hasNext()) {
+            r = itr.next();
+            System.out.println(r.getClass());
+            if (r.getClass().equals(TurboJpegImageReader.class)) {
+                inTurboMode = true;
+                break;
+            }
+        }
+        System.out.println("using reader: " + r.toString());
+        
+        ICC_Profile icc = null;
+        if (inTurboMode) {
+            long deb1 = System.currentTimeMillis();
+            try {
+                icc = Imaging.getICCProfile(bytes);
+            } catch (ImageReadException e) {
+                e.printStackTrace();
+            }
+            long endIcc = System.currentTimeMillis();
+            System.out.println("read icc in "+(endIcc - deb1));
+        }
+        
+        r.setInput(iis);
+
+        BufferedImage bi = r.read(0);
+        long endRead = System.currentTimeMillis();
+        
+        // original pixel 100,100 is (127, 109, 89), while when the image
+        // is transformed into sRGB, it is (135,109,87), which is the case here
+        printPixel100(bi, "after read");
+        
+        if (icc != null) {
+            long beginRenaming = System.currentTimeMillis();
+            bi = new ColorTools().relabelColorSpace(bi, icc);
+            printPixel100(bi, "after renaming");
+            System.out.println("renaming icc in "+(System.currentTimeMillis()-beginRenaming));
+        }
+        
+        // selecting the TwelveMonkeys writer, mandatory
+        Iterator<ImageWriter> itw2 = ImageIO.getImageWriters(new ImageTypeSpecifier(bi), "jpeg");
+        ImageWriter iw2 = null;
+        while (itw2.hasNext()) {
+            iw2 = itw2.next();
+            if (iw2.getClass().equals(JPEGImageWriter.class)) {
+                break;
+            }
+        }
+        if (icc != null && !iw2.getClass().equals(JPEGImageWriter.class)) {
+            System.out.println("big error! please install the twelvemonkeys writer or the colors will be off!");
+        }
+
+        System.out.println("using writer: " + iw2.toString());
+        long startWrite = System.currentTimeMillis();
+        ImageOutputStream out = ImageIO.createImageOutputStream(new File("test-perfect.jpg"));
+        iw2.setOutput(out);
+        iw2.write(null, new IIOImage(bi, null, null), null);
+        System.out.println("writing in "+(System.currentTimeMillis()-startWrite));
+
+        is.close();
+        iis.close();
+    }
+    
+    
     public static void readAndWriteTurboPipeline(String filename) throws IOException, UnsupportedFormatException {
         InputStream is = ImageTest.class.getClassLoader().getResourceAsStream(filename);
         // to emulate the live conditions, we put the image into a byte[]:
@@ -150,17 +226,20 @@ public class ImageTest {
         printPixel100(bi, "final");
         
         // nor do I when I try to get a writer for the output of the read:
-        Iterator<ImageWriter> itw2 = ImageIO.getImageWriters(new ImageTypeSpecifier(bi), "jpeg");
+        Iterator<ImageWriter> itw2 = ImageIO.getImageWriters(new ImageTypeSpecifier(biNew), "jpeg");
         ImageWriter iw2 = itw2.next();
+        iw2 = itw2.next();
         if (iw2 == null) {
             System.out.println("no writer for the image type of the buffered image");
         } else {
             System.out.println("using writer: " + iw2.toString());
             ImageWriteParam wp = iw2.getDefaultWriteParam();
-            wp.setDestinationType(its);
+            //wp.setDestinationType(its);
+            long startWrite = System.currentTimeMillis();
             ImageOutputStream out = ImageIO.createImageOutputStream(new File("test-turbo.jpg"));
             iw2.setOutput(out);
-            iw2.write(null, new IIOImage(bi, null, null), wp);
+            iw2.write(null, new IIOImage(biNew, null, null), wp);
+            System.out.println("writing in "+(System.currentTimeMillis()-startWrite));
         }
 
         is.close();
@@ -256,10 +335,12 @@ public class ImageTest {
     }
 
     public static void main(String[] args) throws IOException, UnsupportedFormatException {
-        readAndWriteTwelveMonkeysPipeline("ORIGINAL_S3.jpg");
-        readAndWriteTurboPipeline("ORIGINAL_S3.jpg");
-        readAndWriteTwelveMonkeysPipeline("ORIGINAL_S3.jpg");
-        readAndWriteTurboPipeline("ORIGINAL_S3.jpg");
+        //readAndWriteTwelveMonkeysPipeline("ORIGINAL_S3.jpg");
+        readAndWritePerfectPipeline("ORIGINAL_S3.jpg");
+        readAndWritePerfectPipeline("ORIGINAL_S3.jpg");
+        //readAndWriteTurboPipeline("ORIGINAL_S3.jpg");
+        //readAndWriteTwelveMonkeysPipeline("ORIGINAL_S3.jpg");
+        //readAndWriteTurboPipeline("ORIGINAL_S3.jpg");
     }
 
 }
