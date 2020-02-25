@@ -67,6 +67,7 @@ import de.digitalcollections.model.api.identifiable.resource.exceptions.Resource
 import de.digitalcollections.turbojpeg.imageio.TurboJpegImageReadParam;
 import de.digitalcollections.turbojpeg.imageio.TurboJpegImageReader;
 import io.bdrc.iiif.exceptions.IIIFException;
+import io.bdrc.iiif.resolver.ImageIdentifier;
 
 @Service
 @Primary
@@ -184,6 +185,7 @@ public class BDRCImageServiceImpl implements ImageService {
      **/
     private ImageReader_ICC getReader(String identifier) throws UnsupportedFormatException, IOException, IIIFException, ResourceNotFoundException {
         long deb = System.currentTimeMillis();
+        ImageIdentifier idf = new ImageIdentifier(identifier);
         byte[] bytes = (byte[]) ServerCache.getObjectFromCache(IIIF_IMG, identifier);
         ICC_Profile icc = null;
         if (bytes != null) {
@@ -214,8 +216,19 @@ public class BDRCImageServiceImpl implements ImageService {
             bytes = (byte[]) ServerCache.getObjectFromCache(IIIF_IMG, identifier);
             Application.logPerf("Image service read {} from s3 {}", S3input, identifier);
         }
+        ImageReader reader = null;
         ImageInputStream iis = ImageIO.createImageInputStream(new ByteArrayInputStream(bytes));
-        ImageReader reader = Streams.stream(ImageIO.getImageReaders(iis)).findFirst().orElseThrow(UnsupportedFormatException::new);
+        if (idf.getImageExtension().equals("jpg")) {
+            Iterator<ImageReader> itr = ImageIO.getImageReaders(iis);
+            while (itr.hasNext()) {
+                reader = itr.next();
+                if (reader.getClass().equals(TurboJpegImageReader.class)) {
+                    break;
+                }
+            }
+        } else {
+            reader = Streams.stream(ImageIO.getImageReaders(iis)).findFirst().orElseThrow(UnsupportedFormatException::new);
+        }
         reader.setInput(iis);
         if (reader.getClass().equals(TurboJpegImageReader.class)) {
             long deb1 = System.currentTimeMillis();
@@ -227,8 +240,8 @@ public class BDRCImageServiceImpl implements ImageService {
             long endIcc = System.currentTimeMillis();
             System.out.println("read icc in " + (endIcc - deb1));
         }
-        Application.logPerf("S3 object IIIS READER >> {}", reader);
-        Application.logPerf("S3 object Associated ICC >> {}", icc);
+        log.info("IIIS READER >> {} and ICC={}", reader, icc);
+        Application.logPerf("IIIS READER >> {}", reader);
         Application.logPerf("Image service return reader in " + (System.currentTimeMillis() - deb) + " ms for " + identifier);
         return new ImageReader_ICC(reader, icc);
     }
@@ -325,12 +338,9 @@ public class BDRCImageServiceImpl implements ImageService {
                 imageIndex = idx;
             }
         }
-        // BufferedImage bImg = reader.read(imageIndex);
-        // byte[] buff = ((DataBufferByte) bImg.getRaster().getDataBuffer()).getData();
-        // System.out.println("ICC PROFILE >>" + Imaging.getICCProfile(buff));
+
         ImageReadParam readParam = getReadParam(imgReader.getReader(), selector, decodeScaleFactor);
         System.out.println("READER " + imgReader.getReader());
-        // readParam.setDestinationType(reader.getImageTypes(imageIndex).next());
         int rotation = (int) selector.getRotation().getRotation();
         if (readParam instanceof TurboJpegImageReadParam && ((TurboJpegImageReadParam) readParam).getRotationDegree() != 0) {
             if (rotation == 90 || rotation == 270) {

@@ -73,6 +73,14 @@ public class ImageIdentifier {
         return parts.get(key);
     }
 
+    public String getImageExtension() {
+        String s = parts.get("imageName");
+        if (s != null) {
+            return s.substring(s.lastIndexOf(".") + 1);
+        }
+        return null;
+    }
+
     public boolean hasPrefix() {
         return (parts.get("prefix") != null);
     }
