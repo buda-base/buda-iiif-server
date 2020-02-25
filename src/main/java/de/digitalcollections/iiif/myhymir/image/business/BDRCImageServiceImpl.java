@@ -214,6 +214,8 @@ public class BDRCImageServiceImpl implements ImageService {
             bytes = (byte[]) ServerCache.getObjectFromCache(IIIF_IMG, identifier);
             Application.logPerf("Image service read {} from s3 {}", S3input, identifier);
         }
+        // Wherever the bytes are coming from, they are parsed in order to get the ICC
+        // profile, if any
         try {
             long deb1 = System.currentTimeMillis();
             icc = Imaging.getICCProfile(bytes);
@@ -224,16 +226,11 @@ public class BDRCImageServiceImpl implements ImageService {
             e1.printStackTrace();
         }
         ImageInputStream iis = ImageIO.createImageInputStream(new ByteArrayInputStream(bytes));
-        Iterator<ImageReader> itr = ImageIO.getImageReaders(iis);
-        while (itr.hasNext()) {
-            System.out.println("FOUND READER >> " + itr.next());
-        }
         ImageReader reader = Streams.stream(ImageIO.getImageReaders(iis)).findFirst().orElseThrow(UnsupportedFormatException::new);
-        // reader.setInput(iis, false, false);
         reader.setInput(iis);
         Application.logPerf("S3 object IIIS READER >> {}", reader);
-        Application.logPerf("Image service return reader at " + (System.currentTimeMillis() - deb) + " ms " + identifier);
-        // return reader;
+        Application.logPerf("S3 object Associated ICC >> {}", icc);
+        Application.logPerf("Image service return reader in " + (System.currentTimeMillis() - deb) + " ms for " + identifier);
         return new ImageReader_ICC(reader, icc);
     }
 
