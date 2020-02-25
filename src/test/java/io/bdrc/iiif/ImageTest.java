@@ -315,27 +315,37 @@ public class ImageTest {
         return new String(hexChars);
     }
 
-    public static void printIcc(IIOMetadata meta) {
+    public static ICC_Profile getIcc(IIOMetadata meta) {
         if (meta == null)
-            return;
-        String[] names = meta.getMetadataFormatNames();
-        // Print image metadata
-        System.out.println("image icc:");
-        for (String s : names) {
-            IIOMetadataNode inode = (IIOMetadataNode) meta.getAsTree(s);
-            NodeList app2iccl = inode.getElementsByTagName("app2ICC");
-            if (app2iccl.getLength() > 0) {
-                IIOMetadataNode app2icc = (IIOMetadataNode) app2iccl.item(0);
-                ICC_Profile icc = (ICC_Profile) app2icc.getUserObject();
-                byte[] iccData = icc.getData();
-                System.out.println("   length: " + iccData.length + " bytes (Adobe RGB is 560 bytes and starts with 0000 0230)");
-                System.out.println("   bytes:  " + bytesToHex(iccData).substring(0, 8) + "...");
+            return null;
+        IIOMetadataNode tree = (IIOMetadataNode) meta.getAsTree(meta.getNativeMetadataFormatName());
+        NodeList iccs = tree.getElementsByTagName("app2ICC");
+        if (iccs.getLength() > 0) {
+            IIOMetadataNode icc = (IIOMetadataNode) iccs.item(0);
+            Object iccData = icc.getUserObject();
+            if (iccData instanceof ICC_Profile) {
+                return (ICC_Profile) iccData;
             }
+        }
+        return null;
+    }
+    
+    public static void printIcc(ICC_Profile icc) {
+        System.out.println("image icc:");
+        byte[] iccDataBytes = icc.getData();
+        System.out.println("   length: " + iccDataBytes.length + " bytes (Adobe RGB is 560 bytes and starts with 0000 0230)");
+        System.out.println("   bytes:  " + bytesToHex(iccDataBytes).substring(0, 8) + "...");
+    }
+    
+    public static void printIcc(IIOMetadata meta) {
+        ICC_Profile icc = getIcc(meta);
+        if (icc != null) {
+            printIcc(icc);
         }
     }
 
     public static void main(String[] args) throws IOException, UnsupportedFormatException {
-        //readAndWriteTwelveMonkeysPipeline("ORIGINAL_S3.jpg");
+        readAndWriteTwelveMonkeysPipeline("ORIGINAL_S3.jpg");
         readAndWritePerfectPipeline("ORIGINAL_S3.jpg");
         readAndWritePerfectPipeline("ORIGINAL_S3.jpg");
         //readAndWriteTurboPipeline("ORIGINAL_S3.jpg");
