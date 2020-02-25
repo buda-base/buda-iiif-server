@@ -51,7 +51,7 @@
                 <artifactId>javamelody-spring-boot-starter</artifactId>
             </exclusion>
         </exclusions>       
-    </dependency>    
+    </dependency>
     <!-- https://mvnrepository.com/artifact/de.digitalcollections/digitalcollections-core-business-api -->
     <dependency>
         <groupId>de.digitalcollections</groupId>
@@ -75,6 +75,12 @@
         <artifactId>imageio-openjpeg</artifactId>
         <version>0.3.1</version>
     </dependency>
+    <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-imaging -->
+    <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-imaging</artifactId>
+        <version>1.0-alpha1</version>
+    </dependency>    
      <!-- Used by S3 ResourceRepository -->
     <dependency>
       <groupId>com.amazonaws</groupId>
@@ -115,7 +121,7 @@
         <groupId>org.apache.commons</groupId>
         <artifactId>commons-jcs-core</artifactId>
         <version>2.2.1</version>
-    </dependency>
+    </dependency>    
     <!-- https://mvnrepository.com/artifact/io.bdrc/bdrc-auth-lib -->
     <dependency>
         <groupId>io.bdrc</groupId>

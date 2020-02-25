@@ -9,11 +9,11 @@ import java.util.Calendar;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
-import javax.imageio.ImageReader;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.imaging.ImageReadException;
 import org.apache.http.client.ClientProtocolException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,6 +46,7 @@ import de.digitalcollections.iiif.model.image.ResolvingException;
 import de.digitalcollections.iiif.model.jackson.IiifObjectMapper;
 import de.digitalcollections.iiif.myhymir.Application;
 import de.digitalcollections.iiif.myhymir.CacheAccessModel;
+import de.digitalcollections.iiif.myhymir.ImageReader_ICC;
 import de.digitalcollections.iiif.myhymir.ResourceAccessValidation;
 import de.digitalcollections.iiif.myhymir.ServerCache;
 import de.digitalcollections.iiif.myhymir.image.business.BDRCImageServiceImpl;
@@ -148,7 +149,7 @@ public class IIIFImageApiController {
     public ResponseEntity<byte[]> getImageRepresentation(@PathVariable String identifier, @PathVariable String region, @PathVariable String size,
             @PathVariable String rotation, @PathVariable String quality, @PathVariable String format, HttpServletRequest request,
             HttpServletResponse response, WebRequest webRequest) throws ClientProtocolException, IOException, IIIFException,
-            InvalidParametersException, UnsupportedOperationException, UnsupportedFormatException, ResourceNotFoundException {
+            InvalidParametersException, UnsupportedOperationException, UnsupportedFormatException, ResourceNotFoundException, ImageReadException {
         long deb = System.currentTimeMillis();
         boolean staticImg = false;
         String img = "";
@@ -220,9 +221,10 @@ public class IIIFImageApiController {
             Application.logPerf("got the bytes in {} ms for {}", (System.currentTimeMillis() - deb1), identifier);
             ImageMetrics.imageCount(ImageMetrics.IMG_CALLS_COMMON, (String) request.getAttribute("origin"));
             return new ResponseEntity<>(bytes, headers, HttpStatus.OK);
+
         }
         deb1 = System.currentTimeMillis();
-        ImageReader imgReader = null;
+        ImageReader_ICC imgReader = null;
         try {
             imgReader = imageService.readImageInfo(identifier, info, null);
         } catch (ResourceIOException e) {
@@ -242,7 +244,7 @@ public class IIIFImageApiController {
         imageService.processImage(identifier, selector, profile, os, imgReader, request.getRequestURI());
         Application.logPerf("ended processing image after {} ms for {}", (System.currentTimeMillis() - deb1), identifier);
         Application.logPerf("Total request time {} ms ", (System.currentTimeMillis() - deb), identifier);
-        imgReader.dispose();
+        imgReader.getReader().dispose();
         ImageMetrics.imageCount(ImageMetrics.IMG_CALLS_COMMON, (String) request.getAttribute("origin"));
         return new ResponseEntity<>(os.toByteArray(), headers, HttpStatus.OK);
     }
