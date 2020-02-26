@@ -231,18 +231,15 @@ public class BDRCImageServiceImpl implements ImageService {
         }
         reader.setInput(iis);
         if (reader.getClass().equals(TurboJpegImageReader.class)) {
-            long deb1 = System.currentTimeMillis();
             try {
                 icc = Imaging.getICCProfile(bytes);
             } catch (ImageReadException e) {
                 e.printStackTrace();
             }
-            long endIcc = System.currentTimeMillis();
-            System.out.println("read icc in " + (endIcc - deb1));
         }
         log.info("IIIS READER >> {} and ICC={}", reader, icc);
         Application.logPerf("IIIS READER >> {}", reader);
-        Application.logPerf("Image service return reader in " + (System.currentTimeMillis() - deb) + " ms for " + identifier);
+        Application.logPerf("Image getReader service return reader in " + (System.currentTimeMillis() - deb) + " ms for " + identifier);
         return new ImageReader_ICC(reader, icc);
     }
 
@@ -451,14 +448,12 @@ public class BDRCImageServiceImpl implements ImageService {
         return false;
     }
 
-    public void processImage(String identifier, ImageApiSelector selector, ImageApiProfile profile, OutputStream os, ImageReader_ICC imgReader,
-            String uri)
+    public void processImage(String identifier, ImageApiSelector selector, ImageApiProfile profile, OutputStream os, ImageReader_ICC imgReader)
             throws InvalidParametersException, UnsupportedOperationException, UnsupportedFormatException, IOException, ImageReadException {
         long deb = System.currentTimeMillis();
         try {
-            Application.logPerf("Entering Processimage.... with reader {} ", imgReader);
+            log.info("Processing Image for identifier >> {} ", identifier);
             DecodedImage img = readImage(identifier, selector, profile, imgReader);
-            Application.logPerf("Done readingImage DecodedImage created");
             BufferedImage outImg = transformImage(selector.getFormat(), img.img, img.targetSize, img.rotation, selector.getRotation().isMirror(),
                     selector.getQuality());
             if (imgReader.getIcc() != null) {
@@ -477,7 +472,7 @@ public class BDRCImageServiceImpl implements ImageService {
             switch (selector.getFormat()) {
 
             case PNG:
-                Application.logPerf("USING JAI PNG for {} ", identifier);
+                Application.logPerf("USING PNG JAI ENCODER for {} ", identifier);
                 ImageEncodeParam param = PNGEncodeParam.getDefaultEncodeParam(outImg);
                 String format = "PNG";
                 ImageEncoder encoder = ImageCodec.createImageEncoder(format, os, param);
@@ -492,25 +487,10 @@ public class BDRCImageServiceImpl implements ImageService {
                     ImageWriter w = it1.next();
                     if (w.getClass().getName().equals("com.twelvemonkeys.imageio.plugins.jpeg.JPEGImageWriter")) {
                         wtr = w;
+                        break;
                     }
-                    log.info("WRITER for JPEG >> {} with quality {}", wtr, outImg.getType());
-                    Application.logPerf("Should use WRITERS for JPEG >> {} with quality {}", wtr, outImg.getType());
-                    Application.logPerf("WRITERS---> in list {}", w.getClass().getName());
                 }
-                /*** This test might not be relevant anymore ***/
-                /** we keep twelve monkey writer in all cases ***/
-                // if (outImg.getType() != BufferedImage.TYPE_BYTE_GRAY) {
-                // wtr = ImageIO.getImageWritersByMIMEType("image/jpeg").next();
-                // }
-                // log.info("WRITER for JPEG COLOR >> {} with quality {}", wtr,
-                // outImg.getType());
-                // Application.logPerf("USING JPEG WRITER {} for {}", wtr, identifier);
-                // Application.logPerf("use jpg writer vendor {}, version {}",
-                // wtr.getOriginatingProvider().getVendorName(),
-                // wtr.getOriginatingProvider().getVersion());
-                // This setting, using 0.75f as compression quality produces the same
-                // as the default setting, with no writeParam --> writer.write(outImg)
-
+                log.info("WRITER for JPEG >> {} with quality {}", wtr, outImg.getType());
                 ImageWriteParam jpgWriteParam = wtr.getDefaultWriteParam();
                 jpgWriteParam.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
                 jpgWriteParam.setCompressionQuality(0.75f);
@@ -524,7 +504,7 @@ public class BDRCImageServiceImpl implements ImageService {
 
             case WEBP:
                 writer = ImageIO.getImageWritersByMIMEType("image/webp").next();
-                Application.logPerf("Using WRITER for WEBP >>" + writer);
+                log.info("WRITER for WEBP >> {} with quality {}", writer, outImg.getType());
                 ImageWriteParam pr = writer.getDefaultWriteParam();
                 WebPWriteParam writeParam = (WebPWriteParam) pr;
                 writeParam.setCompressionMode(WebPWriteParam.MODE_DEFAULT);

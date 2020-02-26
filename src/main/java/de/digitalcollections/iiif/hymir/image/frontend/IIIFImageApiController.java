@@ -251,7 +251,7 @@ public class IIIFImageApiController {
             return new ResponseEntity<>(("Resource was not found for identifier " + identifier).getBytes(), HttpStatus.NOT_FOUND);
         }
         Application.logPerf("end reading from image service after {} ms for {} with reader {}", (System.currentTimeMillis() - deb1), identifier,
-                imgReader);
+                imgReader.getReader());
         final String canonicalForm;
         canonicalForm = imgId.getCanonical(IdentifierInfo.getIndentifierInfo(identifier).getImageInfoList());
         headers.add("Link",
@@ -259,10 +259,9 @@ public class IIIFImageApiController {
         // headers.add("Location", getUrlBase(request) + path.substring(0,
         // path.indexOf(identifier)) + canonicalForm);
         deb1 = System.currentTimeMillis();
-        Application.logPerf("processing image output stream for {}", identifier);
         ByteArrayOutputStream os = new ByteArrayOutputStream();
-        imageService.processImage(identifier, selector, profile, os, imgReader, request.getRequestURI());
-        Application.logPerf("ended processing image after {} ms for {}", (System.currentTimeMillis() - deb1), identifier);
+        imageService.processImage(identifier, selector, profile, os, imgReader);
+        Application.logPerf("Ended processing image after {} ms for {}", (System.currentTimeMillis() - deb1), identifier);
         Application.logPerf("Total request time {} ms ", (System.currentTimeMillis() - deb), identifier);
         imgReader.getReader().dispose();
         ImageMetrics.imageCount(ImageMetrics.IMG_CALLS_COMMON, (String) request.getAttribute("origin"));
