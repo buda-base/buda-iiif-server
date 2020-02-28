@@ -86,11 +86,11 @@ public class ArchiveBuilder {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 COSWriter cw = new COSWriter(baos);
                 cw.write(doc);
-                Application.logPerf("pdf document finished and closed for {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
                 ServerCache.addToCache(IIIF, output.substring(4), baos.toByteArray());
                 cw.close();
             }
             doc.close();
+            Application.logPerf("pdf document finished and closed for {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
             ServerCache.addToCache("pdfjobs", output, true);
         } catch (ExecutionException | InterruptedException e) {
             log.error("Error while building pdf for identifier info " + inf.toString(), "");
