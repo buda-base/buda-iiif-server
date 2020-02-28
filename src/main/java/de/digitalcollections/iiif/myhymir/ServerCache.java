@@ -12,14 +12,25 @@ public class ServerCache {
 
     public final static Logger log = LoggerFactory.getLogger(ServerCache.class.getName());
 
-    private static final CacheAccess<Object, Object> IIIF = JCS.getInstance("IIIF");
-    private static final CacheAccess<Object, Object> IIIF_IMG = JCS.getInstance("IIIF_IMG");
-    private static final CacheAccess<Object, Object> IIIF_ZIP = JCS.getInstance("IIIF_ZIP");
-    private static final CacheAccess<Object, Object> INFO = JCS.getInstance("info");
-    private static final CacheAccess<Object, Object> PDF_JOBS = JCS.getInstance("pdfjobs");
-    private static final CacheAccess<Object, Object> ZIP_JOBS = JCS.getInstance("zipjobs");
-    private static final CacheAccess<Object, Object> DEFAULT = JCS.getInstance("default");
-    private static final CacheAccess<Object, Object> IDENTIFIER = JCS.getInstance("identifier");
+    private static CacheAccess<Object, Object> IIIF;
+    private static CacheAccess<Object, Object> IIIF_IMG;
+    private static CacheAccess<Object, Object> IIIF_ZIP;
+    private static CacheAccess<Object, Object> INFO;
+    private static CacheAccess<Object, Object> PDF_JOBS;
+    private static CacheAccess<Object, Object> ZIP_JOBS;
+    private static CacheAccess<Object, Object> DEFAULT;
+    private static CacheAccess<Object, Object> IDENTIFIER;
+
+    public static void init() {
+        IIIF = JCS.getInstance("IIIF");
+        IIIF_IMG = JCS.getInstance("IIIF_IMG");
+        IIIF_ZIP = JCS.getInstance("IIIF_ZIP");
+        INFO = JCS.getInstance("info");
+        PDF_JOBS = JCS.getInstance("pdfjobs");
+        ZIP_JOBS = JCS.getInstance("zipjobs");
+        DEFAULT = JCS.getInstance("default");
+        IDENTIFIER = JCS.getInstance("identifier");
+    }
 
     public static void addToCache(String cacheName, String name, Object res) throws IIIFException {
         try {

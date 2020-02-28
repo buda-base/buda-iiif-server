@@ -71,6 +71,7 @@ public class Application extends SpringBootServletInitializer {
             logPerf = Boolean.parseBoolean(props.getProperty("logPerf"));
         }
         S3ResourceRepositoryImpl.initWithProps(props);
+        ServerCache.init();
         SpringApplication.run(Application.class, args);
         logPerf("Application main", "Test PERF Log ");
     }
