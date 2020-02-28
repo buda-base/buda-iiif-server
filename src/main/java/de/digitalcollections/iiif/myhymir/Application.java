@@ -23,7 +23,6 @@ import org.springframework.context.event.EventListener;
 import de.digitalcollections.iiif.myhymir.backend.impl.repository.S3ResourceRepositoryImpl;
 import io.bdrc.auth.AuthProps;
 import io.bdrc.auth.rdf.RdfAuthModel;
-import io.bdrc.iiif.metrics.ImageMetrics;
 
 @SpringBootApplication
 @Configuration
@@ -102,7 +101,7 @@ public class Application extends SpringBootServletInitializer {
 
     @EventListener(ApplicationReadyEvent.class)
     public void postStartup() throws ClientProtocolException, IOException {
-        ImageMetrics.init();
+        // ImageMetrics.init();
     }
 
     public static void initForTests() throws IOException {
