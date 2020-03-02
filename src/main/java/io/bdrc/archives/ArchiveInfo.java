@@ -36,10 +36,16 @@ public class ArchiveInfo implements Serializable {
     public static Property PUBLISHER_NAME = ResourceFactory.createProperty("http://purl.bdrc.io/ontology/core/workPublisherName");
 
     IdentifierInfo inf;
-    Model m;
+    String biblioNote;
+    String numVolumes;
+    String catalogInfo;
+    String publisherName;
+    String publisherLocation;
+    String author;
+    String prefLabel;
     static HashMap<String, Integer> langOrder;
 
-    private ArchiveInfo(IdentifierInfo inf) {
+    private ArchiveInfo(IdentifierInfo inf) throws ClientProtocolException, IOException {
         super();
         this.inf = inf;
 
@@ -47,11 +53,50 @@ public class ArchiveInfo implements Serializable {
         langOrder.put("bo-x-ewts", 0);
         langOrder.put("bo", 1);
         langOrder.put("en", 2);
-        this.m = ModelFactory.createDefaultModel();
+        Model m = ModelFactory.createDefaultModel();
         m.read(inf.getWork() + ".ttl", "TURTLE");
+        setBiblioNote(m);
+        setNumVolumes(m);
+        setCatalogInfo(m);
+        setPublisherName(m);
+        setPublisherLocation(m);
+        setAuthor(m);
+        setPrefLabel(m);
     }
 
-    public static ArchiveInfo getInstance(IdentifierInfo inf) throws IIIFException {
+    public String getBiblioNote() {
+        return biblioNote;
+    }
+
+    public void setBiblioNote(String biblioNote) {
+        this.biblioNote = biblioNote;
+    }
+
+    public String getNumVolumes() {
+        return numVolumes;
+    }
+
+    public String getCatalogInfo() {
+        return catalogInfo;
+    }
+
+    public String getPublisherName() {
+        return publisherName;
+    }
+
+    public String getPublisherLocation() {
+        return publisherLocation;
+    }
+
+    public String getAuthor() {
+        return author;
+    }
+
+    public String getPrefLabel() {
+        return prefLabel;
+    }
+
+    public static ArchiveInfo getInstance(IdentifierInfo inf) throws IIIFException, ClientProtocolException, IOException {
         ArchiveInfo info = ServerCache.ARCHIVE_INFO.get(inf.getVolumeId());
         if (info == null) {
             info = new ArchiveInfo(inf);
@@ -60,7 +105,7 @@ public class ArchiveInfo implements Serializable {
         return info;
     }
 
-    private String getBiblioNote() {
+    private void setBiblioNote(Model m) {
         String workId = inf.getWork();
         String id = workId.substring(workId.lastIndexOf("/") + 1);
         String ret = "";
@@ -69,10 +114,10 @@ public class ArchiveInfo implements Serializable {
             RDFNode nd = ni.next();
             ret = nd.asLiteral().getString();
         }
-        return ret;
+        this.biblioNote = ret;
     }
 
-    private String getNumVolumes() {
+    private void setNumVolumes(Model m) {
         String workId = inf.getWork();
         String id = workId.substring(workId.lastIndexOf("/") + 1);
         String ret = "";
@@ -81,10 +126,10 @@ public class ArchiveInfo implements Serializable {
             RDFNode nd = ni.next();
             ret = nd.asLiteral().getString();
         }
-        return ret;
+        this.numVolumes = ret;
     }
 
-    private String getCatalogInfo() {
+    private void setCatalogInfo(Model m) {
         String workId = inf.getWork();
         String id = workId.substring(workId.lastIndexOf("/") + 1);
         String ret = "";
@@ -93,10 +138,10 @@ public class ArchiveInfo implements Serializable {
             RDFNode nd = ni.next();
             ret = nd.asLiteral().getString();
         }
-        return ret;
+        this.catalogInfo = ret;
     }
 
-    private String getPublisherName() {
+    private void setPublisherName(Model m) {
         String workId = inf.getWork();
         String id = workId.substring(workId.lastIndexOf("/") + 1);
         String ret = "";
@@ -105,10 +150,10 @@ public class ArchiveInfo implements Serializable {
             RDFNode nd = ni.next();
             ret = nd.asLiteral().getString();
         }
-        return ret;
+        this.publisherName = ret;
     }
 
-    private String getPublisherLocation() {
+    private void setPublisherLocation(Model m) {
         String workId = inf.getWork();
         String id = workId.substring(workId.lastIndexOf("/") + 1);
         String ret = "";
@@ -117,10 +162,11 @@ public class ArchiveInfo implements Serializable {
             RDFNode nd = ni.next();
             ret = nd.asLiteral().getString();
         }
-        return ret;
+        this.publisherLocation = ret;
+        ;
     }
 
-    private String getAuthor() {
+    private void setAuthor(Model m) {
         String workId = inf.getWork();
         String id = workId.substring(workId.lastIndexOf("/") + 1);
         String ret = "";
@@ -144,10 +190,11 @@ public class ArchiveInfo implements Serializable {
                 ret = nd.asLiteral().getString();
             }
         }
-        return ret;
+        this.author = ret;
+        ;
     }
 
-    private String getPrefLabel() throws ClientProtocolException, IOException {
+    private void setPrefLabel(Model m) throws ClientProtocolException, IOException {
         String workId = inf.getWork();
         String id = workId.substring(workId.lastIndexOf("/") + 1);
         String ret = "";
@@ -165,10 +212,12 @@ public class ArchiveInfo implements Serializable {
                 }
             }
         }
+
         if (!ret.isEmpty()) {
-            return ret;
+            this.prefLabel = ret;
+        } else {
+            this.prefLabel = tmp;
         }
-        return tmp;
     }
 
     public PDDocumentInformation getDocInformation() throws ClientProtocolException, IOException {
