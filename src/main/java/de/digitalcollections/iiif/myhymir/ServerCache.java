@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory;
 
 import io.bdrc.archives.ArchiveInfo;
 import io.bdrc.archives.PdfItemInfo;
-import io.bdrc.iiif.resolver.IdentifierInfo;
 
 public class ServerCache {
 
@@ -20,7 +19,7 @@ public class ServerCache {
     public static CacheAccess<Object, Boolean> PDF_JOBS;
     public static CacheAccess<Object, Boolean> ZIP_JOBS;
     public static CacheAccess<Object, ArchiveInfo> ARCHIVE_INFO;
-    public static CacheAccess<Object, IdentifierInfo> IDENTIFIER;
+    // public static CacheAccess<Object, IdentifierInfo> IDENTIFIER;
 
     public static void init() {
         IIIF = JCS.getInstance("IIIF");
@@ -30,7 +29,7 @@ public class ServerCache {
         PDF_JOBS = JCS.getInstance("pdfjobs");
         ZIP_JOBS = JCS.getInstance("zipjobs");
         ARCHIVE_INFO = JCS.getInstance("default");
-        IDENTIFIER = JCS.getInstance("identifier");
+        // IDENTIFIER = JCS.getInstance("identifier");
     }
 
     public static boolean clearCache() {
@@ -54,9 +53,9 @@ public class ServerCache {
             if (ZIP_JOBS != null) {
                 ZIP_JOBS.clear();
             }
-            if (IDENTIFIER != null) {
-                IDENTIFIER.clear();
-            }
+            /*
+             * if (IDENTIFIER != null) { IDENTIFIER.clear(); }
+             */
             return true;
         } catch (Exception e) {
             log.error("There was an issue while clearing caches; Message:" + e.getMessage());
