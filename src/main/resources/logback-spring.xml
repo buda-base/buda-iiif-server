@@ -40,7 +40,7 @@
     <logger name="performance" level="debug" additivity="true">
         <appender-ref ref="PROD_PERF" />
     </logger>
-    <logger name="custom" level="info" additivity="true">
+    <logger name="custom" level="DEBUG" additivity="true">
         <appender-ref ref="default" />
     </logger>
   </springProfile>  
@@ -51,7 +51,7 @@
       </encoder>
     </appender>    
   </springProfile>
-  <root level="info">
+  <root level="DEBUG">
     <appender-ref ref="default" />
   </root>
 </configuration>
