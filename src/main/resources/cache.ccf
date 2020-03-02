@@ -65,6 +65,7 @@ jcs.auxiliary.IIIF.attributes.DiskPath=/usr/local/iiifserv/pdf_cache
 #jcs.auxiliary.IIIF.attributes.DiskPath=pdf_cache
 jcs.auxiliary.IIIF.attributes.MaxPurgatorySize=500
             ##  10 Gig size limit
+jcs.auxiliary.IIIF.attributes.ClearDiskOnStartup=true
 jcs.auxiliary.IIIF.attributes.MaxKeySize=10000000
 jcs.auxiliary.IIIF.attributes.DiskLimitType=SIZE
 
@@ -76,6 +77,7 @@ jcs.auxiliary.IIIF_IMG.attributes.DiskPath=/usr/local/iiifserv/pdf_cache
 #jcs.auxiliary.IIIF_IMG.attributes.DiskPath=pdf_cache
 jcs.auxiliary.IIIF_IMG.attributes.MaxPurgatorySize=500
             ##  10 Gig size limit
+jcs.auxiliary.IIIF.attributes.ClearDiskOnStartup=true
 jcs.auxiliary.IIIF_IMG.attributes.MaxKeySize=10000000
 jcs.auxiliary.IIIF_IMG.attributes.DiskLimitType=SIZE
 
@@ -87,6 +89,7 @@ jcs.auxiliary.IIIF_ZIP.attributes=org.apache.commons.jcs.auxiliary.disk.indexed.
 jcs.auxiliary.IIIF_IMG.attributes.DiskPath=/usr/local/iiifserv/pdf_cache
 jcs.auxiliary.IIIF_ZIP.attributes.MaxPurgatorySize=500
             ##  5 Gig size limit
+jcs.auxiliary.IIIF.attributes.ClearDiskOnStartup=true
 jcs.auxiliary.IIIF_ZIP.attributes.MaxKeySize=5000000
 jcs.auxiliary.IIIF_ZIP.attributes.DiskLimitType=SIZE
 
@@ -126,6 +129,7 @@ jcs.auxiliary.IIIFtestspace.attributes=org.apache.commons.jcs.auxiliary.disk.ind
 jcs.auxiliary.IIIFtestspace.attributes.DiskPath=pdf_cache_test_space
 jcs.auxiliary.IIIFtestspace.attributes.MaxPurgatorySize=0
             ##  10 Meg size limit 
+jcs.auxiliary.IIIF.attributes.ClearDiskOnStartup=true
 jcs.auxiliary.IIIFtestspace.attributes.MaxKeySize=1000
 jcs.auxiliary.IIIFtestspace.attributes.DiskLimitType=SIZE
 
