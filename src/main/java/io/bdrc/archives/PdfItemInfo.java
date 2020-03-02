@@ -32,10 +32,10 @@ public class PdfItemInfo {
 
     public static PdfItemInfo getPdfItemInfo(String itemId) throws IIIFException {
 
-        PdfItemInfo meta = (PdfItemInfo) ServerCache.getObjectFromCache("info", itemId + "_PdfItemInfo");
+        PdfItemInfo meta = ServerCache.PDF_ITEM_INFO.get(itemId + "_PdfItemInfo");
         if (meta == null) {
             meta = new PdfItemInfo(itemId);
-            ServerCache.addToCache("info", itemId + "_PdfItemInfo", meta);
+            ServerCache.PDF_ITEM_INFO.put(itemId + "_PdfItemInfo", meta);
         }
         return meta;
     }

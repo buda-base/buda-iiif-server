@@ -60,7 +60,7 @@ public class ArchiveBuilder {
                 t_map.put(i, fut);
                 i += 1;
             }
-            ServerCache.addToCache("pdfjobs", output, false);
+            ServerCache.PDF_JOBS.put(output, false);
             PDDocument doc = new PDDocument();
             doc.setDocumentInformation(ArchiveInfo.getInstance(inf).getDocInformation());
             Application.logPerf("building pdf writer and document opened {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
@@ -86,12 +86,12 @@ public class ArchiveBuilder {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 COSWriter cw = new COSWriter(baos);
                 cw.write(doc);
-                ServerCache.addToCache(IIIF, output.substring(4), baos.toByteArray());
+                ServerCache.IIIF.put(output.substring(4), baos.toByteArray());
                 cw.close();
             }
             doc.close();
             Application.logPerf("pdf document finished and closed for {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
-            ServerCache.addToCache("pdfjobs", output, true);
+            ServerCache.PDF_JOBS.put(output, true);
         } catch (ExecutionException | InterruptedException e) {
             log.error("Error while building pdf for identifier info " + inf.toString(), "");
             throw new IIIFException(500, IIIFException.GENERIC_APP_ERROR_CODE, e);
@@ -120,7 +120,7 @@ public class ArchiveBuilder {
                 images.put(i, img);
                 i += 1;
             }
-            ServerCache.addToCache("zipjobs", output, false);
+            ServerCache.ZIP_JOBS.put(output, false);
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             ZipOutputStream zipOut = new ZipOutputStream(baos);
             Application.logPerf("building zip stream opened {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
@@ -148,8 +148,8 @@ public class ArchiveBuilder {
             }
             zipOut.close();
             Application.logPerf("zip document finished and closed for {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
-            ServerCache.addToCache(IIIF_ZIP, output.substring(3), baos.toByteArray());
-            ServerCache.addToCache("zipjobs", output, true);
+            ServerCache.IIIF_ZIP.put(output.substring(3), baos.toByteArray());
+            ServerCache.ZIP_JOBS.put(output, true);
         } catch (IOException | ExecutionException | InterruptedException e) {
             log.error("Error while building zip archives ", e.getMessage());
             throw new IIIFException(500, IIIFException.GENERIC_APP_ERROR_CODE, e);
@@ -158,21 +158,21 @@ public class ArchiveBuilder {
 
     public static boolean isPdfDone(String id) {
         log.debug("IS PDF DONE job " + id);
-        if (ServerCache.getObjectFromCache("pdfjobs", id) == null) {
+        if (ServerCache.PDF_JOBS.get(id) == null) {
             log.debug("IS PDF DONE null in cache for " + id);
             return false;
         }
-        log.debug("IS PDF DONE returns from cache value for " + id + ">>" + (boolean) ServerCache.getObjectFromCache("pdfjobs", id));
-        return (boolean) ServerCache.getObjectFromCache("pdfjobs", id);
+        log.debug("IS PDF DONE returns from cache value for " + id + ">>" + ServerCache.PDF_JOBS.get(id));
+        return (boolean) ServerCache.PDF_JOBS.get(id);
     }
 
     public static boolean isZipDone(String id) {
         log.debug("IS ZIP DONE job " + id);
-        if (ServerCache.getObjectFromCache("zipjobs", id) == null) {
+        if (ServerCache.ZIP_JOBS.get(id) == null) {
             log.debug("IS ZIP DONE null in cache for " + id);
             return false;
         }
-        log.debug("IS ZIP DONE returns from cache value for " + id + ">>" + (boolean) ServerCache.getObjectFromCache("zipjobs", id));
-        return (boolean) ServerCache.getObjectFromCache("zipjobs", id);
+        log.debug("IS ZIP DONE returns from cache value for " + id + ">>" + ServerCache.ZIP_JOBS.get(id));
+        return (boolean) ServerCache.ZIP_JOBS.get(id);
     }
 }

@@ -186,7 +186,7 @@ public class BDRCImageServiceImpl implements ImageService {
     private ImageReader_ICC getReader(String identifier) throws UnsupportedFormatException, IOException, IIIFException, ResourceNotFoundException {
         long deb = System.currentTimeMillis();
         ImageIdentifier idf = new ImageIdentifier(identifier);
-        byte[] bytes = (byte[]) ServerCache.getObjectFromCache(IIIF_IMG, identifier);
+        byte[] bytes = (byte[]) ServerCache.IIIF_IMG.get(identifier);
         ICC_Profile icc = null;
         if (bytes != null) {
             Application.logPerf("Image service image was cached {}", identifier);
@@ -208,12 +208,8 @@ public class BDRCImageServiceImpl implements ImageService {
             if (S3input == null) {
                 throw new ResourceNotFoundException("No S3 resource could be found for identifier: " + identifier);
             }
-            try {
-                ServerCache.addToCache(IIIF_IMG, identifier, IOUtils.toByteArray(S3input));
-            } catch (IIIFException e) {
-                Log.error("Could not add bytearray image to cache", e.getMessage());
-            }
-            bytes = (byte[]) ServerCache.getObjectFromCache(IIIF_IMG, identifier);
+            ServerCache.IIIF_IMG.put(identifier, IOUtils.toByteArray(S3input));
+            bytes = (byte[]) ServerCache.IIIF_IMG.get(identifier);
             Application.logPerf("Image service read {} from s3 {}", S3input, identifier);
         }
         ImageReader reader = null;

@@ -1,6 +1,7 @@
 package io.bdrc.archives;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Calendar;
 import java.util.HashMap;
 
@@ -18,7 +19,12 @@ import de.digitalcollections.iiif.myhymir.ServerCache;
 import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 
-public class ArchiveInfo {
+public class ArchiveInfo implements Serializable {
+
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 8907077264323301578L;
 
     public static Property PREF_LABEL = ResourceFactory.createProperty("http://www.w3.org/2004/02/skos/core#prefLabel");
     public static Property BIBLIO_NOTE = ResourceFactory.createProperty("http://purl.bdrc.io/ontology/core/workBiblioNote");
@@ -46,10 +52,10 @@ public class ArchiveInfo {
     }
 
     public static ArchiveInfo getInstance(IdentifierInfo inf) throws IIIFException {
-        ArchiveInfo info = (ArchiveInfo) ServerCache.getObjectFromCache("default", inf.getVolumeId());
+        ArchiveInfo info = ServerCache.ARCHIVE_INFO.get(inf.getVolumeId());
         if (info == null) {
             info = new ArchiveInfo(inf);
-            ServerCache.addToCache("default", inf.getVolumeId(), info);
+            ServerCache.ARCHIVE_INFO.put(inf.getVolumeId(), info);
         }
         return info;
     }

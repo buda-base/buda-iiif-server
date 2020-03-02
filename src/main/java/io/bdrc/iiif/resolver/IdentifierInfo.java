@@ -2,6 +2,7 @@ package io.bdrc.iiif.resolver;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -28,7 +29,7 @@ import io.bdrc.auth.rdf.RdfConstants;
 import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.libraries.ImageListIterator;
 
-public class IdentifierInfo {
+public class IdentifierInfo implements Serializable {
 
     public String identifier;
     public String work = "";
@@ -108,12 +109,12 @@ public class IdentifierInfo {
             throws ClientProtocolException, IOException, IIIFException, ResourceNotFoundException {
         ImageIdentifier imgId = new ImageIdentifier(identifier);
         String volumeId = imgId.getPart("imageGroup");
-        IdentifierInfo info = (IdentifierInfo) ServerCache.getObjectFromCache("identifier", "ID_" + volumeId);
+        IdentifierInfo info = ServerCache.IDENTIFIER.get("ID_" + volumeId);
         if (info != null) {
             return info;
         } else {
             info = new IdentifierInfo(identifier);
-            ServerCache.addToCache("identifier", "ID_" + volumeId, info);
+            ServerCache.IDENTIFIER.put("ID_" + volumeId, info);
             return info;
         }
     }
@@ -221,8 +222,8 @@ public class IdentifierInfo {
         Application.initForTests();
         IdentifierInfo info = new IdentifierInfo("bdr:V1NLM7_I1NLM7_001::I1NLM7_0010003.jpg");
         System.out.println("INFO >> " + info);
-        ServerCache.addToCache("identifier", "ID_" + 415289, info);
-        info = (IdentifierInfo) ServerCache.getObjectFromCache("identifier", "ID_" + 415289);
+        ServerCache.IDENTIFIER.put("ID_" + 415289, info);
+        info = ServerCache.IDENTIFIER.get("ID_" + 415289);
         System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>");
         System.out.println(info);
     }

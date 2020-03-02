@@ -2,93 +2,50 @@ package de.digitalcollections.iiif.myhymir;
 
 import org.apache.commons.jcs.JCS;
 import org.apache.commons.jcs.access.CacheAccess;
-import org.apache.commons.jcs.access.exception.CacheException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.bdrc.iiif.exceptions.IIIFException;
+import io.bdrc.archives.ArchiveInfo;
+import io.bdrc.archives.PdfItemInfo;
+import io.bdrc.iiif.resolver.IdentifierInfo;
 
 public class ServerCache {
 
     public final static Logger log = LoggerFactory.getLogger(ServerCache.class.getName());
 
-    private static CacheAccess<Object, Object> IIIF;
-    private static CacheAccess<Object, Object> IIIF_IMG;
-    private static CacheAccess<Object, Object> IIIF_ZIP;
-    private static CacheAccess<Object, Object> INFO;
-    private static CacheAccess<Object, Object> PDF_JOBS;
-    private static CacheAccess<Object, Object> ZIP_JOBS;
-    private static CacheAccess<Object, Object> DEFAULT;
-    private static CacheAccess<Object, Object> IDENTIFIER;
+    public static CacheAccess<Object, byte[]> IIIF_IMG;
+    public static CacheAccess<Object, byte[]> IIIF_ZIP;
+    public static CacheAccess<Object, byte[]> IIIF;
+    public static CacheAccess<Object, PdfItemInfo> PDF_ITEM_INFO;
+    public static CacheAccess<Object, Boolean> PDF_JOBS;
+    public static CacheAccess<Object, Boolean> ZIP_JOBS;
+    public static CacheAccess<Object, ArchiveInfo> ARCHIVE_INFO;
+    public static CacheAccess<Object, IdentifierInfo> IDENTIFIER;
 
     public static void init() {
         IIIF = JCS.getInstance("IIIF");
         IIIF_IMG = JCS.getInstance("IIIF_IMG");
         IIIF_ZIP = JCS.getInstance("IIIF_ZIP");
-        INFO = JCS.getInstance("info");
+        PDF_ITEM_INFO = JCS.getInstance("info");
         PDF_JOBS = JCS.getInstance("pdfjobs");
         ZIP_JOBS = JCS.getInstance("zipjobs");
-        DEFAULT = JCS.getInstance("default");
+        ARCHIVE_INFO = JCS.getInstance("default");
         IDENTIFIER = JCS.getInstance("identifier");
-    }
-
-    public static void addToCache(String cacheName, String name, Object res) throws IIIFException {
-        try {
-            CacheAccess<Object, Object> access = getCacheAccess(cacheName);
-            log.debug("Added " + res + " name :" + name + " to " + cacheName);
-            access.put(name, res);
-            res = null;
-        } catch (CacheException e) {
-            log.error("Problem putting object -->" + name + " in the cache >> " + cacheName + " Exception: " + e.getMessage());
-            throw new IIIFException(500, IIIFException.GENERIC_APP_ERROR_CODE, e);
-        }
-    }
-
-    public static Object getObjectFromCache(String cacheName, String name) {
-        CacheAccess<Object, Object> access = getCacheAccess(cacheName);
-        log.debug("Got " + access.get(name) + " with name : " + name + " from " + cacheName);
-        return access.get(name);
-    }
-
-    public static CacheAccess<Object, Object> getCacheAccess(String cacheName) {
-        CacheAccess<Object, Object> access = null;
-        switch (cacheName) {
-        case "IIIF":
-            access = IIIF;
-        case "IIIF_ZIP":
-            access = IIIF_ZIP;
-        case "IIIF_IMG":
-            access = IIIF_IMG;
-        case "info":
-            access = INFO;
-        case "default":
-            access = DEFAULT;
-        case "pdfjobs":
-            access = PDF_JOBS;
-        case "zipjobs":
-            access = ZIP_JOBS;
-        case "identifier":
-            access = IDENTIFIER;
-        }
-        return access;
     }
 
     public static boolean clearCache() {
         try {
-            if (IIIF != null) {
-                IIIF.clear();
-            }
-            if (IIIF_ZIP != null) {
-                IIIF_ZIP.clear();
-            }
             if (IIIF_IMG != null) {
                 IIIF_IMG.clear();
             }
-            if (INFO != null) {
-                INFO.clear();
+            if (IIIF != null) {
+                IIIF.clear();
             }
-            if (DEFAULT != null) {
-                DEFAULT.clear();
+            if (PDF_ITEM_INFO != null) {
+                PDF_ITEM_INFO.clear();
+            }
+            if (ARCHIVE_INFO != null) {
+                ARCHIVE_INFO.clear();
             }
             ;
             if (PDF_JOBS != null) {

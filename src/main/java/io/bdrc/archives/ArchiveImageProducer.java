@@ -62,7 +62,7 @@ public class ArchiveImageProducer implements Callable {
     public BufferedImage getBufferedPdfImage() throws IOException, IIIFException {
         BufferedImage bImg = null;
         try {
-            byte[] imgbytes = (byte[]) ServerCache.getObjectFromCache(IIIF_IMG, id);
+            byte[] imgbytes = (byte[]) ServerCache.IIIF_IMG.get(id);
             if (imgbytes != null) {
                 InputStream in = new ByteArrayInputStream(imgbytes);
                 bImg = ImageIO.read(in);
@@ -76,7 +76,7 @@ public class ArchiveImageProducer implements Callable {
             InputStream in = new ByteArrayInputStream(imgbytes);
             bImg = ImageIO.read(in);
             log.debug("Got " + id + " from S3 ...added to cache");
-            ServerCache.addToCache(IIIF_IMG, id, imgbytes);
+            ServerCache.IIIF_IMG.put(id, imgbytes);
             ImageMetrics.imageCount(ImageMetrics.IMG_CALLS_PDF, origin);
         } catch (IOException | IIIFException e) {
             log.error("Could not get Buffered Pdf Image for id=" + id, e.getMessage());
@@ -88,7 +88,7 @@ public class ArchiveImageProducer implements Callable {
     public byte[] getImageAsBytes() throws MalformedURLException, IOException, IIIFException {
         byte[] imgbytes = null;
         try {
-            imgbytes = (byte[]) ServerCache.getObjectFromCache(IIIF_IMG, id);
+            imgbytes = (byte[]) ServerCache.IIIF_IMG.get(id);
             if (imgbytes != null) {
                 InputStream in = new ByteArrayInputStream(imgbytes);
                 BufferedImage bImg = ImageIO.read(in);
@@ -103,7 +103,7 @@ public class ArchiveImageProducer implements Callable {
             BufferedImage bImg = ImageIO.read(in);
             this.d = new Dimension(bImg.getWidth(), bImg.getHeight());
             log.debug("Zip Got " + id + " from S3 ...added to cache");
-            ServerCache.addToCache(IIIF_IMG, id, imgbytes);
+            ServerCache.IIIF_IMG.put(id, imgbytes);
             ImageMetrics.imageCount(ImageMetrics.IMG_CALLS_ZIP, origin);
         } catch (IOException | IIIFException e) {
             log.error("Could not get Image as bytes for id=" + id, e.getMessage());

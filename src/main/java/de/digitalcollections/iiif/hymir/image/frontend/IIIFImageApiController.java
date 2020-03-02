@@ -229,7 +229,7 @@ public class IIIFImageApiController {
             if (staticImg) {
                 res.setStatic(true);
             }
-            byte[] osbytes = (byte[]) ServerCache.getObjectFromCache(IIIF_IMG, identifier);
+            byte[] osbytes = (byte[]) ServerCache.IIIF_IMG.get(identifier);
             if (osbytes == null) {
                 final InputStream input = resourceService.getInputStream(res);
                 Application.logPerf("got the S3 inputstream in {} ms for {}", (System.currentTimeMillis() - deb1), identifier);

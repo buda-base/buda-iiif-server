@@ -103,7 +103,7 @@ public class ArchivesController {
                 output = idf.getVolumeId() + ":" + bPage + "-" + ePage;// +"."+type;
             }
             if (type.equals(ArchiveBuilder.PDF_TYPE)) {
-                Object pdf_cached = ServerCache.getObjectFromCache(IIIF, output);
+                Object pdf_cached = ServerCache.IIIF.get(output);
                 log.debug("PDF " + id + " from IIIF cache >>" + pdf_cached);
                 if (pdf_cached == null) {
                     // Build pdf since the pdf file doesn't exist yet
@@ -111,7 +111,7 @@ public class ArchivesController {
                 }
             }
             if (type.equals(ArchiveBuilder.ZIP_TYPE)) {
-                Object zip_cached = ServerCache.getObjectFromCache(IIIF_ZIP, output);
+                Object zip_cached = ServerCache.IIIF_ZIP.get(output);
                 log.debug("ZIP " + id + " from IIIF_ZIP cache >>" + zip_cached);
                 if (zip_cached == null) {
                     // Build pdf since the pdf file doesn't exist yet
@@ -145,16 +145,17 @@ public class ArchivesController {
     public ResponseEntity<ByteArrayResource> downloadPdf(@PathVariable String name, @PathVariable String type) throws Exception {
         byte[] array = null;
         if (type.equals(ArchiveBuilder.PDF_TYPE)) {
-            array = (byte[]) ServerCache.getObjectFromCache(IIIF, name.substring(4));
+            array = (byte[]) ServerCache.IIIF.get(name.substring(4));
             log.debug("READ from cache " + IIIF + " name=" + name + " " + array);
         }
         if (type.equals(ArchiveBuilder.ZIP_TYPE)) {
-            array = (byte[]) ServerCache.getObjectFromCache(IIIF_ZIP, name.substring(3));
+            array = (byte[]) ServerCache.IIIF_ZIP.get(name.substring(3));
         }
         HttpHeaders headers = new HttpHeaders();
         if (array == null) {
             headers.setContentType(MediaType.parseMediaType("text/plain"));
-            array = new String("The link is wrong or has expired: please retry loading the archive and proceed to its download within 10 mn").getBytes();
+            array = new String("The link is wrong or has expired: please retry loading the archive and proceed to its download within 10 mn")
+                    .getBytes();
             return new ResponseEntity<ByteArrayResource>(new ByteArrayResource(array), headers, HttpStatus.NOT_FOUND);
         }
         headers.setContentType(MediaType.parseMediaType("application/" + type));
@@ -201,19 +202,21 @@ public class ArchivesController {
         return sb.toString();
     }
 
-    public String getVolumeDownLoadLinks(PdfItemInfo item, Identifier idf, String type) throws ClientProtocolException, IOException, IIIFException, ResourceNotFoundException {
+    public String getVolumeDownLoadLinks(PdfItemInfo item, Identifier idf, String type)
+            throws ClientProtocolException, IOException, IIIFException, ResourceNotFoundException {
         String links = "";
         List<String> vlist = item.getItemVolumes();
         for (String s : vlist) {
             String shortName = getShortName(s);
             IdentifierInfo vi = IdentifierInfo.getIndentifierInfo("bdr:" + shortName);
-            links = links + "<a type=\"application/" + type + "\" href=\"/download/" + type + "/v:" + "bdr:" + shortName + "::1-" + vi.getTotalPages() + "\">Vol." + vi.getVolumeNumber() + " (" + vi.getTotalPages() + " pages) - " + "bdr:" + shortName
-                    + "." + type + "</a><br/>";
+            links = links + "<a type=\"application/" + type + "\" href=\"/download/" + type + "/v:" + "bdr:" + shortName + "::1-" + vi.getTotalPages()
+                    + "\">Vol." + vi.getVolumeNumber() + " (" + vi.getTotalPages() + " pages) - " + "bdr:" + shortName + "." + type + "</a><br/>";
         }
         return links;
     }
 
-    public HashMap<String, HashMap<String, String>> getJsonVolumeLinks(PdfItemInfo item, String type) throws ClientProtocolException, IOException, IIIFException, ResourceNotFoundException {
+    public HashMap<String, HashMap<String, String>> getJsonVolumeLinks(PdfItemInfo item, String type)
+            throws ClientProtocolException, IOException, IIIFException, ResourceNotFoundException {
         HashMap<String, HashMap<String, String>> map = new HashMap<>();
         List<String> vlist = item.getItemVolumes();
         for (String s : vlist) {

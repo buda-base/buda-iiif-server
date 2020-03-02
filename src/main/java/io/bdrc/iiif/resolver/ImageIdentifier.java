@@ -1,6 +1,7 @@
 package io.bdrc.iiif.resolver;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 
@@ -9,7 +10,7 @@ import org.apache.http.client.ClientProtocolException;
 import de.digitalcollections.model.api.identifiable.resource.exceptions.ResourceNotFoundException;
 import io.bdrc.iiif.exceptions.IIIFException;
 
-public class ImageIdentifier {
+public class ImageIdentifier implements Serializable {
 
     public static String IGFN = "igfn";
     public static String IGFI = "igfi";

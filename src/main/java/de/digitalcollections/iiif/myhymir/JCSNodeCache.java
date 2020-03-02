@@ -12,7 +12,7 @@ import com.maxmind.db.NodeCache;
 
 public class JCSNodeCache implements NodeCache {
 
-    private CacheAccess<String, Object> jcscache;
+    private CacheAccess<String, JsonNode> jcscache;
     public final static Logger log = LoggerFactory.getLogger(JCSNodeCache.class.getName());
 
     public JCSNodeCache() {
@@ -23,7 +23,7 @@ public class JCSNodeCache implements NodeCache {
     public JsonNode get(int key, Loader loader) throws IOException {
         try {
             String k = Integer.toString(key);
-            JsonNode value = (JsonNode) jcscache.get(k);
+            JsonNode value = jcscache.get(k);
             if (value == null) {
                 value = loader.load(key);
                 jcscache.put(k, value);
