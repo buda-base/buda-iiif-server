@@ -58,40 +58,6 @@ jcs.region.identifier.elementattributes=org.apache.commons.jcs.engine.ElementAtt
 jcs.region.identifier.elementattributes.MaxLife=60
 jcs.region.identifier.elementattributes.IsEternal=false
 
-# Indexed Disk Cache for pdf
-jcs.auxiliary.IIIF=org.apache.commons.jcs.auxiliary.disk.indexed.IndexedDiskCacheFactory
-jcs.auxiliary.IIIF.attributes=org.apache.commons.jcs.auxiliary.disk.indexed.IndexedDiskCacheAttributes
-jcs.auxiliary.IIIF.attributes.DiskPath=/usr/local/iiifserv/pdffiles
-#jcs.auxiliary.IIIF.attributes.DiskPath=pdf_cache
-jcs.auxiliary.IIIF.attributes.MaxPurgatorySize=500
-            ##  10 Gig size limit
-jcs.auxiliary.IIIF.attributes.ClearDiskOnStartup=true
-jcs.auxiliary.IIIF.attributes.MaxKeySize=10000000
-jcs.auxiliary.IIIF.attributes.DiskLimitType=SIZE
-
-# Indexed Disk Cache for images
-jcs.auxiliary.IIIF_IMG=org.apache.commons.jcs.auxiliary.disk.indexed.IndexedDiskCacheFactory
-jcs.auxiliary.IIIF_IMG.attributes=org.apache.commons.jcs.auxiliary.disk.indexed.IndexedDiskCacheAttributes
-jcs.auxiliary.IIIF_IMG.attributes.DiskPath=/usr/local/iiifserv/images
-#jcs.auxiliary.IIIF_IMG.attributes.DiskPath=img_cache
-#jcs.auxiliary.IIIF_IMG.attributes.DiskPath=pdf_cache
-jcs.auxiliary.IIIF_IMG.attributes.MaxPurgatorySize=500
-            ##  10 Gig size limit
-jcs.auxiliary.IIIF.attributes.ClearDiskOnStartup=true
-jcs.auxiliary.IIIF_IMG.attributes.MaxKeySize=10000000
-jcs.auxiliary.IIIF_IMG.attributes.DiskLimitType=SIZE
-
-# Indexed Disk Cache for zip
-jcs.auxiliary.IIIF_ZIP=org.apache.commons.jcs.auxiliary.disk.indexed.IndexedDiskCacheFactory
-jcs.auxiliary.IIIF_ZIP.attributes=org.apache.commons.jcs.auxiliary.disk.indexed.IndexedDiskCacheAttributes
-#jcs.auxiliary.IIIF_ZIP.attributes.DiskPath=zip_cache
-#jcs.auxiliary.IIIF_ZIP.attributes.DiskPath=pdf_cache
-jcs.auxiliary.IIIF_IMG.attributes.DiskPath=/usr/local/iiifserv/zipfiles
-jcs.auxiliary.IIIF_ZIP.attributes.MaxPurgatorySize=500
-            ##  5 Gig size limit
-jcs.auxiliary.IIIF.attributes.ClearDiskOnStartup=true
-jcs.auxiliary.IIIF_ZIP.attributes.MaxKeySize=5000000
-jcs.auxiliary.IIIF_ZIP.attributes.DiskLimitType=SIZE
 
 ################# TEST STUFF #############################
 
