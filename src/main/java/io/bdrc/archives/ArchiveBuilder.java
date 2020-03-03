@@ -66,8 +66,8 @@ public class ArchiveBuilder {
             Application.logPerf("building pdf writer and document opened {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
             for (int k = 1; k <= t_map.keySet().size(); k++) {
                 Future<?> tmp = t_map.get(k);
-
                 BufferedImage bImg = (BufferedImage) tmp.get();
+                log.debug("building pdf writer is imagage null {} ", (bImg == null));
                 if (bImg == null) {
                     // Trying to insert image indicating that original image is missing
                     try {
@@ -82,6 +82,7 @@ public class ArchiveBuilder {
                 PDImageXObject pdImage = LosslessFactory.createFromImage(doc, bImg);
                 PDPageContentStream contents = new PDPageContentStream(doc, page);
                 contents.drawImage(pdImage, 0, 0);
+                log.debug("page was drawn for img {} ", bImg);
                 contents.close();
 
             }
@@ -89,6 +90,7 @@ public class ArchiveBuilder {
             COSWriter cw = new COSWriter(baos);
             cw.write(doc);
             cw.close();
+            log.debug("Closing doc after writing {} ", doc);
             doc.close();
             Application.logPerf("pdf document finished and closed for {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
             ServerCache.IIIF.put(output.substring(4), baos.toByteArray());
