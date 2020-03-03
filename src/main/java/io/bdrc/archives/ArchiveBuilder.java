@@ -18,12 +18,12 @@ import javax.imageio.ImageIO;
 import org.slf4j.LoggerFactory;
 
 import com.amazonaws.services.s3.AmazonS3;
-import com.itextpdf.text.BadElementException;
-import com.itextpdf.text.Document;
-import com.itextpdf.text.DocumentException;
-import com.itextpdf.text.Image;
-import com.itextpdf.text.Rectangle;
-import com.itextpdf.text.pdf.PdfWriter;
+import com.lowagie.text.BadElementException;
+import com.lowagie.text.Document;
+import com.lowagie.text.DocumentException;
+import com.lowagie.text.Image;
+import com.lowagie.text.Rectangle;
+import com.lowagie.text.pdf.PdfWriter;
 
 import ch.qos.logback.classic.Logger;
 import de.digitalcollections.iiif.myhymir.Application;
@@ -56,6 +56,7 @@ public class ArchiveBuilder {
                 final String id = inf.getVolumeId() + "::" + idList.next();
                 ArchiveImageProducer tmp = null;
                 tmp = new ArchiveImageProducer(s3, id, PDF_TYPE, origin);
+                log.info("added Future for image {}", id);
                 Future<?> fut = service.submit((Callable) tmp);
                 t_map.put(i, fut);
                 i += 1;
@@ -70,7 +71,7 @@ public class ArchiveBuilder {
             } catch (DocumentException e) {
                 throw e;
             }
-            writer.open();
+            // writer.open();
             document.open();
             document.setMargins(0, 0, 0, 0);
             Application.perfLog.debug("building pdf writer and document opened {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
@@ -100,6 +101,7 @@ public class ArchiveBuilder {
                 }
             }
             document.close();
+            writer.close();
             Application.logPerf("pdf document finished and closed for {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
             EHServerCache.IIIF.put(output.substring(4), stream.toByteArray());
             ServerCache.PDF_JOBS.put(output, true);

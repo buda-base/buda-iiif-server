@@ -18,8 +18,8 @@ import org.slf4j.LoggerFactory;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.GetObjectRequest;
-import com.itextpdf.text.BadElementException;
-import com.itextpdf.text.Image;
+import com.lowagie.text.BadElementException;
+import com.lowagie.text.Image;
 
 import ch.qos.logback.classic.Logger;
 import de.digitalcollections.iiif.myhymir.EHServerCache;
@@ -64,15 +64,14 @@ public class ArchiveImageProducer implements Callable {
     public Image getPdfImage() throws BadElementException, MalformedURLException, IOException {
         byte[] imgbytes = (byte[]) EHServerCache.IIIF_IMG.get(id);
         if (imgbytes != null) {
-            log.debug("Got " + id + " from cache ...");
+            log.info("Got " + id + " from cache ...");
             return Image.getInstance(imgbytes);
         }
         GetObjectRequest request = new GetObjectRequest(S3_BUCKET, identifier);
         imgbytes = IOUtils.toByteArray(s3.getObject(request).getObjectContent());
-        Image img = Image.getInstance(imgbytes);
-        log.debug("Got " + id + " from S3 ...added to cache");
+        log.info("Got " + id + " from S3 ...added to cache");
         EHServerCache.IIIF_IMG.put(id, imgbytes);
-        return img;
+        return Image.getInstance(imgbytes);
     }
 
     public BufferedImage getBufferedPdfImage() throws IOException, IIIFException {
