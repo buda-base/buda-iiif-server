@@ -15,18 +15,17 @@ import java.util.zip.ZipOutputStream;
 
 import javax.imageio.ImageIO;
 
-import org.apache.pdfbox.pdfwriter.COSWriter;
-import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.pdmodel.PDPage;
-import org.apache.pdfbox.pdmodel.PDPageContentStream;
-import org.apache.pdfbox.pdmodel.common.PDRectangle;
-import org.apache.pdfbox.pdmodel.graphics.image.LosslessFactory;
-import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
-import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.amazonaws.services.s3.AmazonS3;
+import com.itextpdf.text.BadElementException;
+import com.itextpdf.text.Document;
+import com.itextpdf.text.DocumentException;
+import com.itextpdf.text.Image;
+import com.itextpdf.text.Rectangle;
+import com.itextpdf.text.pdf.PdfWriter;
 
+import ch.qos.logback.classic.Logger;
 import de.digitalcollections.iiif.myhymir.Application;
 import de.digitalcollections.iiif.myhymir.EHServerCache;
 import de.digitalcollections.iiif.myhymir.ServerCache;
@@ -41,10 +40,10 @@ public class ArchiveBuilder {
     public final static String PDF_TYPE = "pdf";
     public final static String ZIP_TYPE = "zip";
 
-    public final static Logger log = LoggerFactory.getLogger(ArchiveBuilder.class.getName());
+    public final static Logger log = (Logger) LoggerFactory.getLogger(ArchiveBuilder.class.getName());
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
-    public static void buildPdf(Iterator<String> idList, IdentifierInfo inf, String output, String origin) throws IIIFException, IOException {
+    public static void buildPdf(Iterator<String> idList, IdentifierInfo inf, String output, String origin) throws Exception {
         long deb = System.currentTimeMillis();
         try {
             Application.logPerf("Starting building pdf {}", inf.volumeId);
@@ -61,41 +60,47 @@ public class ArchiveBuilder {
                 t_map.put(i, fut);
                 i += 1;
             }
+            log.info("Setting output {} to false", output);
             ServerCache.PDF_JOBS.put(output, false);
-            PDDocument doc = new PDDocument();
-            doc.setDocumentInformation(ArchiveInfo.getInstance(inf).getDocInformation());
-            Application.logPerf("building pdf writer and document opened {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
+            Document document = new Document();
+            ByteArrayOutputStream stream = new ByteArrayOutputStream();
+            PdfWriter writer = null;
+            try {
+                writer = PdfWriter.getInstance(document, stream);
+            } catch (DocumentException e) {
+                throw e;
+            }
+            writer.open();
+            document.open();
+            Application.perfLog.debug("building pdf writer and document opened {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
             for (int k = 1; k <= t_map.keySet().size(); k++) {
                 Future<?> tmp = t_map.get(k);
-                BufferedImage bImg = (BufferedImage) tmp.get();
-                log.debug("building pdf writer is imagage null {} ", (bImg == null));
-                if (bImg == null) {
-                    // Trying to insert image indicating that original image is missing
-                    try {
-                        bImg = ArchiveImageProducer.getBufferedMissingImage("Page " + k + " couldn't be found");
-                    } catch (Exception e) {
-                        // We don't interrupt the pdf generation process
-                        log.error("Could not get Buffered Missing image from producer for page {} of volume {}", k, inf.volumeId);
+                Image img = null;
+                try {
+                    img = (Image) tmp.get();
+                    if (img == null) {
+                        // Trying to insert image indicating that original image is missing
+                        try {
+                            img = ArchiveImageProducer.getMissingImage("Page " + k + " couldn't be found");
+                            document.setPageSize(new Rectangle(img.getWidth(), img.getHeight()));
+                            document.newPage();
+                            document.add(img);
+                        } catch (BadElementException | IOException e) {
+                            // We don't interrupt the pdf generation process
+                            e.printStackTrace();
+                        }
                     }
+                    log.info("added image index {}", k);
+                    document.setPageSize(new Rectangle(img.getWidth(), img.getHeight()));
+                    document.newPage();
+                    document.add(img);
+                } catch (DocumentException | ExecutionException | InterruptedException e) {
+                    throw e;
                 }
-                PDPage page = new PDPage(new PDRectangle(bImg.getWidth(), bImg.getHeight()));
-                doc.addPage(page);
-                PDImageXObject pdImage = LosslessFactory.createFromImage(doc, bImg);
-                PDPageContentStream contents = new PDPageContentStream(doc, page);
-                contents.drawImage(pdImage, 0, 0);
-                log.debug("page was drawn for img {} ", bImg);
-                contents.close();
-
             }
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            COSWriter cw = new COSWriter(baos);
-            cw.write(doc);
-            cw.close();
-            log.debug("Closing doc after writing {} ", doc);
-            doc.close();
+            document.close();
             Application.logPerf("pdf document finished and closed for {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
-            EHServerCache.IIIF.put(output.substring(4), baos.toByteArray());
-            baos.close();
+            EHServerCache.IIIF.put(output.substring(4), stream.toByteArray());
             ServerCache.PDF_JOBS.put(output, true);
         } catch (ExecutionException | InterruptedException e) {
             log.error("Error while building pdf for identifier info " + inf.toString(), "");

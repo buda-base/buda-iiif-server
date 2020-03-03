@@ -14,12 +14,14 @@ import java.util.concurrent.Callable;
 import javax.imageio.ImageIO;
 
 import org.apache.commons.io.IOUtils;
-import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.GetObjectRequest;
+import com.itextpdf.text.BadElementException;
+import com.itextpdf.text.Image;
 
+import ch.qos.logback.classic.Logger;
 import de.digitalcollections.iiif.myhymir.EHServerCache;
 import de.digitalcollections.model.api.identifiable.resource.exceptions.ResourceNotFoundException;
 import io.bdrc.iiif.exceptions.IIIFException;
@@ -31,7 +33,7 @@ public class ArchiveImageProducer implements Callable {
 
     final static String S3_BUCKET = "archive.tbrc.org";
     public static final String IIIF_IMG = "IIIF_IMG";
-    public final static Logger log = LoggerFactory.getLogger("default");
+    public final static Logger log = (Logger) LoggerFactory.getLogger("default");
 
     AmazonS3 s3;
     String identifier;
@@ -59,6 +61,20 @@ public class ArchiveImageProducer implements Callable {
         }
     }
 
+    public Image getPdfImage() throws BadElementException, MalformedURLException, IOException {
+        byte[] imgbytes = (byte[]) EHServerCache.IIIF_IMG.get(id);
+        if (imgbytes != null) {
+            log.debug("Got " + id + " from cache ...");
+            return Image.getInstance(imgbytes);
+        }
+        GetObjectRequest request = new GetObjectRequest(S3_BUCKET, identifier);
+        imgbytes = IOUtils.toByteArray(s3.getObject(request).getObjectContent());
+        Image img = Image.getInstance(imgbytes);
+        log.debug("Got " + id + " from S3 ...added to cache");
+        EHServerCache.IIIF_IMG.put(id, imgbytes);
+        return img;
+    }
+
     public BufferedImage getBufferedPdfImage() throws IOException, IIIFException {
         BufferedImage bImg = null;
         try {
@@ -66,7 +82,7 @@ public class ArchiveImageProducer implements Callable {
             if (imgbytes != null) {
                 InputStream in = new ByteArrayInputStream(imgbytes);
                 bImg = ImageIO.read(in);
-                log.debug("Got " + id + " from cache ...");
+                log.info("Got " + id + " from cache ...");
                 in.close();
                 ImageMetrics.imageCount(ImageMetrics.IMG_CALLS_PDF, origin);
                 return bImg;
@@ -75,7 +91,7 @@ public class ArchiveImageProducer implements Callable {
             imgbytes = IOUtils.toByteArray(s3.getObject(request).getObjectContent());
             InputStream in = new ByteArrayInputStream(imgbytes);
             bImg = ImageIO.read(in);
-            log.debug("Got " + id + " from S3 ...added to cache");
+            log.info("Got " + id + " from S3 ...added to cache");
             EHServerCache.IIIF_IMG.put(id, imgbytes);
             ImageMetrics.imageCount(ImageMetrics.IMG_CALLS_PDF, origin);
         } catch (IOException | IIIFException e) {
@@ -83,6 +99,17 @@ public class ArchiveImageProducer implements Callable {
             throw e;
         }
         return bImg;
+    }
+
+    public static Image getMissingImage(String text) throws BadElementException, IOException {
+        BufferedImage bufferedImage = new BufferedImage(800, 200, BufferedImage.TYPE_INT_RGB);
+        Graphics graphics = bufferedImage.getGraphics();
+        graphics.setColor(Color.LIGHT_GRAY);
+        graphics.fillRect(0, 0, 800, 200);
+        graphics.setColor(Color.BLACK);
+        graphics.setFont(new Font("Arial Black", Font.BOLD, 20));
+        graphics.drawString(text, 300, 100);
+        return Image.getInstance(bufferedImage, null);
     }
 
     public byte[] getImageAsBytes() throws MalformedURLException, IOException, IIIFException {
@@ -128,10 +155,11 @@ public class ArchiveImageProducer implements Callable {
     }
 
     @Override
-    public Object call() throws IIIFException {
+    public Object call() throws IIIFException, BadElementException {
         try {
             if (archiveType.equals(ArchiveBuilder.PDF_TYPE)) {
-                return getBufferedPdfImage();
+                return getPdfImage();
+                // return getBufferedPdfImage();
             }
             if (archiveType.equals(ArchiveBuilder.ZIP_TYPE)) {
                 return getImageAsBytes();
