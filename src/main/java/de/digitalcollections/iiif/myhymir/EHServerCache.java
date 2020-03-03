@@ -29,7 +29,7 @@ public class EHServerCache {
 
         PersistentCacheManager iiif = CacheManagerBuilder.newCacheManagerBuilder()
                 .with(CacheManagerBuilder.persistence(System.getProperty("iiifserv.configpath") + File.separator + "EH_IIIF")).build(true);
-        IIIF = iiif_img.createCache("iiif_zip", CacheConfigurationBuilder.newCacheConfigurationBuilder(String.class, byte[].class,
+        IIIF = iiif_img.createCache("iiif", CacheConfigurationBuilder.newCacheConfigurationBuilder(String.class, byte[].class,
                 ResourcePoolsBuilder.newResourcePoolsBuilder().heap(500, EntryUnit.ENTRIES).disk(5000, MemoryUnit.MB, true)));
 
     }
