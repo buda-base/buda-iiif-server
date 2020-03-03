@@ -72,6 +72,7 @@ public class ArchiveBuilder {
             }
             writer.open();
             document.open();
+            document.setMargins(0, 0, 0, 0);
             Application.perfLog.debug("building pdf writer and document opened {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
             for (int k = 1; k <= t_map.keySet().size(); k++) {
                 Future<?> tmp = t_map.get(k);
