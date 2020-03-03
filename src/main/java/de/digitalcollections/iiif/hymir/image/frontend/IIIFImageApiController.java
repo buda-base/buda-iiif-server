@@ -48,6 +48,7 @@ import de.digitalcollections.iiif.model.image.ImageService;
 import de.digitalcollections.iiif.model.image.ResolvingException;
 import de.digitalcollections.iiif.model.jackson.IiifObjectMapper;
 import de.digitalcollections.iiif.myhymir.Application;
+import de.digitalcollections.iiif.myhymir.EHServerCache;
 import de.digitalcollections.iiif.myhymir.ImageReader_ICC;
 import de.digitalcollections.iiif.myhymir.ResourceAccessValidation;
 import de.digitalcollections.iiif.myhymir.ServerCache;
@@ -229,7 +230,7 @@ public class IIIFImageApiController {
             if (staticImg) {
                 res.setStatic(true);
             }
-            byte[] osbytes = (byte[]) ServerCache.IIIF_IMG.get(identifier);
+            byte[] osbytes = (byte[]) EHServerCache.IIIF_IMG.get(identifier);
             if (osbytes == null) {
                 final InputStream input = resourceService.getInputStream(res);
                 Application.logPerf("got the S3 inputstream in {} ms for {}", (System.currentTimeMillis() - deb1), identifier);

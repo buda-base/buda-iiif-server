@@ -27,8 +27,8 @@ import org.springframework.web.bind.annotation.RequestMethod;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import de.digitalcollections.iiif.myhymir.EHServerCache;
 import de.digitalcollections.iiif.myhymir.ResourceAccessValidation;
-import de.digitalcollections.iiif.myhymir.ServerCache;
 import de.digitalcollections.model.api.identifiable.resource.exceptions.ResourceNotFoundException;
 import io.bdrc.auth.Access;
 import io.bdrc.iiif.exceptions.IIIFException;
@@ -103,7 +103,7 @@ public class ArchivesController {
                 output = idf.getVolumeId() + ":" + bPage + "-" + ePage;// +"."+type;
             }
             if (type.equals(ArchiveBuilder.PDF_TYPE)) {
-                Object pdf_cached = ServerCache.IIIF.get(output);
+                Object pdf_cached = EHServerCache.IIIF.get(output);
                 log.debug("PDF " + id + " from IIIF cache >>" + pdf_cached);
                 if (pdf_cached == null) {
                     // Build pdf since the pdf file doesn't exist yet
@@ -111,7 +111,7 @@ public class ArchivesController {
                 }
             }
             if (type.equals(ArchiveBuilder.ZIP_TYPE)) {
-                Object zip_cached = ServerCache.IIIF_ZIP.get(output);
+                Object zip_cached = EHServerCache.IIIF_ZIP.get(output);
                 log.debug("ZIP " + id + " from IIIF_ZIP cache >>" + zip_cached);
                 if (zip_cached == null) {
                     // Build pdf since the pdf file doesn't exist yet
@@ -145,11 +145,11 @@ public class ArchivesController {
     public ResponseEntity<ByteArrayResource> downloadPdf(@PathVariable String name, @PathVariable String type) throws Exception {
         byte[] array = null;
         if (type.equals(ArchiveBuilder.PDF_TYPE)) {
-            array = (byte[]) ServerCache.IIIF.get(name.substring(4));
+            array = (byte[]) EHServerCache.IIIF.get(name.substring(4));
             log.debug("READ from cache " + IIIF + " name=" + name + " " + array);
         }
         if (type.equals(ArchiveBuilder.ZIP_TYPE)) {
-            array = (byte[]) ServerCache.IIIF_ZIP.get(name.substring(3));
+            array = (byte[]) EHServerCache.IIIF_ZIP.get(name.substring(3));
         }
         HttpHeaders headers = new HttpHeaders();
         if (array == null) {

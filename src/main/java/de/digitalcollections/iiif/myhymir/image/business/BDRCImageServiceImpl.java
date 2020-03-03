@@ -61,8 +61,8 @@ import de.digitalcollections.iiif.model.image.Size;
 import de.digitalcollections.iiif.model.image.SizeRequest;
 import de.digitalcollections.iiif.model.image.TileInfo;
 import de.digitalcollections.iiif.myhymir.Application;
+import de.digitalcollections.iiif.myhymir.EHServerCache;
 import de.digitalcollections.iiif.myhymir.ImageReader_ICC;
-import de.digitalcollections.iiif.myhymir.ServerCache;
 import de.digitalcollections.model.api.identifiable.resource.exceptions.ResourceNotFoundException;
 import de.digitalcollections.turbojpeg.imageio.TurboJpegImageReadParam;
 import de.digitalcollections.turbojpeg.imageio.TurboJpegImageReader;
@@ -186,7 +186,7 @@ public class BDRCImageServiceImpl implements ImageService {
     private ImageReader_ICC getReader(String identifier) throws UnsupportedFormatException, IOException, IIIFException, ResourceNotFoundException {
         long deb = System.currentTimeMillis();
         ImageIdentifier idf = new ImageIdentifier(identifier);
-        byte[] bytes = (byte[]) ServerCache.IIIF_IMG.get(identifier);
+        byte[] bytes = (byte[]) EHServerCache.IIIF_IMG.get(identifier);
         ICC_Profile icc = null;
         if (bytes != null) {
             Application.logPerf("Image service image was cached {}", identifier);
@@ -208,8 +208,8 @@ public class BDRCImageServiceImpl implements ImageService {
             if (S3input == null) {
                 throw new ResourceNotFoundException("No S3 resource could be found for identifier: " + identifier);
             }
-            ServerCache.IIIF_IMG.put(identifier, IOUtils.toByteArray(S3input));
-            bytes = (byte[]) ServerCache.IIIF_IMG.get(identifier);
+            EHServerCache.IIIF_IMG.put(identifier, IOUtils.toByteArray(S3input));
+            bytes = (byte[]) EHServerCache.IIIF_IMG.get(identifier);
             Application.logPerf("Image service read {} from s3 {}", S3input, identifier);
         }
         ImageReader reader = null;

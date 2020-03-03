@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 import com.amazonaws.services.s3.AmazonS3;
 
 import de.digitalcollections.iiif.myhymir.Application;
+import de.digitalcollections.iiif.myhymir.EHServerCache;
 import de.digitalcollections.iiif.myhymir.ServerCache;
 import de.digitalcollections.iiif.myhymir.backend.impl.repository.S3ResourceRepositoryImpl;
 import io.bdrc.iiif.exceptions.IIIFException;
@@ -93,7 +94,7 @@ public class ArchiveBuilder {
             log.debug("Closing doc after writing {} ", doc);
             doc.close();
             Application.logPerf("pdf document finished and closed for {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
-            ServerCache.IIIF.put(output.substring(4), baos.toByteArray());
+            EHServerCache.IIIF.put(output.substring(4), baos.toByteArray());
             baos.close();
             ServerCache.PDF_JOBS.put(output, true);
         } catch (ExecutionException | InterruptedException e) {
@@ -152,7 +153,7 @@ public class ArchiveBuilder {
             }
             zipOut.close();
             Application.logPerf("zip document finished and closed for {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
-            ServerCache.IIIF_ZIP.put(output.substring(3), baos.toByteArray());
+            EHServerCache.IIIF_ZIP.put(output.substring(3), baos.toByteArray());
             ServerCache.ZIP_JOBS.put(output, true);
         } catch (IOException | ExecutionException | InterruptedException e) {
             log.error("Error while building zip archives ", e.getMessage());
