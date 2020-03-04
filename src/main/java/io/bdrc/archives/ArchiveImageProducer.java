@@ -1,7 +1,6 @@
 package io.bdrc.archives;
 
 import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
@@ -38,14 +37,16 @@ public class ArchiveImageProducer implements Callable {
     AmazonS3 s3;
     String identifier;
     String id;
+    String imageName;
     String archiveType;
     String origin;
-    Dimension d;
+    // Dimension d;
     boolean isTiff = false;
 
     public ArchiveImageProducer(AmazonS3 s3, String id, String archiveType, String origin) throws IIIFException {
         this.s3 = s3;
         this.id = id;
+        this.imageName = id.substring(id.lastIndexOf(":") + 1);
         this.archiveType = archiveType;
         this.origin = origin;
         BdrcS3Resolver resolver = new BdrcS3Resolver();
@@ -111,23 +112,21 @@ public class ArchiveImageProducer implements Callable {
         return Image.getInstance(bufferedImage, null);
     }
 
-    public byte[] getImageAsBytes() throws MalformedURLException, IOException, IIIFException {
+    public Object[] getImageAsBytes() throws MalformedURLException, IOException, IIIFException {
+        Object[] obj = new Object[2];
+        obj[1] = imageName;
         byte[] imgbytes = null;
         try {
             imgbytes = (byte[]) EHServerCache.IIIF_IMG.get(id);
             if (imgbytes != null) {
-                InputStream in = new ByteArrayInputStream(imgbytes);
-                BufferedImage bImg = ImageIO.read(in);
-                this.d = new Dimension(bImg.getWidth(), bImg.getHeight());
                 log.debug("Zip Got " + id + " from cache ...");
                 ImageMetrics.imageCount(ImageMetrics.IMG_CALLS_ZIP, origin);
-                return imgbytes;
+                obj[0] = imgbytes;
+                return obj;
             }
             GetObjectRequest request = new GetObjectRequest(S3_BUCKET, identifier);
             imgbytes = IOUtils.toByteArray(s3.getObject(request).getObjectContent());
-            InputStream in = new ByteArrayInputStream(imgbytes);
-            BufferedImage bImg = ImageIO.read(in);
-            this.d = new Dimension(bImg.getWidth(), bImg.getHeight());
+            obj[0] = imgbytes;
             log.debug("Zip Got " + id + " from S3 ...added to cache");
             EHServerCache.IIIF_IMG.put(id, imgbytes);
             ImageMetrics.imageCount(ImageMetrics.IMG_CALLS_ZIP, origin);
@@ -135,7 +134,7 @@ public class ArchiveImageProducer implements Callable {
             log.error("Could not get Image as bytes for id=" + id, e.getMessage());
             throw e;
         }
-        return imgbytes;
+        return obj;
     }
 
     public String getIdentifier() {
@@ -157,8 +156,9 @@ public class ArchiveImageProducer implements Callable {
     public Object call() throws IIIFException, BadElementException {
         try {
             if (archiveType.equals(ArchiveBuilder.PDF_TYPE)) {
-                return getPdfImage();
+                // return getPdfImage();
                 // return getBufferedPdfImage();
+                return getImageAsBytes();
             }
             if (archiveType.equals(ArchiveBuilder.ZIP_TYPE)) {
                 return getImageAsBytes();

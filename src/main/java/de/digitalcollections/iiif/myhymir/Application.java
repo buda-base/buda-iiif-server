@@ -32,18 +32,6 @@ import io.bdrc.auth.rdf.RdfAuthModel;
         "de.digitalcollections.iiif.hymir", "de.digitalcollections.iiif.myhymir",
         "de.digitalcollections.core.backend.impl.file.repository.resource.util" })
 
-//REMINDER : DO NOT REMOVE THE FOLLOWING COMMENTS
-/*
- * , excludeFilters = { @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE,
- * value = ReferencedResourcePersistenceTypeHandler.class),
- * 
- * @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value =
- * ManagedResourcePersistenceTypeHandler.class), @ComponentScan.Filter(type =
- * FilterType.ASSIGNABLE_TYPE, value =
- * ResolvedResourcePersistenceTypeHandler.class) } type =
- * FilterType.ASSIGNABLE_TYPE, value = {ResourceRepositoryImpl.class}))
- */
-
 public class Application extends SpringBootServletInitializer {
 
     static final String configPath = System.getProperty("iiifserv.configpath");

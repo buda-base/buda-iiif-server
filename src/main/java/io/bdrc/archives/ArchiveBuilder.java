@@ -3,6 +3,7 @@ package io.bdrc.archives;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.TreeMap;
 import java.util.concurrent.Callable;
@@ -15,15 +16,15 @@ import java.util.zip.ZipOutputStream;
 
 import javax.imageio.ImageIO;
 
+import org.apache.pdfbox.pdfwriter.COSWriter;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
+import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 import org.slf4j.LoggerFactory;
 
 import com.amazonaws.services.s3.AmazonS3;
-import com.lowagie.text.BadElementException;
-import com.lowagie.text.Document;
-import com.lowagie.text.DocumentException;
-import com.lowagie.text.Image;
-import com.lowagie.text.Rectangle;
-import com.lowagie.text.pdf.PdfWriter;
 
 import ch.qos.logback.classic.Logger;
 import de.digitalcollections.iiif.myhymir.Application;
@@ -32,6 +33,7 @@ import de.digitalcollections.iiif.myhymir.ServerCache;
 import de.digitalcollections.iiif.myhymir.backend.impl.repository.S3ResourceRepositoryImpl;
 import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.iiif.resolver.IdentifierInfo;
+import io.bdrc.iiif.resolver.ImageInfo;
 
 public class ArchiveBuilder {
 
@@ -47,10 +49,14 @@ public class ArchiveBuilder {
         long deb = System.currentTimeMillis();
         try {
             Application.logPerf("Starting building pdf {}", inf.volumeId);
-            ExecutorService service = Executors.newFixedThreadPool(50);
+            ExecutorService service = Executors.newFixedThreadPool(25);
             AmazonS3 s3 = S3ResourceRepositoryImpl.getClientInstance();
             Application.logPerf("S3 client obtained in building pdf {} after {} ", inf.volumeId, System.currentTimeMillis() - deb);
             TreeMap<Integer, Future<?>> t_map = new TreeMap<>();
+            HashMap<String, ImageInfo> imgDim = new HashMap<>();
+            for (ImageInfo i : inf.getImageInfoList()) {
+                imgDim.put(i.filename, i);
+            }
             int i = 1;
             while (idList.hasNext()) {
                 final String id = inf.getVolumeId() + "::" + idList.next();
@@ -63,53 +69,56 @@ public class ArchiveBuilder {
             }
             log.info("Setting output {} to false", output);
             ServerCache.PDF_JOBS.put(output, false);
-            Document document = new Document();
-            ByteArrayOutputStream stream = new ByteArrayOutputStream();
-            PdfWriter writer = null;
-            try {
-                writer = PdfWriter.getInstance(document, stream);
-            } catch (DocumentException e) {
-                throw e;
-            }
-            // writer.open();
-            document.open();
-            document.setMargins(0, 0, 0, 0);
-            Application.perfLog.debug("building pdf writer and document opened {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
+            PDDocument doc = new PDDocument();
+            doc.setDocumentInformation(ArchiveInfo.getInstance(inf).getDocInformation());
+            Application.logPerf("building pdf writer and document opened {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
             for (int k = 1; k <= t_map.keySet().size(); k++) {
                 Future<?> tmp = t_map.get(k);
-                Image img = null;
-                try {
-                    img = (Image) tmp.get();
-                    if (img == null) {
-                        // Trying to insert image indicating that original image is missing
-                        try {
-                            img = ArchiveImageProducer.getMissingImage("Page " + k + " couldn't be found");
-                            document.setPageSize(new Rectangle(img.getWidth(), img.getHeight()));
-                            document.newPage();
-                            document.add(img);
-                        } catch (BadElementException | IOException e) {
-                            // We don't interrupt the pdf generation process
-                            e.printStackTrace();
-                        }
+                // BufferedImage bImg = (BufferedImage) tmp.get();
+                Object[] obj = (Object[]) tmp.get();
+                byte[] bmg = (byte[]) obj[0];
+                String imgKey = (String) obj[1];
+                log.debug("building pdf writer is imagage null {} ", (bmg == null));
+                if (bmg == null) {
+                    // Trying to insert image indicating that original image is missing
+                    try {
+                        bmg = toByteArray(ArchiveImageProducer.getBufferedMissingImage("Page " + k + " couldn't be found"));
+                    } catch (Exception e) {
+                        // We don't interrupt the pdf generation process
+                        log.error("Could not get Buffered Missing image from producer for page {} of volume {}", k, inf.volumeId);
                     }
-                    log.info("added image index {}", k);
-                    document.setPageSize(new Rectangle(img.getWidth(), img.getHeight()));
-                    document.newPage();
-                    document.add(img);
-                } catch (DocumentException | ExecutionException | InterruptedException e) {
-                    throw e;
                 }
+                PDPage page = new PDPage(new PDRectangle(imgDim.get(imgKey).getWidth(), imgDim.get(imgKey).getHeight()));
+                doc.addPage(page);
+                PDImageXObject pdImage = PDImageXObject.createFromByteArray(doc, bmg, "");
+                PDPageContentStream contents = new PDPageContentStream(doc, page);
+                contents.drawImage(pdImage, 0, 0);
+                log.debug("page was drawn for img {} ", bmg);
+                contents.close();
             }
-            document.close();
-            writer.close();
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            COSWriter cw = new COSWriter(baos);
+            cw.write(doc);
+            cw.close();
+            log.debug("Closing doc after writing {} ", doc);
+            doc.close();
             Application.logPerf("pdf document finished and closed for {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
-            EHServerCache.IIIF.put(output.substring(4), stream.toByteArray());
+            EHServerCache.IIIF.put(output.substring(4), baos.toByteArray());
             ServerCache.PDF_JOBS.put(output, true);
         } catch (ExecutionException | InterruptedException e) {
             log.error("Error while building pdf for identifier info " + inf.toString(), "");
             throw new IIIFException(500, IIIFException.GENERIC_APP_ERROR_CODE, e);
         }
 
+    }
+
+    public static byte[] toByteArray(BufferedImage img) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ImageIO.write(img, "jpg", baos);
+        baos.flush();
+        byte[] imageInByte = baos.toByteArray();
+        baos.close();
+        return imageInByte;
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
