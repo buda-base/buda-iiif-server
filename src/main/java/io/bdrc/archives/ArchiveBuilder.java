@@ -150,7 +150,8 @@ public class ArchiveBuilder {
             for (int k = 1; k <= t_map.keySet().size(); k++) {
                 Future<?> tmp = t_map.get(k);
                 byte[] img = null;
-                img = (byte[]) tmp.get();
+                Object[] obj = (Object[]) tmp.get();
+                img = (byte[]) obj[0];
                 if (img == null) {
                     // Trying to insert image indicating that original image is missing
                     try {

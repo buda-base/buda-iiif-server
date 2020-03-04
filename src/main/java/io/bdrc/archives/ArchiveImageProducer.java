@@ -155,15 +155,7 @@ public class ArchiveImageProducer implements Callable {
     @Override
     public Object call() throws IIIFException, BadElementException {
         try {
-            if (archiveType.equals(ArchiveBuilder.PDF_TYPE)) {
-                // return getPdfImage();
-                // return getBufferedPdfImage();
-                return getImageAsBytes();
-            }
-            if (archiveType.equals(ArchiveBuilder.ZIP_TYPE)) {
-                return getImageAsBytes();
-            }
-            return null;
+            return getImageAsBytes();
         } catch (IOException e) {
             throw new IIIFException(500, IIIFException.GENERIC_APP_ERROR_CODE, e);
         }
