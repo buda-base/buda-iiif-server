@@ -37,7 +37,7 @@
         <pattern>[%d{ISO8601} %5p] %40.40c:%4L [%-8t] - %m%n</pattern>
       </encoder>
     </appender> 
-    <logger name="performance" level="DEBUG" additivity="true">
+    <logger name="performance" level="debug" additivity="true">
         <appender-ref ref="PROD_PERF" />
     </logger>
     <logger name="custom" level="DEBUG" additivity="true">
