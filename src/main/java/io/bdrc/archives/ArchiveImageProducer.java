@@ -13,7 +13,6 @@ import org.slf4j.LoggerFactory;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.GetObjectRequest;
-import com.lowagie.text.BadElementException;
 
 import ch.qos.logback.classic.Logger;
 import de.digitalcollections.iiif.myhymir.EHServerCache;
@@ -91,7 +90,7 @@ public class ArchiveImageProducer implements Callable {
     }
 
     @Override
-    public Object call() throws IIIFException, BadElementException {
+    public Object call() throws IIIFException {
         try {
             return getImageAsBytes();
         } catch (IOException e) {
