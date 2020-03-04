@@ -4,13 +4,9 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.util.concurrent.Callable;
-
-import javax.imageio.ImageIO;
 
 import org.apache.commons.io.IOUtils;
 import org.slf4j.LoggerFactory;
@@ -18,7 +14,6 @@ import org.slf4j.LoggerFactory;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.lowagie.text.BadElementException;
-import com.lowagie.text.Image;
 
 import ch.qos.logback.classic.Logger;
 import de.digitalcollections.iiif.myhymir.EHServerCache;
@@ -38,16 +33,13 @@ public class ArchiveImageProducer implements Callable {
     String identifier;
     String id;
     String imageName;
-    String archiveType;
     String origin;
-    // Dimension d;
     boolean isTiff = false;
 
     public ArchiveImageProducer(AmazonS3 s3, String id, String archiveType, String origin) throws IIIFException {
         this.s3 = s3;
         this.id = id;
         this.imageName = id.substring(id.lastIndexOf(":") + 1);
-        this.archiveType = archiveType;
         this.origin = origin;
         BdrcS3Resolver resolver = new BdrcS3Resolver();
         try {
@@ -62,56 +54,6 @@ public class ArchiveImageProducer implements Callable {
         }
     }
 
-    public Image getPdfImage() throws BadElementException, MalformedURLException, IOException {
-        byte[] imgbytes = (byte[]) EHServerCache.IIIF_IMG.get(id);
-        if (imgbytes != null) {
-            log.info("Got " + id + " from cache ...");
-            return Image.getInstance(imgbytes);
-        }
-        GetObjectRequest request = new GetObjectRequest(S3_BUCKET, identifier);
-        imgbytes = IOUtils.toByteArray(s3.getObject(request).getObjectContent());
-        log.info("Got " + id + " from S3 ...added to cache");
-        EHServerCache.IIIF_IMG.put(id, imgbytes);
-        return Image.getInstance(imgbytes);
-    }
-
-    public BufferedImage getBufferedPdfImage() throws IOException, IIIFException {
-        BufferedImage bImg = null;
-        try {
-            byte[] imgbytes = (byte[]) EHServerCache.IIIF_IMG.get(id);
-            if (imgbytes != null) {
-                InputStream in = new ByteArrayInputStream(imgbytes);
-                bImg = ImageIO.read(in);
-                log.info("Got " + id + " from cache ...");
-                in.close();
-                ImageMetrics.imageCount(ImageMetrics.IMG_CALLS_PDF, origin);
-                return bImg;
-            }
-            GetObjectRequest request = new GetObjectRequest(S3_BUCKET, identifier);
-            imgbytes = IOUtils.toByteArray(s3.getObject(request).getObjectContent());
-            InputStream in = new ByteArrayInputStream(imgbytes);
-            bImg = ImageIO.read(in);
-            log.info("Got " + id + " from S3 ...added to cache");
-            EHServerCache.IIIF_IMG.put(id, imgbytes);
-            ImageMetrics.imageCount(ImageMetrics.IMG_CALLS_PDF, origin);
-        } catch (IOException | IIIFException e) {
-            log.error("Could not get Buffered Pdf Image for id=" + id, e.getMessage());
-            throw e;
-        }
-        return bImg;
-    }
-
-    public static Image getMissingImage(String text) throws BadElementException, IOException {
-        BufferedImage bufferedImage = new BufferedImage(800, 200, BufferedImage.TYPE_INT_RGB);
-        Graphics graphics = bufferedImage.getGraphics();
-        graphics.setColor(Color.LIGHT_GRAY);
-        graphics.fillRect(0, 0, 800, 200);
-        graphics.setColor(Color.BLACK);
-        graphics.setFont(new Font("Arial Black", Font.BOLD, 20));
-        graphics.drawString(text, 300, 100);
-        return Image.getInstance(bufferedImage, null);
-    }
-
     public Object[] getImageAsBytes() throws MalformedURLException, IOException, IIIFException {
         Object[] obj = new Object[2];
         obj[1] = imageName;
@@ -119,26 +61,22 @@ public class ArchiveImageProducer implements Callable {
         try {
             imgbytes = (byte[]) EHServerCache.IIIF_IMG.get(id);
             if (imgbytes != null) {
-                log.debug("Zip Got " + id + " from cache ...");
-                ImageMetrics.imageCount(ImageMetrics.IMG_CALLS_ZIP, origin);
+                log.debug("Got " + id + " from cache ...");
+                ImageMetrics.imageCount(ImageMetrics.IMG_CALLS_COMMON, origin);
                 obj[0] = imgbytes;
                 return obj;
             }
             GetObjectRequest request = new GetObjectRequest(S3_BUCKET, identifier);
             imgbytes = IOUtils.toByteArray(s3.getObject(request).getObjectContent());
             obj[0] = imgbytes;
-            log.debug("Zip Got " + id + " from S3 ...added to cache");
+            log.debug("Got " + id + " from S3 ...added to cache");
             EHServerCache.IIIF_IMG.put(id, imgbytes);
-            ImageMetrics.imageCount(ImageMetrics.IMG_CALLS_ZIP, origin);
+            ImageMetrics.imageCount(ImageMetrics.IMG_CALLS_COMMON, origin);
         } catch (IOException | IIIFException e) {
             log.error("Could not get Image as bytes for id=" + id, e.getMessage());
             throw e;
         }
         return obj;
-    }
-
-    public String getIdentifier() {
-        return identifier;
     }
 
     public static BufferedImage getBufferedMissingImage(String text) {

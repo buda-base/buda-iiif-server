@@ -23,7 +23,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.digitalcollections.iiif.myhymir.Application;
-import de.digitalcollections.iiif.myhymir.ServerCache;
+import de.digitalcollections.iiif.myhymir.EHServerCache;
 import de.digitalcollections.model.api.identifiable.resource.exceptions.ResourceNotFoundException;
 import io.bdrc.auth.rdf.RdfConstants;
 import io.bdrc.iiif.exceptions.IIIFException;
@@ -110,12 +110,12 @@ public class IdentifierInfo implements Serializable {
         ImageIdentifier imgId = new ImageIdentifier(identifier);
         String volumeId = imgId.getPart("imageGroup");
 
-        IdentifierInfo info = ServerCache.IDENTIFIER.get("ID_" + volumeId);
+        IdentifierInfo info = EHServerCache.IDENTIFIER.get("ID_" + volumeId);
         if (info != null) {
             return info;
         } else {
             info = new IdentifierInfo(identifier);
-            ServerCache.IDENTIFIER.put("ID_" + volumeId, info);
+            EHServerCache.IDENTIFIER.put("ID_" + volumeId, info);
             return info;
         }
 
@@ -224,8 +224,8 @@ public class IdentifierInfo implements Serializable {
         Application.initForTests();
         IdentifierInfo info = new IdentifierInfo("bdr:V1NLM7_I1NLM7_001::I1NLM7_0010003.jpg");
         System.out.println("INFO >> " + info);
-        ServerCache.IDENTIFIER.put("ID_" + 415289, info);
-        info = ServerCache.IDENTIFIER.get("ID_" + 415289);
+        EHServerCache.IDENTIFIER.put("ID_" + 415289, info);
+        info = EHServerCache.IDENTIFIER.get("ID_" + 415289);
         System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>");
         System.out.println(info);
     }

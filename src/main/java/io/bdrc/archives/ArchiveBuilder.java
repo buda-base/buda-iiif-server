@@ -29,7 +29,6 @@ import com.amazonaws.services.s3.AmazonS3;
 import ch.qos.logback.classic.Logger;
 import de.digitalcollections.iiif.myhymir.Application;
 import de.digitalcollections.iiif.myhymir.EHServerCache;
-import de.digitalcollections.iiif.myhymir.ServerCache;
 import de.digitalcollections.iiif.myhymir.backend.impl.repository.S3ResourceRepositoryImpl;
 import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.iiif.resolver.IdentifierInfo;
@@ -68,7 +67,7 @@ public class ArchiveBuilder {
                 i += 1;
             }
             log.info("Setting output {} to false", output);
-            ServerCache.PDF_JOBS.put(output, false);
+            EHServerCache.PDF_JOBS.put(output, false);
             PDDocument doc = new PDDocument();
             doc.setDocumentInformation(ArchiveInfo.getInstance(inf).getDocInformation());
             Application.logPerf("building pdf writer and document opened {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
@@ -78,7 +77,7 @@ public class ArchiveBuilder {
                 Object[] obj = (Object[]) tmp.get();
                 byte[] bmg = (byte[]) obj[0];
                 String imgKey = (String) obj[1];
-                log.debug("building pdf writer is imagage null {} ", (bmg == null));
+                // log.debug("building pdf writer is imagage null {} ", (bmg == null));
                 if (bmg == null) {
                     // Trying to insert image indicating that original image is missing
                     try {
@@ -93,7 +92,8 @@ public class ArchiveBuilder {
                 PDImageXObject pdImage = PDImageXObject.createFromByteArray(doc, bmg, "");
                 PDPageContentStream contents = new PDPageContentStream(doc, page);
                 contents.drawImage(pdImage, 0, 0);
-                Application.logPerf("Time after Image {} was added to pdf in {} ms", imgKey, (System.currentTimeMillis() - deb));
+                // Application.logPerf("Time after Image {} was added to pdf in {} ms", imgKey,
+                // (System.currentTimeMillis() - deb));
                 log.debug("page was drawn for img {} ", bmg);
                 contents.close();
             }
@@ -105,7 +105,7 @@ public class ArchiveBuilder {
             doc.close();
             Application.logPerf("pdf document finished and closed for {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
             EHServerCache.IIIF.put(output.substring(4), baos.toByteArray());
-            ServerCache.PDF_JOBS.put(output, true);
+            EHServerCache.PDF_JOBS.put(output, true);
         } catch (ExecutionException | InterruptedException e) {
             log.error("Error while building pdf for identifier info " + inf.toString(), "");
             throw new IIIFException(500, IIIFException.GENERIC_APP_ERROR_CODE, e);
@@ -143,7 +143,7 @@ public class ArchiveBuilder {
                 images.put(i, img);
                 i += 1;
             }
-            ServerCache.ZIP_JOBS.put(output, false);
+            EHServerCache.ZIP_JOBS.put(output, false);
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             ZipOutputStream zipOut = new ZipOutputStream(baos);
             Application.logPerf("building zip stream opened {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
@@ -173,7 +173,7 @@ public class ArchiveBuilder {
             zipOut.close();
             Application.logPerf("zip document finished and closed for {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
             EHServerCache.IIIF_ZIP.put(output.substring(3), baos.toByteArray());
-            ServerCache.ZIP_JOBS.put(output, true);
+            EHServerCache.ZIP_JOBS.put(output, true);
         } catch (IOException | ExecutionException | InterruptedException e) {
             log.error("Error while building zip archives ", e.getMessage());
             throw new IIIFException(500, IIIFException.GENERIC_APP_ERROR_CODE, e);
@@ -182,21 +182,21 @@ public class ArchiveBuilder {
 
     public static boolean isPdfDone(String id) {
         log.debug("IS PDF DONE job " + id);
-        if (ServerCache.PDF_JOBS.get(id) == null) {
+        if (EHServerCache.PDF_JOBS.get(id) == null) {
             log.debug("IS PDF DONE null in cache for " + id);
             return false;
         }
-        log.debug("IS PDF DONE returns from cache value for " + id + ">>" + ServerCache.PDF_JOBS.get(id));
-        return (boolean) ServerCache.PDF_JOBS.get(id);
+        log.debug("IS PDF DONE returns from cache value for " + id + ">>" + EHServerCache.PDF_JOBS.get(id));
+        return (boolean) EHServerCache.PDF_JOBS.get(id);
     }
 
     public static boolean isZipDone(String id) {
         log.debug("IS ZIP DONE job " + id);
-        if (ServerCache.ZIP_JOBS.get(id) == null) {
+        if (EHServerCache.ZIP_JOBS.get(id) == null) {
             log.debug("IS ZIP DONE null in cache for " + id);
             return false;
         }
-        log.debug("IS ZIP DONE returns from cache value for " + id + ">>" + ServerCache.ZIP_JOBS.get(id));
-        return (boolean) ServerCache.ZIP_JOBS.get(id);
+        log.debug("IS ZIP DONE returns from cache value for " + id + ">>" + EHServerCache.ZIP_JOBS.get(id));
+        return (boolean) EHServerCache.ZIP_JOBS.get(id);
     }
 }

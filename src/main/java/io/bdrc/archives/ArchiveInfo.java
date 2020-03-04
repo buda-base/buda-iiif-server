@@ -15,7 +15,7 @@ import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
 
-import de.digitalcollections.iiif.myhymir.ServerCache;
+import de.digitalcollections.iiif.myhymir.EHServerCache;
 import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 
@@ -97,10 +97,10 @@ public class ArchiveInfo implements Serializable {
     }
 
     public static ArchiveInfo getInstance(IdentifierInfo inf) throws IIIFException, ClientProtocolException, IOException {
-        ArchiveInfo info = ServerCache.ARCHIVE_INFO.get(inf.getVolumeId());
+        ArchiveInfo info = EHServerCache.ARCHIVE_INFO.get(inf.getVolumeId());
         if (info == null) {
             info = new ArchiveInfo(inf);
-            ServerCache.ARCHIVE_INFO.put(inf.getVolumeId(), info);
+            EHServerCache.ARCHIVE_INFO.put(inf.getVolumeId(), info);
         }
         return info;
     }
