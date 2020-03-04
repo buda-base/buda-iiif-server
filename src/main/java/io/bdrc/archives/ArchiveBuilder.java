@@ -93,6 +93,7 @@ public class ArchiveBuilder {
                 PDImageXObject pdImage = PDImageXObject.createFromByteArray(doc, bmg, "");
                 PDPageContentStream contents = new PDPageContentStream(doc, page);
                 contents.drawImage(pdImage, 0, 0);
+                Application.logPerf("Time after Image {} was added to pdf in {} ms", imgKey, (System.currentTimeMillis() - deb));
                 log.debug("page was drawn for img {} ", bmg);
                 contents.close();
             }
