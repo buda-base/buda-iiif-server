@@ -20,11 +20,9 @@ import org.slf4j.LoggerFactory;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 
-import de.digitalcollections.iiif.myhymir.ServerCache;
+import de.digitalcollections.iiif.myhymir.EHServerCache;
 import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.iiif.metrics.ImageMetrics;
-import io.bdrc.iiif.resolver.IdentifierInfo;
-import io.bdrc.iiif.resolver.ImageS3Service;
 
 @SuppressWarnings("rawtypes")
 public class ArchiveImageProducer implements Callable {
@@ -54,7 +52,7 @@ public class ArchiveImageProducer implements Callable {
     public BufferedImage getBufferedPdfImage() throws IOException, IIIFException {
         BufferedImage bImg = null;
         try {
-            byte[] imgbytes = (byte[]) ServerCache.getObjectFromCache(IIIF_IMG, id);
+            byte[] imgbytes = (byte[]) EHServerCache.IIIF_IMG.get(id);
             if (imgbytes != null) {
                 InputStream in = new ByteArrayInputStream(imgbytes);
                 bImg = ImageIO.read(in);
@@ -68,7 +66,7 @@ public class ArchiveImageProducer implements Callable {
             InputStream in = new ByteArrayInputStream(imgbytes);
             bImg = ImageIO.read(in);
             log.debug("Got {} from S3 ...added to cache", id);
-            ServerCache.addToCache(IIIF_IMG, id, imgbytes);
+            EHServerCache.IIIF_IMG.put(id, imgbytes);
             ImageMetrics.imageCount(ImageMetrics.IMG_CALLS_PDF, origin);
         } catch (IOException | IIIFException e) {
             log.error("Could not get Buffered Pdf Image for id=" + id, e.getMessage());
@@ -80,7 +78,7 @@ public class ArchiveImageProducer implements Callable {
     public byte[] getImageAsBytes() throws MalformedURLException, IOException, IIIFException {
         byte[] imgbytes = null;
         try {
-            imgbytes = (byte[]) ServerCache.getObjectFromCache(IIIF_IMG, id);
+            imgbytes = (byte[]) EHServerCache.IIIF_IMG.get(id);
             if (imgbytes != null) {
                 InputStream in = new ByteArrayInputStream(imgbytes);
                 BufferedImage bImg = ImageIO.read(in);
@@ -95,7 +93,7 @@ public class ArchiveImageProducer implements Callable {
             BufferedImage bImg = ImageIO.read(in);
             this.d = new Dimension(bImg.getWidth(), bImg.getHeight());
             log.debug("Zip Got {} from S3 ...added to cache", id);
-            ServerCache.addToCache(IIIF_IMG, id, imgbytes);
+            EHServerCache.IIIF_IMG.put(id, imgbytes);
             ImageMetrics.imageCount(ImageMetrics.IMG_CALLS_ZIP, origin);
         } catch (IOException | IIIFException e) {
             log.error("Could not get Image as bytes for id=" + id, e.getMessage());

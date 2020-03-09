@@ -28,7 +28,7 @@ import org.slf4j.LoggerFactory;
 import com.amazonaws.services.s3.AmazonS3;
 
 import de.digitalcollections.iiif.myhymir.Application;
-import de.digitalcollections.iiif.myhymir.ServerCache;
+import de.digitalcollections.iiif.myhymir.EHServerCache;
 import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 import io.bdrc.iiif.resolver.ImageS3Service;
@@ -41,7 +41,7 @@ public class ArchiveBuilder {
     public final static String ZIP_TYPE = "zip";
 
     public final static Logger log = LoggerFactory.getLogger(ArchiveBuilder.class.getName());
-    
+
     private static ExecutorService service = Executors.newFixedThreadPool(50);
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
@@ -49,23 +49,23 @@ public class ArchiveBuilder {
         long deb = System.currentTimeMillis();
         try {
             Application.logPerf("Starting building pdf {}", inf.volumeId);
-            
+
             AmazonS3 s3 = ImageS3Service.getClient();
             Application.logPerf("S3 client obtained in building pdf {} after {} ", inf.volumeId, System.currentTimeMillis() - deb);
             TreeMap<Integer, Future<?>> t_map = new TreeMap<>();
             int i = 1;
             final String keyPrefix = ImageS3Service.getKeyPrefix(inf);
             for (String imageFileName : imageList) {
-                ArchiveImageProducer tmp = new ArchiveImageProducer(s3, keyPrefix+imageFileName, PDF_TYPE, origin);
+                ArchiveImageProducer tmp = new ArchiveImageProducer(s3, keyPrefix + imageFileName, PDF_TYPE, origin);
                 Future<?> fut = service.submit((Callable) tmp);
                 t_map.put(i, fut);
                 i += 1;
             }
-            ServerCache.addToCache("pdfjobs", output, false);
+            EHServerCache.PDF_JOBS.put(output, false);
             PDDocument doc = new PDDocument();
 
             // TODO: this should be completely reworked, it's not ready for production
-            //doc.setDocumentInformation(ArchiveInfo.getInstance(inf).getDocInformation());
+            // doc.setDocumentInformation(ArchiveInfo.getInstance(inf).getDocInformation());
 
             Application.logPerf("building pdf writer and document opened {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
             for (int k = 1; k <= t_map.keySet().size(); k++) {
@@ -91,11 +91,11 @@ public class ArchiveBuilder {
                 COSWriter cw = new COSWriter(baos);
                 cw.write(doc);
                 Application.logPerf("pdf document finished and closed for {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
-                ServerCache.addToCache(IIIF, output.substring(4), baos.toByteArray());
+                EHServerCache.IIIF.put(output.substring(4), baos.toByteArray());
                 cw.close();
             }
             doc.close();
-            ServerCache.addToCache("pdfjobs", output, true);
+            EHServerCache.PDF_JOBS.put(output, true);
         } catch (ExecutionException | InterruptedException e) {
             log.error("Error while building pdf for identifier info " + inf.toString(), "");
             throw new IIIFException(500, IIIFException.GENERIC_APP_ERROR_CODE, e);
@@ -115,13 +115,13 @@ public class ArchiveBuilder {
             int i = 1;
             final String keyPrefix = ImageS3Service.getKeyPrefix(inf);
             for (String imageFileName : imageList) {
-                ArchiveImageProducer tmp = new ArchiveImageProducer(s3, keyPrefix+imageFileName, PDF_TYPE, origin);
+                ArchiveImageProducer tmp = new ArchiveImageProducer(s3, keyPrefix + imageFileName, PDF_TYPE, origin);
                 Future<?> fut = service.submit((Callable) tmp);
                 t_map.put(i, fut);
                 images.put(i, imageFileName);
                 i += 1;
             }
-            ServerCache.addToCache("zipjobs", output, false);
+            EHServerCache.ZIP_JOBS.put(output, false);
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             ZipOutputStream zipOut = new ZipOutputStream(baos);
             Application.logPerf("building zip stream opened {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
@@ -149,8 +149,8 @@ public class ArchiveBuilder {
             }
             zipOut.close();
             Application.logPerf("zip document finished and closed for {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
-            ServerCache.addToCache(IIIF_ZIP, output.substring(3), baos.toByteArray());
-            ServerCache.addToCache("zipjobs", output, true);
+            EHServerCache.IIIF_ZIP.put(output.substring(3), baos.toByteArray());
+            EHServerCache.ZIP_JOBS.put(output, true);
         } catch (IOException | ExecutionException | InterruptedException e) {
             log.error("Error while building zip archives ", e.getMessage());
             throw new IIIFException(500, IIIFException.GENERIC_APP_ERROR_CODE, e);
@@ -159,21 +159,21 @@ public class ArchiveBuilder {
 
     public static boolean isPdfDone(String id) {
         log.debug("IS PDF DONE job " + id);
-        if (ServerCache.getObjectFromCache("pdfjobs", id) == null) {
+        if (EHServerCache.PDF_JOBS.get(id) == null) {
             log.debug("IS PDF DONE null in cache for " + id);
             return false;
         }
-        log.debug("IS PDF DONE returns from cache value for " + id + ">>" + (boolean) ServerCache.getObjectFromCache("pdfjobs", id));
-        return (boolean) ServerCache.getObjectFromCache("pdfjobs", id);
+        log.debug("IS PDF DONE returns from cache value for " + id + ">>" + (boolean) EHServerCache.PDF_JOBS.get(id));
+        return (boolean) EHServerCache.PDF_JOBS.get(id);
     }
 
     public static boolean isZipDone(String id) {
         log.debug("IS ZIP DONE job " + id);
-        if (ServerCache.getObjectFromCache("zipjobs", id) == null) {
+        if (EHServerCache.ZIP_JOBS.get(id) == null) {
             log.debug("IS ZIP DONE null in cache for " + id);
             return false;
         }
-        log.debug("IS ZIP DONE returns from cache value for " + id + ">>" + (boolean) ServerCache.getObjectFromCache("zipjobs", id));
-        return (boolean) ServerCache.getObjectFromCache("zipjobs", id);
+        log.debug("IS ZIP DONE returns from cache value for " + id + ">>" + (boolean) EHServerCache.ZIP_JOBS.get(id));
+        return (boolean) EHServerCache.ZIP_JOBS.get(id);
     }
 }

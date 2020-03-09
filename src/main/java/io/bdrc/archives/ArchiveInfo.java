@@ -14,7 +14,7 @@ import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
 
-import de.digitalcollections.iiif.myhymir.ServerCache;
+import de.digitalcollections.iiif.myhymir.EHServerCache;
 import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 
@@ -46,10 +46,10 @@ public class ArchiveInfo {
     }
 
     public static ArchiveInfo getInstance(IdentifierInfo inf) throws IIIFException {
-        ArchiveInfo info = (ArchiveInfo) ServerCache.getObjectFromCache("default", inf.volumeId);
+        ArchiveInfo info = (ArchiveInfo) EHServerCache.ARCHIVE_INFO.get(inf.volumeId);
         if (info == null) {
             info = new ArchiveInfo(inf);
-            ServerCache.addToCache("default", inf.volumeId, info);
+            EHServerCache.ARCHIVE_INFO.put(inf.volumeId, info);
         }
         return info;
     }
@@ -170,8 +170,8 @@ public class ArchiveInfo {
         docInf.setCreator("Buddhist Digital Resource Center");
         docInf.setCreationDate(Calendar.getInstance());
         // TODO
-        //docInf.setCustomMetadataValue("license", inf.getLicense());
-        //docInf.setCustomMetadataValue("URL", inf.getAsset());
+        // docInf.setCustomMetadataValue("license", inf.getLicense());
+        // docInf.setCustomMetadataValue("URL", inf.getAsset());
         docInf.setCustomMetadataValue("Bibliographical note", getBiblioNote());
         docInf.setCustomMetadataValue("Catalog info", getCatalogInfo());
         docInf.setCustomMetadataValue("Number of volumes", getNumVolumes());

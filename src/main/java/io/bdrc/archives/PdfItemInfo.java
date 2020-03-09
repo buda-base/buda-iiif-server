@@ -12,7 +12,7 @@ import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.ResourceFactory;
 
 import de.digitalcollections.iiif.myhymir.Application;
-import de.digitalcollections.iiif.myhymir.ServerCache;
+import de.digitalcollections.iiif.myhymir.EHServerCache;
 import io.bdrc.iiif.exceptions.IIIFException;
 
 public class PdfItemInfo {
@@ -32,10 +32,10 @@ public class PdfItemInfo {
 
     public static PdfItemInfo getPdfItemInfo(String itemId) throws IIIFException {
 
-        PdfItemInfo meta = (PdfItemInfo) ServerCache.getObjectFromCache("info", itemId + "_PdfItemInfo");
+        PdfItemInfo meta = (PdfItemInfo) EHServerCache.PDF_ITEM_INFO.get(itemId + "_PdfItemInfo");
         if (meta == null) {
             meta = new PdfItemInfo(itemId);
-            ServerCache.addToCache("info", itemId + "_PdfItemInfo", meta);
+            EHServerCache.PDF_ITEM_INFO.put(itemId + "_PdfItemInfo", meta);
         }
         return meta;
     }
