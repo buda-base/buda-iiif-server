@@ -180,14 +180,6 @@ public class IIIFImageApiController {
         } else {
             headers.setCacheControl(CacheControl.maxAge(maxAge, TimeUnit.MILLISECONDS).cachePrivate());
         }
-//        try {
-//            webRequest.checkNotModified(imageService.getImageModificationDate(identifier).toEpochMilli());
-//            headers.setDate("Last-Modified", imageService.getImageModificationDate(identifier).toEpochMilli());
-//        } catch (ResourceNotFoundException e1) {
-//            log.error("Resource was not found for identifier " + identifier + " Message: " + e1.getMessage());
-//            return new ResponseEntity<>(("Resource was not found for identifier " + identifier).getBytes(), HttpStatus.NOT_FOUND);
-//        }
-
         ImageApiSelector selector = getImageApiSelector(identifier, region, size, rotation, quality, format);
         long deb1 = System.currentTimeMillis();
         final ImageApiProfile profile = ImageApiProfile.LEVEL_TWO;

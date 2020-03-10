@@ -38,10 +38,6 @@ import com.sun.media.jai.codec.ImageEncodeParam;
 import com.sun.media.jai.codec.ImageEncoder;
 import com.sun.media.jai.codec.PNGEncodeParam;
 
-import de.digitalcollections.core.business.api.ResourceService;
-import de.digitalcollections.core.model.api.MimeType;
-import de.digitalcollections.core.model.api.resource.Resource;
-import de.digitalcollections.core.model.api.resource.enums.ResourcePersistenceType;
 import de.digitalcollections.core.model.api.resource.exceptions.ResourceIOException;
 import de.digitalcollections.iiif.hymir.image.business.api.ImageSecurityService;
 import de.digitalcollections.iiif.hymir.image.business.api.ImageService;
@@ -73,9 +69,6 @@ public class BDRCImageServiceImpl implements ImageService {
 
     @Autowired(required = false)
     private ImageSecurityService imageSecurityService;
-
-    @Autowired
-    private ResourceService resourceService;
 
     @Value("${custom.iiif.image.maxWidth:65500}")
     private int maxWidth;
@@ -531,9 +524,12 @@ public class BDRCImageServiceImpl implements ImageService {
             throw new ResourceNotFoundException();
         }
         try {
-            Resource res = resourceService.get(identifier, ResourcePersistenceType.RESOLVED, MimeType.MIME_IMAGE);
-            return Instant.ofEpochMilli(res.getLastModified());
-        } catch (ResourceIOException e) {
+            // Resource res = resourceService.get(identifier,
+            // ResourcePersistenceType.RESOLVED, MimeType.MIME_IMAGE);
+            // This was returning -1 from S3Resource as we don't have this info yet from S3
+            // We'll change this wahe we get the info from s3, meanwhile, we use -1
+            return Instant.ofEpochMilli(-1);
+        } catch (Exception e) {
             Log.error("Could not get Image modification date from resource for identifier " + identifier, "");
             throw new ResourceNotFoundException();
         }
