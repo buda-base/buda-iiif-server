@@ -10,6 +10,8 @@ import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.NodeIterator;
 import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.ResourceFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import de.digitalcollections.iiif.myhymir.Application;
 import de.digitalcollections.iiif.myhymir.EHServerCache;
@@ -17,12 +19,14 @@ import io.bdrc.iiif.exceptions.IIIFException;
 
 public class PdfItemInfo {
 
+    private static final Logger log = LoggerFactory.getLogger(PdfItemInfo.class);
+
     public String itemId;
     public List<String> itemVolumes;
     public HashMap<String, String> volNumbers;
     public String itemAccess;
 
-    public static String ITEM_URL_ROOT = Application.getProperty("dataserver") + "/query/graph/IIIFPres_itemGraph?R_RES=";
+    public static String ITEM_URL_ROOT = Application.getProperty("dataserver") + "/query/graph/IIIFPres_imageInstanceGraph?R_RES=";
     public static String BDO = "http://purl.bdrc.io/ontology/core/";
     public static String BDR = "http://purl.bdrc.io/resource/";
     public static String BDA = "http://purl.bdrc.io/admindata/";
@@ -45,6 +49,7 @@ public class PdfItemInfo {
         this.itemModel = ModelFactory.createDefaultModel();
         if (itemId != null) {
             this.itemId = itemId;
+            log.info("PDF Info Url {}", ITEM_URL_ROOT + itemId + "&format=ttl");
             itemModel.read(ITEM_URL_ROOT + itemId + "&format=ttl", "TURTLE");
             itemModel.write(System.out, "TURTLE");
         }

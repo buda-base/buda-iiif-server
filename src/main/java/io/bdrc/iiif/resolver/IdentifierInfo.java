@@ -59,6 +59,10 @@ public class IdentifierInfo {
         }
     }
 
+    public List<ImageInfo> getImageListInfo() {
+        return ili;
+    }
+
     public String getCanonical() throws ClientProtocolException, IOException, IIIFException, ResourceNotFoundException {
         String in = imageName == null ? computedImageName : imageName;
         return AppConstants.IGFN + ":" + volumeId + ":" + in;
