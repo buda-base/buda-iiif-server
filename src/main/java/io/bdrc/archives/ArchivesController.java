@@ -66,7 +66,7 @@ public class ArchivesController {
         switch (subType) {
         // Case work in item
         case Identifier.MANIFEST_ID_WORK_IN_ITEM:
-            PdfItemInfo item = PdfItemInfo.getPdfItemInfo(idf.getItemId());
+            PdfItemInfo item = PdfItemInfo.getPdfItemInfo(idf.getImageInstanceId());
             if (!acc.hasResourceAccess(item.getItemAccess())) {
                 return new ResponseEntity<>("Insufficient rights", HttpStatus.FORBIDDEN);
             }
@@ -86,7 +86,7 @@ public class ArchivesController {
         case Identifier.MANIFEST_ID_WORK_IN_VOLUMEID:
             int bPage = idf.getBPageNum().intValue();
             int ePage = idf.getEPageNum().intValue();
-            IdentifierInfo inf = new IdentifierInfo(idf.getVolumeId());
+            IdentifierInfo inf = new IdentifierInfo(idf.getImageGroupId());
             List<ImageInfo> ili = null;
             try {
                 ili = ImageInfoListService.Instance.getAsync(inf.igi.imageInstanceId.substring(AppConstants.BDR_len), inf.igi.imageGroup).get();
@@ -100,9 +100,9 @@ public class ArchivesController {
             }
             List<String> imageList = getImageList(idf, inf, ili, al.equals(AccessLevel.FAIR_USE));
             if (al.equals(AccessLevel.FAIR_USE)) {
-                output = idf.getVolumeId() + "FAIR_USE:" + bPage + "-" + ePage;// +"."+type;
+                output = idf.getImageGroupId() + "FAIR_USE:" + bPage + "-" + ePage;// +"."+type;
             } else {
-                output = idf.getVolumeId() + ":" + bPage + "-" + ePage;// +"."+type;
+                output = idf.getImageGroupId() + ":" + bPage + "-" + ePage;// +"."+type;
             }
             if (type.equals(ArchiveBuilder.PDF_TYPE)) {
                 Object pdf_cached = EHServerCache.IIIF.get(output);
@@ -169,13 +169,13 @@ public class ArchivesController {
     @RequestMapping(value = "/download/job/{type}/{id}", method = { RequestMethod.GET, RequestMethod.HEAD })
     public ResponseEntity<String> jobState(@PathVariable String id, @PathVariable String type) throws Exception {
         Identifier idf = new Identifier(id, Identifier.MANIFEST_ID);
-        String url = "download/file/" + type + "/" + idf.getVolumeId() + ":" + idf.getBPageNum() + "-" + idf.getEPageNum() + "." + type;
+        String url = "download/file/" + type + "/" + idf.getImageGroupId() + ":" + idf.getBPageNum() + "-" + idf.getEPageNum() + "." + type;
         boolean done = false;
         if (type.equals(ArchiveBuilder.PDF_TYPE)) {
-            done = ArchiveBuilder.isPdfDone(idf.getVolumeId() + ":" + idf.getBPageNum() + "-" + idf.getEPageNum() + ".pdf");
+            done = ArchiveBuilder.isPdfDone(idf.getImageGroupId() + ":" + idf.getBPageNum() + "-" + idf.getEPageNum() + ".pdf");
         }
         if (type.equals(ArchiveBuilder.ZIP_TYPE)) {
-            done = ArchiveBuilder.isZipDone(idf.getVolumeId() + ":" + idf.getBPageNum() + "-" + idf.getEPageNum() + ".zip");
+            done = ArchiveBuilder.isZipDone(idf.getImageGroupId() + ":" + idf.getBPageNum() + "-" + idf.getEPageNum() + ".zip");
         }
         HashMap<String, Object> json = new HashMap<>();
         json.put("done", done);
@@ -210,6 +210,7 @@ public class ArchivesController {
         List<String> vlist = item.getItemVolumes();
         for (int i = 0; i < vlist.size(); i++) {
             String s = vlist.get(i);
+            System.out.println("Item volumes >>" + s);
             String shortName = getShortName(s);
             links = links + "<a type=\"application/" + type + "\" href=\"/download/" + type + "/v:" + "bdr:" + shortName + "::1-" + "\">"
                     + Integer.toString(i) + " - " + "bdr:" + shortName + "." + type + "</a><br/>";

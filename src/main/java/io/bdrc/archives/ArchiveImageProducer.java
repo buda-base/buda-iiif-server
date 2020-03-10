@@ -9,12 +9,10 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.concurrent.Callable;
 
-import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.GetObjectRequest;
 
 import de.digitalcollections.iiif.myhymir.EHServerCache;
 import io.bdrc.iiif.exceptions.IIIFException;
@@ -59,13 +57,14 @@ public class ArchiveImageProducer implements Callable {
                 obj[0] = imgbytes;
                 return obj;
             }
-            GetObjectRequest request = new GetObjectRequest(S3_BUCKET, id);
-            imgbytes = IOUtils.toByteArray(s3.getObject(request).getObjectContent());
+            imgbytes = ImageS3Service.InstanceArchive.getFromApi(id);
+            // GetObjectRequest request = new GetObjectRequest(S3_BUCKET, id);
+            // imgbytes = IOUtils.toByteArray(s3.getObject(request).getObjectContent());
             obj[0] = imgbytes;
             log.debug("Got " + id + " from S3 ...added to cache");
             EHServerCache.IIIF_IMG.put(id, imgbytes);
             ImageMetrics.imageCount(ImageMetrics.IMG_CALLS_COMMON, origin);
-        } catch (IOException | IIIFException e) {
+        } catch (IIIFException e) {
             log.error("Could not get Image as bytes for id=" + id, e.getMessage());
             throw e;
         }
