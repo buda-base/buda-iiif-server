@@ -8,7 +8,7 @@ import java.util.List;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.NodeIterator;
-import org.apache.jena.rdf.model.RDFNode;
+import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.ResourceFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,7 +51,6 @@ public class PdfItemInfo {
             this.itemId = itemId;
             log.info("PDF Info Url {}", ITEM_URL_ROOT + itemId + "&format=ttl");
             itemModel.read(ITEM_URL_ROOT + itemId + "&format=ttl", "TURTLE");
-            itemModel.write(System.out, "TURTLE");
         }
     }
 
@@ -65,11 +64,13 @@ public class PdfItemInfo {
     }
 
     public List<String> getItemVolumes() {
-        List<RDFNode> nodes;
+        List<Resource> nodes;
         if (itemVolumes == null) {
             itemVolumes = new ArrayList<>();
-            nodes = itemModel.listObjectsOfProperty(ResourceFactory.createProperty(BDO + "itemHasVolume")).toList();
-            for (RDFNode nd : nodes) {
+            // nodes = itemModel.listObjectsOfProperty(ResourceFactory.createProperty(BDO +
+            // "itemHasVolume")).toList();
+            nodes = itemModel.listSubjectsWithProperty(ResourceFactory.createProperty(BDO + "volumeNumber")).toList();
+            for (Resource nd : nodes) {
                 itemVolumes.add(nd.asResource().getURI());
             }
         }

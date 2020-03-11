@@ -14,6 +14,7 @@ import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
 
+import de.digitalcollections.iiif.myhymir.Application;
 import de.digitalcollections.iiif.myhymir.EHServerCache;
 import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.iiif.resolver.IdentifierInfo;
@@ -42,7 +43,11 @@ public class ArchiveInfo {
         langOrder.put("bo", 1);
         langOrder.put("en", 2);
         this.m = ModelFactory.createDefaultModel();
-        m.read(inf.igi.instanceId + ".ttl", "TURTLE");
+        // this is a trick we should not need (i.e the resource is prefixed by
+        // purl.bdrc.io)
+        String name = inf.igi.instanceId;
+        name = name.substring(name.lastIndexOf("/") + 1);
+        m.read(Application.getProperty("dataserver") + "resource/" + name + ".ttl", "TURTLE");
     }
 
     public static ArchiveInfo getInstance(IdentifierInfo inf) throws IIIFException {

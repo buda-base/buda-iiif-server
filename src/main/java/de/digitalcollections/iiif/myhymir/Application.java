@@ -105,7 +105,7 @@ public class Application extends SpringBootServletInitializer {
     }
 
     public static void initForTests() throws IOException {
-        InputStream input = Application.class.getClassLoader().getResourceAsStream("test.properties");
+        InputStream input = new FileInputStream(new File("/etc/buda/iiifserv/iiifserv.properties"));
         props = new Properties();
         props.load(input);
         try {

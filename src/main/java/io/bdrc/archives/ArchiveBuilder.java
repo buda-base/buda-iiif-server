@@ -55,7 +55,8 @@ public class ArchiveBuilder {
             Application.logPerf("S3 client obtained in building pdf {} after {} ", inf.volumeId, System.currentTimeMillis() - deb);
             TreeMap<Integer, Future<?>> t_map = new TreeMap<>();
             HashMap<String, ImageInfo> imgDim = new HashMap<>();
-            for (ImageInfo i : inf.getImageListInfo()) {
+            log.info("IDENTIFIER INFO IN PDF BUILDER {}", inf);
+            for (ImageInfo i : inf.ensureImageListInfo()) {
                 imgDim.put(i.filename, i);
             }
             int i = 1;
@@ -75,11 +76,9 @@ public class ArchiveBuilder {
             Application.logPerf("building pdf writer and document opened {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
             for (int k = 1; k <= t_map.keySet().size(); k++) {
                 Future<?> tmp = t_map.get(k);
-                // BufferedImage bImg = (BufferedImage) tmp.get();
                 Object[] obj = (Object[]) tmp.get();
                 byte[] bmg = (byte[]) obj[0];
                 String imgKey = (String) obj[1];
-                // log.debug("building pdf writer is imagage null {} ", (bmg == null));
                 if (bmg == null) {
                     // Trying to insert image indicating that original image is missing
                     try {
@@ -94,8 +93,6 @@ public class ArchiveBuilder {
                 PDImageXObject pdImage = PDImageXObject.createFromByteArray(doc, bmg, "");
                 PDPageContentStream contents = new PDPageContentStream(doc, page);
                 contents.drawImage(pdImage, 0, 0);
-                // Application.logPerf("Time after Image {} was added to pdf in {} ms", imgKey,
-                // (System.currentTimeMillis() - deb));
                 log.debug("page was drawn for img {} ", bmg);
                 contents.close();
             }

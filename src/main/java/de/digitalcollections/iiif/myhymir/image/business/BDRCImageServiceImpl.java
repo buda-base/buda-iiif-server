@@ -205,7 +205,6 @@ public class BDRCImageServiceImpl implements ImageService {
                 e.printStackTrace();
             }
             long endIcc = System.currentTimeMillis();
-            System.out.println("read icc in " + (endIcc - deb1));
         }
         Application.logPerf("S3 object IIIS READER >> {}", reader);
         Application.logPerf("Image service return reader at {} ms {}", System.currentTimeMillis() - deb, identifier);
@@ -304,12 +303,7 @@ public class BDRCImageServiceImpl implements ImageService {
                 imageIndex = idx;
             }
         }
-        // BufferedImage bImg = reader.read(imageIndex);
-        // byte[] buff = ((DataBufferByte) bImg.getRaster().getDataBuffer()).getData();
-        // System.out.println("ICC PROFILE >>" + Imaging.getICCProfile(buff));
         ImageReadParam readParam = getReadParam(imgReader.getReader(), selector, decodeScaleFactor);
-        System.out.println("READER " + imgReader.getReader());
-        // readParam.setDestinationType(reader.getImageTypes(imageIndex).next());
         int rotation = (int) selector.getRotation().getRotation();
         if (readParam instanceof TurboJpegImageReadParam && ((TurboJpegImageReadParam) readParam).getRotationDegree() != 0) {
             if (rotation == 90 || rotation == 270) {

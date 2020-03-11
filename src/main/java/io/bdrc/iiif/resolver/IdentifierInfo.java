@@ -12,7 +12,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.digitalcollections.iiif.myhymir.Application;
-import de.digitalcollections.iiif.myhymir.EHServerCache;
 import de.digitalcollections.model.api.identifiable.resource.exceptions.ResourceNotFoundException;
 import io.bdrc.iiif.exceptions.IIIFException;
 
@@ -59,8 +58,20 @@ public class IdentifierInfo {
         }
     }
 
-    public List<ImageInfo> getImageListInfo() {
+    public List<ImageInfo> ensureImageListInfo() throws IIIFException {
+        if (ili == null) {
+            try {
+                ili = ImageInfoListService.Instance.getAsync(igi.imageInstanceId.substring(AppConstants.BDR_len), igi.imageGroup).get();
+                return ili;
+            } catch (InterruptedException | ExecutionException e) {
+                throw new IIIFException(404, 5000, e);
+            }
+        }
         return ili;
+    }
+
+    public int getTotalPages() {
+        return igi.totalPages;
     }
 
     public String getCanonical() throws ClientProtocolException, IOException, IIIFException, ResourceNotFoundException {
@@ -144,11 +155,11 @@ public class IdentifierInfo {
 
     public static void main(String[] args) throws ClientProtocolException, IOException, IIIFException, ResourceNotFoundException {
         Application.initForTests();
-        IdentifierInfo info = new IdentifierInfo("bdr:I1NLM7_001::I1NLM7_0010003.jpg");
+        IdentifierInfo info = new IdentifierInfo("bdr:I0988");
         System.out.println("INFO >> " + info);
-        EHServerCache.IDENTIFIER.put("ID_" + 415289, info);
-        info = EHServerCache.IDENTIFIER.get("ID_" + 415289);
-        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>");
-        System.out.println(info);
+        // EHServerCache.IDENTIFIER.put("ID_" + 415289, info);
+        // info = EHServerCache.IDENTIFIER.get("ID_" + 415289);
+        // System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>");
+        // System.out.println(info);
     }
 }

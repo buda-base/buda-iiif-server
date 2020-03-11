@@ -210,10 +210,10 @@ public class ArchivesController {
         List<String> vlist = item.getItemVolumes();
         for (int i = 0; i < vlist.size(); i++) {
             String s = vlist.get(i);
-            System.out.println("Item volumes >>" + s);
             String shortName = getShortName(s);
-            links = links + "<a type=\"application/" + type + "\" href=\"/download/" + type + "/v:" + "bdr:" + shortName + "::1-" + "\">"
-                    + Integer.toString(i) + " - " + "bdr:" + shortName + "." + type + "</a><br/>";
+            IdentifierInfo vi = new IdentifierInfo("bdr:" + shortName);
+            links = links + "<a type=\"application/" + type + "\" href=\"/download/" + type + "/v:" + "bdr:" + shortName + "::1-" + vi.getTotalPages()
+                    + "\">Vol." + vi.igi.volumeNumber + " (" + vi.getTotalPages() + " pages) - " + "bdr:" + shortName + "." + type + "</a><br/>";
         }
         return links;
     }
@@ -244,7 +244,7 @@ public class ArchivesController {
         int endIndex = id.getEPageNum() == null ? totalPages : Math.min(totalPages, id.getEPageNum().intValue());
         if (!fairUse) {
             for (int imgSeqNum = beginIndex; imgSeqNum <= endIndex; imgSeqNum++) {
-                res.add(ili.get(imgSeqNum).filename);
+                res.add(ili.get(imgSeqNum - 1).filename);
             }
             return res;
         }

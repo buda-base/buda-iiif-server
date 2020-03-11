@@ -30,6 +30,8 @@ public class ImageGroupInfo {
     public String instanceId;
     @JsonProperty("imageInstanceId")
     public String imageInstanceId;
+    @JsonProperty("totalPages")
+    public Integer totalPages = 0;
     @JsonProperty("pagesIntroTbrc")
     public Integer pagesIntroTbrc = 0;
     @JsonProperty("volumeNumber")
@@ -39,7 +41,7 @@ public class ImageGroupInfo {
     @JsonProperty("iiifManifest")
     public URI iiifManifest = null;
     @JsonProperty("accessibleInFairUseList")
-    public Map<String,Boolean> accessibleInFairUseList = null;
+    public Map<String, Boolean> accessibleInFairUseList = null;
 
     private static final Logger logger = LoggerFactory.getLogger(ImageGroupInfoService.class);
 
@@ -60,6 +62,9 @@ public class ImageGroupInfo {
         if (sol.contains("?pagesIntroTbrc")) {
             this.pagesIntroTbrc = sol.get("?pagesIntroTbrc").asLiteral().getInt();
         }
+        if (sol.contains("?totalPages")) {
+            this.totalPages = sol.get("?totalPages").asLiteral().getInt();
+        }
         if (sol.contains("imageGroup")) {
             this.imageGroup = sol.getLiteral("imageGroup").getString();
         }
@@ -72,20 +77,20 @@ public class ImageGroupInfo {
             }
         }
     }
-    
+
     public void initAccessibleInFairUse(List<ImageInfo> ili) {
         if (this.accessibleInFairUseList != null)
             return;
         this.accessibleInFairUseList = new HashMap<>();
-        for (int x = this.pagesIntroTbrc; x < this.pagesIntroTbrc+AppConstants.FAIRUSE_PAGES_S; x++) {
+        for (int x = this.pagesIntroTbrc; x < this.pagesIntroTbrc + AppConstants.FAIRUSE_PAGES_S; x++) {
             this.accessibleInFairUseList.put(ili.get(x).filename, true);
         }
-        final int listSize = ili.size(); 
+        final int listSize = ili.size();
         for (int x = listSize - AppConstants.FAIRUSE_PAGES_E; x < listSize; x++) {
             this.accessibleInFairUseList.put(ili.get(x).filename, true);
         }
     }
-    
+
     public boolean isAccessibleInFairUse(final String imageFileName) throws IIIFException {
         if (this.accessibleInFairUseList == null) {
             throw new IIIFException(500, 5000, "isAccessibleInFairUse called but list not initialized");
