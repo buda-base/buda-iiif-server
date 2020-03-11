@@ -57,6 +57,7 @@ public class ArchivesController {
         boolean json = format.contains("application/json");
         String output = null;
         Identifier idf = new Identifier(id, Identifier.MANIFEST_ID);
+        log.info("Identifier object {}", idf);
         HttpHeaders headers = new HttpHeaders();
         HashMap<String, String> map = new HashMap<>();
         HashMap<String, HashMap<String, String>> jsonMap = new HashMap<>();
@@ -86,6 +87,7 @@ public class ArchivesController {
         case Identifier.MANIFEST_ID_WORK_IN_VOLUMEID:
             int bPage = idf.getBPageNum().intValue();
             int ePage = idf.getEPageNum().intValue();
+            log.info("Pdf requested start page {} and end page {}", bPage, ePage);
             IdentifierInfo inf = new IdentifierInfo(idf.getImageGroupId());
             List<ImageInfo> ili = null;
             try {
@@ -109,7 +111,7 @@ public class ArchivesController {
                 log.debug("PDF " + id + " from IIIF cache >>" + pdf_cached);
                 if (pdf_cached == null) {
                     // Build pdf since the pdf file doesn't exist yet
-                    ArchiveBuilder.buildPdf(inf, output, (String) request.getAttribute("origin"));
+                    ArchiveBuilder.buildPdf(inf, idf, output, (String) request.getAttribute("origin"));
                 }
             }
             if (type.equals(ArchiveBuilder.ZIP_TYPE)) {

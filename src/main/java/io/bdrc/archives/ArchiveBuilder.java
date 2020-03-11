@@ -3,6 +3,7 @@ package io.bdrc.archives;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.TreeMap;
@@ -33,6 +34,7 @@ import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 import io.bdrc.iiif.resolver.ImageInfo;
 import io.bdrc.iiif.resolver.ImageS3Service;
+import io.bdrc.libraries.Identifier;
 
 public class ArchiveBuilder {
 
@@ -46,7 +48,7 @@ public class ArchiveBuilder {
     private static ExecutorService service = Executors.newFixedThreadPool(50);
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
-    public static void buildPdf(IdentifierInfo inf, String output, String origin) throws Exception {
+    public static void buildPdf(IdentifierInfo inf, Identifier idf, String output, String origin) throws Exception {
         long deb = System.currentTimeMillis();
         try {
             Application.logPerf("Starting building pdf {}", inf.volumeId);
@@ -55,13 +57,13 @@ public class ArchiveBuilder {
             Application.logPerf("S3 client obtained in building pdf {} after {} ", inf.volumeId, System.currentTimeMillis() - deb);
             TreeMap<Integer, Future<?>> t_map = new TreeMap<>();
             HashMap<String, ImageInfo> imgDim = new HashMap<>();
-            log.info("IDENTIFIER INFO IN PDF BUILDER {}", inf);
-            for (ImageInfo i : inf.ensureImageListInfo()) {
-                imgDim.put(i.filename, i);
+            List<ImageInfo> imgInfo = inf.ensureImageListInfo();
+            if (idf.getBPageNum() != null && idf.getEPageNum() != null) {
+                imgInfo = getLimitedList(inf.ensureImageListInfo(), idf.getBPageNum().intValue(), idf.getEPageNum().intValue());
             }
             int i = 1;
-            for (String s : imgDim.keySet()) {
-                ImageInfo imgInf = imgDim.get(s);
+            for (ImageInfo imgInf : imgInfo) {
+                imgDim.put(imgInf.filename, imgInf);
                 ArchiveImageProducer tmp = null;
                 tmp = new ArchiveImageProducer(s3, inf, imgInf.filename, origin);
                 log.info("added Future for image {}", imgInf.filename);
@@ -110,6 +112,14 @@ public class ArchiveBuilder {
             throw new IIIFException(500, IIIFException.GENERIC_APP_ERROR_CODE, e);
         }
 
+    }
+
+    public static List<ImageInfo> getLimitedList(List<ImageInfo> list, int begin, int end) {
+        List<ImageInfo> imgInfo = new ArrayList<>();
+        for (int x = begin - 1; x < end; x++) {
+            imgInfo.add(list.get(x));
+        }
+        return imgInfo;
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
