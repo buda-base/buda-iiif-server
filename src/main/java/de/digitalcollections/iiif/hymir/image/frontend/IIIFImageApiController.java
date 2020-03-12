@@ -149,14 +149,27 @@ public class IIIFImageApiController {
             InvalidParametersException, UnsupportedOperationException, UnsupportedFormatException, ResourceNotFoundException, ImageReadException {
         long deb = System.currentTimeMillis();
         boolean staticImg = false;
+        String path = request.getServletPath();
+        if (request.getPathInfo() != null) {
+            path = request.getPathInfo();
+        }
         String img = "";
+        HttpHeaders headers = new HttpHeaders();
+        ImageApiSelector selector = getImageApiSelector(identifier, region, size, rotation, quality, format);
+        final ImageApiProfile profile = ImageApiProfile.LEVEL_TWO;
+        // TODO: the first part seems ignored?
+        ImageService info = new ImageService("https://iiif.bdrc.io/" + identifier, profile);
+        headers.setContentType(MediaType.parseMediaType(selector.getFormat().getMimeType().getTypeName()));
+        headers.set("Content-Disposition", "inline; filename=" + path.replaceFirst("/image/", "").replace('/', '_').replace(',', '_'));
+        headers.add("Link", String.format("<%s>;rel=\"profile\"", profile.getIdentifier().toString()));
         if (identifier.split("::").length > 1) {
             img = identifier.split("::")[1];
             staticImg = identifier.split("::")[0].trim().equals("static");
         }
         ResourceAccessValidation accValidation = null;
-        IdentifierInfo idi = new IdentifierInfo(identifier);
+        IdentifierInfo idi = null;
         if (!staticImg) {
+            idi = new IdentifierInfo(identifier);
             accValidation = new ResourceAccessValidation((Access) request.getAttribute("access"), idi, img);
             identifier = URLDecoder.decode(identifier, "UTF-8");
             if (!accValidation.isAccessible(request)) {
@@ -169,25 +182,21 @@ public class IIIFImageApiController {
                     return new ResponseEntity<>("Insufficient rights".getBytes(), headers1, HttpStatus.FORBIDDEN);
                 }
             }
-        }
-        HttpHeaders headers = new HttpHeaders();
-        String path = request.getServletPath();
-        if (request.getPathInfo() != null) {
-            path = request.getPathInfo();
-        }
-        if (staticImg || idi.igi.access.equals(AccessType.OPEN)) {
-            headers.setCacheControl(CacheControl.maxAge(maxAge, TimeUnit.MILLISECONDS).cachePublic());
-        } else {
             headers.setCacheControl(CacheControl.maxAge(maxAge, TimeUnit.MILLISECONDS).cachePrivate());
+        } else {
+            headers.setCacheControl(CacheControl.maxAge(maxAge, TimeUnit.MILLISECONDS).cachePublic());
+            ImageS3Service service = ImageS3Service.InstanceStatic;
         }
-        ImageApiSelector selector = getImageApiSelector(identifier, region, size, rotation, quality, format);
+        if (idi != null) {
+            if (idi.igi.access.equals(AccessType.OPEN)) {
+                headers.setCacheControl(CacheControl.maxAge(maxAge, TimeUnit.MILLISECONDS).cachePublic());
+            } else {
+                headers.setCacheControl(CacheControl.maxAge(maxAge, TimeUnit.MILLISECONDS).cachePrivate());
+            }
+        }
+
         long deb1 = System.currentTimeMillis();
-        final ImageApiProfile profile = ImageApiProfile.LEVEL_TWO;
-        // TODO: the first part seems ignored?
-        ImageService info = new ImageService("https://iiif.bdrc.io/" + identifier, profile);
-        headers.setContentType(MediaType.parseMediaType(selector.getFormat().getMimeType().getTypeName()));
-        headers.set("Content-Disposition", "inline; filename=" + path.replaceFirst("/image/", "").replace('/', '_').replace(',', '_'));
-        headers.add("Link", String.format("<%s>;rel=\"profile\"", profile.getIdentifier().toString()));
+
         // Now a shortcut:
 
         if (!BDRCImageServiceImpl.requestDiffersFromOriginal(identifier, selector)) {
