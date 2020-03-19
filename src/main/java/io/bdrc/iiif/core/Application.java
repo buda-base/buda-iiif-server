@@ -28,9 +28,7 @@ import io.bdrc.iiif.metrics.ImageMetrics;
 @Configuration
 @EnableAutoConfiguration
 @Primary
-@ComponentScan(basePackages = { "de.digitalcollections.core.business.impl.service", "io.bdrc.archives", "io.bdrc.iiif",
-        "de.digitalcollections.iiif.hymir", "de.digitalcollections.iiif.myhymir",
-        "de.digitalcollections.core.backend.impl.file.repository.resource.util" })
+@ComponentScan(basePackages = { "io.bdrc.iiif", "de.digitalcollections.iiif.hymir", "de.digitalcollections.iiif.myhymir" })
 
 //REMINDER : DO NOT REMOVE THE FOLLOWING COMMENTS
 /*
