@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.digitalcollections.iiif.myhymir.EHServerCache;
+import io.bdrc.iiif.core.EHServerCache;
 import io.bdrc.iiif.exceptions.IIIFException;
 
 public class ConcurrentResourceService<T> {

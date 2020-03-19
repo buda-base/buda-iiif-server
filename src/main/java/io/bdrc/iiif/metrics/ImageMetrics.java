@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import de.digitalcollections.iiif.myhymir.Application;
+import io.bdrc.iiif.core.Application;
 import io.bdrc.iiif.exceptions.IIIFException;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Metrics;

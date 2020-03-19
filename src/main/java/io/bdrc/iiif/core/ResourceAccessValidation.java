@@ -1,5 +1,5 @@
 
-package de.digitalcollections.iiif.myhymir;
+package io.bdrc.iiif.core;
 
 import javax.servlet.http.HttpServletRequest;
 

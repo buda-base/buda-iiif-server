@@ -1,4 +1,4 @@
-package de.digitalcollections.iiif.myhymir;
+package io.bdrc.iiif.core;
 
 import java.io.File;
 import java.util.HashMap;
@@ -13,8 +13,8 @@ import org.ehcache.config.builders.ResourcePoolsBuilder;
 import org.ehcache.config.units.EntryUnit;
 import org.ehcache.config.units.MemoryUnit;
 
-import io.bdrc.archives.ArchiveInfo;
-import io.bdrc.archives.PdfItemInfo;
+import io.bdrc.iiif.archives.ArchiveInfo;
+import io.bdrc.iiif.archives.PdfItemInfo;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 import io.bdrc.iiif.resolver.ImageGroupInfo;
 

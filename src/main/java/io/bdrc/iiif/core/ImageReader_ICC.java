@@ -1,4 +1,4 @@
-package de.digitalcollections.iiif.myhymir;
+package io.bdrc.iiif.core;
 
 import java.awt.color.ICC_Profile;
 

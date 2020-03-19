@@ -1,4 +1,4 @@
-package io.bdrc.archives;
+package io.bdrc.iiif.archives;
 
 import java.net.MalformedURLException;
 import java.util.ArrayList;
@@ -13,8 +13,8 @@ import org.apache.jena.rdf.model.ResourceFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.digitalcollections.iiif.myhymir.Application;
-import de.digitalcollections.iiif.myhymir.EHServerCache;
+import io.bdrc.iiif.core.Application;
+import io.bdrc.iiif.core.EHServerCache;
 import io.bdrc.iiif.exceptions.IIIFException;
 
 public class PdfItemInfo {
@@ -67,8 +67,6 @@ public class PdfItemInfo {
         List<Resource> nodes;
         if (itemVolumes == null) {
             itemVolumes = new ArrayList<>();
-            // nodes = itemModel.listObjectsOfProperty(ResourceFactory.createProperty(BDO +
-            // "itemHasVolume")).toList();
             nodes = itemModel.listSubjectsWithProperty(ResourceFactory.createProperty(BDO + "volumeNumber")).toList();
             for (Resource nd : nodes) {
                 itemVolumes.add(nd.asResource().getURI());

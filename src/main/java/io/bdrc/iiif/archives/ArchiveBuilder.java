@@ -1,4 +1,4 @@
-package io.bdrc.archives;
+package io.bdrc.iiif.archives;
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
@@ -28,8 +28,8 @@ import org.slf4j.LoggerFactory;
 
 import com.amazonaws.services.s3.AmazonS3;
 
-import de.digitalcollections.iiif.myhymir.Application;
-import de.digitalcollections.iiif.myhymir.EHServerCache;
+import io.bdrc.iiif.core.Application;
+import io.bdrc.iiif.core.EHServerCache;
 import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 import io.bdrc.iiif.resolver.ImageInfo;

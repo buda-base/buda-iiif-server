@@ -1,4 +1,4 @@
-package io.bdrc.archives;
+package io.bdrc.iiif.archives;
 
 import java.io.IOException;
 import java.util.Calendar;
@@ -14,8 +14,8 @@ import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
 
-import de.digitalcollections.iiif.myhymir.Application;
-import de.digitalcollections.iiif.myhymir.EHServerCache;
+import io.bdrc.iiif.core.Application;
+import io.bdrc.iiif.core.EHServerCache;
 import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 

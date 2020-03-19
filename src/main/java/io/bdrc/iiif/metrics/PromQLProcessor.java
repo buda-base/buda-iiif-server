@@ -11,7 +11,7 @@ import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.digitalcollections.iiif.myhymir.Application;
+import io.bdrc.iiif.core.Application;
 
 public class PromQLProcessor {
 

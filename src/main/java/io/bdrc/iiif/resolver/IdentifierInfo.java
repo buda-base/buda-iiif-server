@@ -11,8 +11,8 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import de.digitalcollections.iiif.myhymir.Application;
 import de.digitalcollections.model.api.identifiable.resource.exceptions.ResourceNotFoundException;
+import io.bdrc.iiif.core.Application;
 import io.bdrc.iiif.exceptions.IIIFException;
 
 public class IdentifierInfo {

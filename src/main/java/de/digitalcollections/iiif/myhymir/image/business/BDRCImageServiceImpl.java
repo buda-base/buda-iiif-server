@@ -26,7 +26,6 @@ import org.apache.commons.imaging.ImageReadException;
 import org.apache.commons.imaging.Imaging;
 import org.apache.jena.atlas.logging.Log;
 import org.imgscalr.Scalr;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
@@ -39,8 +38,7 @@ import com.sun.media.jai.codec.ImageEncoder;
 import com.sun.media.jai.codec.PNGEncodeParam;
 
 import de.digitalcollections.core.model.api.resource.exceptions.ResourceIOException;
-import de.digitalcollections.iiif.hymir.image.business.api.ImageSecurityService;
-import de.digitalcollections.iiif.hymir.image.business.api.ImageService;
+//import de.digitalcollections.iiif.hymir.image.business.api.ImageService;
 import de.digitalcollections.iiif.hymir.model.exception.InvalidParametersException;
 import de.digitalcollections.iiif.hymir.model.exception.UnsupportedFormatException;
 import de.digitalcollections.iiif.model.image.ImageApiProfile;
@@ -52,23 +50,20 @@ import de.digitalcollections.iiif.model.image.ResolvingException;
 import de.digitalcollections.iiif.model.image.Size;
 import de.digitalcollections.iiif.model.image.SizeRequest;
 import de.digitalcollections.iiif.model.image.TileInfo;
-import de.digitalcollections.iiif.myhymir.Application;
-import de.digitalcollections.iiif.myhymir.ImageReader_ICC;
 import de.digitalcollections.model.api.identifiable.resource.exceptions.ResourceNotFoundException;
 import de.digitalcollections.turbojpeg.imageio.TurboJpegImageReadParam;
 import de.digitalcollections.turbojpeg.imageio.TurboJpegImageReader;
+import io.bdrc.iiif.core.Application;
+import io.bdrc.iiif.core.ImageReader_ICC;
 import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 import io.bdrc.iiif.resolver.ImageS3Service;
 
 @Service
 @Primary
-public class BDRCImageServiceImpl implements ImageService {
+public class BDRCImageServiceImpl /* implements ImageService */ {
 
     public static final String IIIF_IMG = "IIIF_IMG";
-
-    @Autowired(required = false)
-    private ImageSecurityService imageSecurityService;
 
     @Value("${custom.iiif.image.maxWidth:65500}")
     private int maxWidth;
@@ -174,9 +169,6 @@ public class BDRCImageServiceImpl implements ImageService {
     private ImageReader_ICC getReader(String identifier) throws UnsupportedFormatException, IOException, IIIFException, ResourceNotFoundException {
         long deb = System.currentTimeMillis();
         ICC_Profile icc = null;
-        if (imageSecurityService != null && !imageSecurityService.isAccessAllowed(identifier)) {
-            throw new IIIFException();
-        }
         final String s3key;
         final ImageS3Service service;
         if (identifier.startsWith("static::")) {
@@ -211,7 +203,7 @@ public class BDRCImageServiceImpl implements ImageService {
         return new ImageReader_ICC(reader, icc);
     }
 
-    @Override
+    // @Override
     public void readImageInfo(String identifier, de.digitalcollections.iiif.model.image.ImageService info)
             throws UnsupportedFormatException, UnsupportedOperationException, IOException {
         try {
@@ -380,7 +372,7 @@ public class BDRCImageServiceImpl implements ImageService {
         return img;
     }
 
-    @Override
+    // @Override
     public void processImage(String identifier, ImageApiSelector selector, ImageApiProfile profile, OutputStream os)
             throws InvalidParametersException, UnsupportedOperationException, UnsupportedFormatException, IOException {
         // unused
@@ -490,7 +482,6 @@ public class BDRCImageServiceImpl implements ImageService {
                 writeParam.setCompressionMode(WebPWriteParam.MODE_DEFAULT);
                 ImageOutputStream iss = ImageIO.createImageOutputStream(os);
                 writer.setOutput(iss);
-                // writer.write(outImg);
                 writer.write(null, new IIOImage(outImg, null, null), writeParam);
                 writer.dispose();
                 iss.flush();
@@ -511,17 +502,9 @@ public class BDRCImageServiceImpl implements ImageService {
         }
     }
 
-    @Override
+    // @Override
     public Instant getImageModificationDate(String identifier) throws ResourceNotFoundException {
-        if (imageSecurityService != null && !imageSecurityService.isAccessAllowed(identifier)) {
-            Log.error("Could not get Image modification date for identifier " + identifier, "");
-            throw new ResourceNotFoundException();
-        }
         try {
-            // Resource res = resourceService.get(identifier,
-            // ResourcePersistenceType.RESOLVED, MimeType.MIME_IMAGE);
-            // This was returning -1 from S3Resource as we don't have this info yet from S3
-            // We'll change this wahe we get the info from s3, meanwhile, we use -1
             return Instant.ofEpochMilli(-1);
         } catch (Exception e) {
             Log.error("Could not get Image modification date from resource for identifier " + identifier, "");

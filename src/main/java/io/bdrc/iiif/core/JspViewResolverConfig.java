@@ -1,4 +1,4 @@
-package de.digitalcollections.iiif.myhymir;
+package io.bdrc.iiif.core;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
