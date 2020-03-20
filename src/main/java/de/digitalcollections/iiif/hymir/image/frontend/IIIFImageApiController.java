@@ -42,7 +42,6 @@ import de.digitalcollections.iiif.model.image.ImageApiSelector;
 import de.digitalcollections.iiif.model.image.ImageService;
 import de.digitalcollections.iiif.model.image.ResolvingException;
 import de.digitalcollections.iiif.model.jackson.IiifObjectMapper;
-import de.digitalcollections.iiif.myhymir.image.business.BDRCImageServiceImpl;
 import de.digitalcollections.model.api.identifiable.resource.exceptions.ResourceNotFoundException;
 import io.bdrc.auth.Access;
 import io.bdrc.auth.AuthProps;
@@ -50,9 +49,11 @@ import io.bdrc.auth.TokenValidation;
 import io.bdrc.iiif.auth.AuthServiceInfo;
 import io.bdrc.iiif.core.Application;
 import io.bdrc.iiif.core.EHServerCache;
-import io.bdrc.iiif.core.ImageReader_ICC;
 import io.bdrc.iiif.core.ResourceAccessValidation;
 import io.bdrc.iiif.exceptions.IIIFException;
+import io.bdrc.iiif.image.BDRCImageService;
+import io.bdrc.iiif.image.BDRCImageServiceImpl;
+import io.bdrc.iiif.image.ImageReader_ICC;
 import io.bdrc.iiif.metrics.ImageMetrics;
 import io.bdrc.iiif.resolver.AccessType;
 import io.bdrc.iiif.resolver.IdentifierInfo;
@@ -62,11 +63,6 @@ import io.bdrc.iiif.resolver.ImageS3Service;
 @Component
 @RequestMapping("/")
 public class IIIFImageApiController {
-
-    public static final String IIIF_IMG = "IIIF_IMG";
-
-    @Autowired
-    private BDRCImageServiceImpl imageService;
 
     @Autowired
     private AuthServiceInfo serviceInfo;
@@ -224,7 +220,7 @@ public class IIIFImageApiController {
         deb1 = System.currentTimeMillis();
         ImageReader_ICC imgReader = null;
         try {
-            imgReader = imageService.readImageInfo(identifier, info, null);
+            imgReader = BDRCImageServiceImpl.readImageInfo(identifier, info, null);
         } catch (ResourceIOException e) {
             log.error("Resource was not found for identifier " + identifier + " Message: " + e.getMessage());
             return new ResponseEntity<>(("Resource was not found for identifier " + identifier).getBytes(), HttpStatus.NOT_FOUND);
@@ -234,12 +230,10 @@ public class IIIFImageApiController {
         final String canonicalForm = idi.getCanonical();
         headers.add("Link",
                 String.format("<%s>;rel=\"canonical\"", getUrlBase(request) + path.substring(0, path.indexOf(identifier)) + canonicalForm));
-        // headers.add("Location", getUrlBase(request) + path.substring(0,
-        // path.indexOf(identifier)) + canonicalForm);
         deb1 = System.currentTimeMillis();
         Application.logPerf("processing image output stream for {}", identifier);
         ByteArrayOutputStream os = new ByteArrayOutputStream();
-        imageService.processImage(identifier, selector, profile, os, imgReader, request.getRequestURI());
+        BDRCImageServiceImpl.processImage(identifier, selector, profile, os, imgReader, request.getRequestURI());
         Application.logPerf("ended processing image after {} ms for {}", (System.currentTimeMillis() - deb1), identifier);
         Application.logPerf("Total request time {} ms ", (System.currentTimeMillis() - deb), identifier);
         imgReader.getReader().dispose();
@@ -272,12 +266,7 @@ public class IIIFImageApiController {
             accValidation = new ResourceAccessValidation((Access) req.getAttribute("access"), idi, img);
             unAuthorized = !accValidation.isAccessible(req);
         }
-//        try {
-//            webRequest.checkNotModified(imageService.getImageModificationDate(identifier).toEpochMilli());
-//        } catch (ResourceNotFoundException e) {
-//            log.error("Resource was not found for identifier " + identifier + " Message: " + e.getMessage());
-//            return new ResponseEntity<>("Resource was not found for identifier " + identifier, HttpStatus.NOT_FOUND);
-//        }
+
         String path = req.getServletPath();
         if (req.getPathInfo() != null) {
             path = req.getPathInfo();
@@ -290,10 +279,10 @@ public class IIIFImageApiController {
             info.setPreferredFormats(pngHint);
         }
         Application.logPerf("getInfo read ImageInfo for {}", identifier);
-        imageService.readImageInfo(identifier, info, null);
+        BDRCImageServiceImpl.readImageInfo(identifier, info, null);
         HttpHeaders headers = new HttpHeaders();
         try {
-            headers.setDate("Last-Modified", imageService.getImageModificationDate(identifier).toEpochMilli());
+            headers.setDate("Last-Modified", BDRCImageServiceImpl.getImageModificationDate(identifier).toEpochMilli());
         } catch (ResourceNotFoundException e) {
             log.error("Resource was not found for identifier " + identifier + " Message: " + e.getMessage());
             return new ResponseEntity<>("Resource was not found for identifier " + identifier, HttpStatus.NOT_FOUND);

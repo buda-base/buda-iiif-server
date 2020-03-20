@@ -1,4 +1,4 @@
-package io.bdrc.iiif.core;
+package io.bdrc.iiif.image;
 
 import java.awt.color.ICC_Profile;
 

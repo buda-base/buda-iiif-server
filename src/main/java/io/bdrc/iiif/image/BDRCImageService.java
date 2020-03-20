@@ -1,4 +1,4 @@
-package de.digitalcollections.iiif.hymir.image.frontend;
+package io.bdrc.iiif.image;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
