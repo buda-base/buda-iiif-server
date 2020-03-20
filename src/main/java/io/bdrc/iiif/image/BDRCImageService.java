@@ -2,17 +2,17 @@ package io.bdrc.iiif.image;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import de.digitalcollections.iiif.model.PropertyValue;
-import de.digitalcollections.iiif.model.image.ImageApiProfile;
-import de.digitalcollections.iiif.model.image.ImageService;
+import io.bdrc.iiif.model.ImageApiProfile;
+import io.bdrc.iiif.model.ImageService;
+import io.bdrc.iiif.model.PropertyValue;
 
 public class BDRCImageService extends ImageService {
 
     // this class extends the info.json with preferredFormats property
-    
+
     @JsonProperty("preferredFormats")
-    private PropertyValue preferredFormats;  
-    
+    private PropertyValue preferredFormats;
+
     public BDRCImageService(String identifier, ImageApiProfile profile) {
         super(identifier, profile);
     }

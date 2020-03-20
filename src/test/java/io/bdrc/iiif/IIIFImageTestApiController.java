@@ -20,15 +20,17 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.context.request.WebRequest;
 
-import de.digitalcollections.iiif.hymir.image.business.api.ImageService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import de.digitalcollections.iiif.hymir.model.exception.InvalidParametersException;
 import de.digitalcollections.iiif.hymir.model.exception.UnsupportedFormatException;
-import de.digitalcollections.iiif.model.jackson.IiifObjectMapper;
 import io.bdrc.auth.Access;
 import io.bdrc.auth.TokenValidation;
 import io.bdrc.iiif.auth.AuthServiceInfo;
 import io.bdrc.iiif.core.ResourceAccessValidation;
 import io.bdrc.iiif.exceptions.IIIFException;
+import io.bdrc.iiif.image.BDRCImageServiceImpl;
+import io.bdrc.iiif.model.ImageService;
 import io.bdrc.iiif.resolver.AccessType;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 import io.bdrc.iiif.resolver.ImageGroupInfo;
@@ -40,13 +42,7 @@ public class IIIFImageTestApiController {
     public static final String VERSION = "v2";
 
     @Autowired
-    private ImageService imageService;
-
-    @Autowired
     private AuthServiceInfo serviceInfo;
-
-    @Autowired
-    private IiifObjectMapper objectMapper;
 
     @Value("${cache-control.maxage}")
     private long maxAge;
@@ -78,8 +74,10 @@ public class IIIFImageTestApiController {
     }
 
     @RequestMapping(value = "{identifier}/{region}/{size}/{rotation}/{quality}.{format}")
-    public ResponseEntity<byte[]> getImageRepresentation(@PathVariable String identifier, @PathVariable String region, @PathVariable String size, @PathVariable String rotation, @PathVariable String quality, @PathVariable String format,
-            HttpServletRequest request, HttpServletResponse response, WebRequest webRequest) throws UnsupportedFormatException, UnsupportedOperationException, IOException, InvalidParametersException, IIIFException {
+    public ResponseEntity<byte[]> getImageRepresentation(@PathVariable String identifier, @PathVariable String region, @PathVariable String size,
+            @PathVariable String rotation, @PathVariable String quality, @PathVariable String format, HttpServletRequest request,
+            HttpServletResponse response, WebRequest webRequest)
+            throws UnsupportedFormatException, UnsupportedOperationException, IOException, InvalidParametersException, IIIFException {
         String pth = "/test/v2/" + identifier + "/" + region + "/" + size + "/" + rotation + "/" + quality + "." + format;
         ImageGroupInfo igi = new ImageGroupInfo();
         igi.access = AccessType.OPEN;
@@ -106,7 +104,9 @@ public class IIIFImageTestApiController {
     }
 
     @RequestMapping(value = "{identifier}/info.json", method = { RequestMethod.GET, RequestMethod.HEAD })
-    public ResponseEntity<String> getInfo(@PathVariable String identifier, HttpServletRequest req, HttpServletResponse res, WebRequest webRequest) throws Exception {
+    public ResponseEntity<String> getInfo(@PathVariable String identifier, HttpServletRequest req, HttpServletResponse res, WebRequest webRequest)
+            throws Exception {
+        ObjectMapper objectMapper = new ObjectMapper();
         String pth = "/test/v2/" + identifier + "/info.json";
         System.out.println("PATH >>>>> " + pth);
         ImageGroupInfo igi = new ImageGroupInfo();
@@ -116,7 +116,7 @@ public class IIIFImageTestApiController {
         IdentifierInfo idf = new IdentifierInfo(identifier, igi);
         ResourceAccessValidation accValidation = new ResourceAccessValidation((Access) req.getAttribute("access"), idf);
         boolean unAuthorized = !accValidation.isAccessible(req);
-        long modified = imageService.getImageModificationDate(identifier).toEpochMilli();
+        long modified = BDRCImageServiceImpl.getImageModificationDate(identifier).toEpochMilli();
         webRequest.checkNotModified(modified);
         String path;
         if (req.getPathInfo() != null) {
@@ -126,11 +126,11 @@ public class IIIFImageTestApiController {
         }
         String baseUrl = getUrlBase(req);
 
-        de.digitalcollections.iiif.model.image.ImageService info = new de.digitalcollections.iiif.model.image.ImageService(baseUrl + path.replace("/info.json", ""));
+        ImageService info = new ImageService(baseUrl + path.replace("/info.json", ""));
         if (unAuthorized && serviceInfo.authEnabled() && serviceInfo.hasValidProperties()) {
             info.addService(serviceInfo);
         }
-        imageService.readImageInfo(identifier, info);
+        BDRCImageServiceImpl.readImageInfo(identifier, info, null);
         HttpHeaders headers = new HttpHeaders();
         headers.setDate("Last-Modified", modified);
         String contentType = req.getHeader("Accept");
@@ -138,7 +138,8 @@ public class IIIFImageTestApiController {
             headers.set("Content-Type", contentType);
         } else {
             headers.set("Content-Type", "application/json");
-            headers.add("Link", "<http://iiif.io/api/image/2/context.json>; " + "rel=\"http://www.w3.org/ns/json-ld#context\"; " + "type=\"application/ld+json\"");
+            headers.add("Link", "<http://iiif.io/api/image/2/context.json>; " + "rel=\"http://www.w3.org/ns/json-ld#context\"; "
+                    + "type=\"application/ld+json\"");
         }
         headers.add("Link", String.format("<%s>;rel=\"profile\"", info.getProfiles().get(0).getIdentifier().toString()));
         // We set the header ourselves, since using @CrossOrigin doesn't expose "*", but

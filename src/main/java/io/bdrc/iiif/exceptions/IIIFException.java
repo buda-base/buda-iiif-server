@@ -24,6 +24,10 @@ public class IIIFException extends Exception {
     public IIIFException() {
     }
 
+    public IIIFException(String message) {
+        super(message);
+    }
+
     public IIIFException(int status, int code, String message, String developerMessage, String link) {
         super(message);
         this.status = status;

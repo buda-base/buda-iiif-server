@@ -32,16 +32,12 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.WebRequest;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.digitalcollections.core.model.api.resource.exceptions.ResourceIOException;
 import de.digitalcollections.iiif.hymir.model.exception.InvalidParametersException;
 import de.digitalcollections.iiif.hymir.model.exception.UnsupportedFormatException;
-import de.digitalcollections.iiif.model.PropertyValue;
-import de.digitalcollections.iiif.model.image.ImageApiProfile;
-import de.digitalcollections.iiif.model.image.ImageApiSelector;
-import de.digitalcollections.iiif.model.image.ImageService;
-import de.digitalcollections.iiif.model.image.ResolvingException;
-import de.digitalcollections.iiif.model.jackson.IiifObjectMapper;
+//import de.digitalcollections.iiif.model.image.ResolvingException;
 import de.digitalcollections.model.api.identifiable.resource.exceptions.ResourceNotFoundException;
 import io.bdrc.auth.Access;
 import io.bdrc.auth.AuthProps;
@@ -55,6 +51,10 @@ import io.bdrc.iiif.image.BDRCImageService;
 import io.bdrc.iiif.image.BDRCImageServiceImpl;
 import io.bdrc.iiif.image.ImageReader_ICC;
 import io.bdrc.iiif.metrics.ImageMetrics;
+import io.bdrc.iiif.model.ImageApiProfile;
+import io.bdrc.iiif.model.ImageApiSelector;
+import io.bdrc.iiif.model.ImageService;
+import io.bdrc.iiif.model.PropertyValue;
 import io.bdrc.iiif.resolver.AccessType;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 import io.bdrc.iiif.resolver.ImageS3Service;
@@ -66,9 +66,6 @@ public class IIIFImageApiController {
 
     @Autowired
     private AuthServiceInfo serviceInfo;
-
-    @Autowired
-    private IiifObjectMapper objectMapper;
 
     @Value("${cache-control.maxage}")
     private long maxAge;
@@ -252,6 +249,7 @@ public class IIIFImageApiController {
     public ResponseEntity<String> getInfo(@PathVariable String identifier, HttpServletRequest req, HttpServletResponse res, WebRequest webRequest)
             throws ClientProtocolException, IOException, IIIFException, UnsupportedOperationException, UnsupportedFormatException {
         long deb = System.currentTimeMillis();
+        ObjectMapper objectMapper = new ObjectMapper();
         String img = "";
         boolean staticImg = false;
         if (identifier.split("::").length > 1) {
@@ -373,7 +371,7 @@ public class IIIFImageApiController {
             }
             selector.setQuality(ImageApiProfile.Quality.valueOf(quality.toUpperCase()));
             selector.setFormat(ImageApiProfile.Format.valueOf(format.toUpperCase()));
-        } catch (ResolvingException e) {
+        } catch (IIIFException e) {
             log.error("ImageApiSelector could not be obtained; Message:" + e.getMessage());
             throw new InvalidParametersException(e);
         }

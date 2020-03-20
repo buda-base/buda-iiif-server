@@ -40,20 +40,20 @@ import com.sun.media.jai.codec.PNGEncodeParam;
 import de.digitalcollections.core.model.api.resource.exceptions.ResourceIOException;
 import de.digitalcollections.iiif.hymir.model.exception.InvalidParametersException;
 import de.digitalcollections.iiif.hymir.model.exception.UnsupportedFormatException;
-import de.digitalcollections.iiif.model.image.ImageApiProfile;
-import de.digitalcollections.iiif.model.image.ImageApiProfile.Format;
-import de.digitalcollections.iiif.model.image.ImageApiProfile.Quality;
-import de.digitalcollections.iiif.model.image.ImageApiSelector;
-import de.digitalcollections.iiif.model.image.RegionRequest;
-import de.digitalcollections.iiif.model.image.ResolvingException;
-import de.digitalcollections.iiif.model.image.Size;
-import de.digitalcollections.iiif.model.image.SizeRequest;
 import de.digitalcollections.iiif.model.image.TileInfo;
 import de.digitalcollections.model.api.identifiable.resource.exceptions.ResourceNotFoundException;
 import de.digitalcollections.turbojpeg.imageio.TurboJpegImageReadParam;
 import de.digitalcollections.turbojpeg.imageio.TurboJpegImageReader;
 import io.bdrc.iiif.core.Application;
 import io.bdrc.iiif.exceptions.IIIFException;
+import io.bdrc.iiif.model.ImageApiProfile;
+import io.bdrc.iiif.model.ImageApiProfile.Format;
+import io.bdrc.iiif.model.ImageApiProfile.Quality;
+import io.bdrc.iiif.model.ImageApiSelector;
+import io.bdrc.iiif.model.ImageService;
+import io.bdrc.iiif.model.RegionRequest;
+import io.bdrc.iiif.model.Size;
+import io.bdrc.iiif.model.SizeRequest;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 import io.bdrc.iiif.resolver.ImageS3Service;
 
@@ -68,7 +68,7 @@ public class BDRCImageServiceImpl {
     private static int maxHeight;
 
     /** Update ImageService based on the image **/
-    private static void enrichInfo(ImageReader reader, de.digitalcollections.iiif.model.image.ImageService info) throws IOException {
+    private static void enrichInfo(ImageReader reader, ImageService info) throws IOException {
 
         ImageApiProfile profile = new ImageApiProfile();
         profile.addFeature(ImageApiProfile.Feature.BASE_URI_REDIRECT, ImageApiProfile.Feature.CORS, ImageApiProfile.Feature.JSONLD_MEDIA_TYPE,
@@ -179,8 +179,8 @@ public class BDRCImageServiceImpl {
         return new ImageReader_ICC(reader, icc);
     }
 
-    public static ImageReader_ICC readImageInfo(String identifier, de.digitalcollections.iiif.model.image.ImageService info,
-            ImageReader_ICC imgReader) throws UnsupportedFormatException, UnsupportedOperationException, IOException {
+    public static ImageReader_ICC readImageInfo(String identifier, ImageService info, ImageReader_ICC imgReader)
+            throws UnsupportedFormatException, UnsupportedOperationException, IOException {
         try {
             imgReader = getReader(identifier);
             enrichInfo(imgReader.getReader(), info);
@@ -203,7 +203,7 @@ public class BDRCImageServiceImpl {
         Rectangle targetRegion;
         try {
             targetRegion = selector.getRegion().resolve(nativeDimensions);
-        } catch (ResolvingException e) {
+        } catch (IIIFException e) {
             Log.error("Could not get image ReadParam", e.getMessage());
             throw new InvalidParametersException(e);
         }
@@ -233,7 +233,7 @@ public class BDRCImageServiceImpl {
         Rectangle targetRegion;
         try {
             targetRegion = selector.getRegion().resolve(nativeDimensions);
-        } catch (ResolvingException e) {
+        } catch (IIIFException e) {
             Log.error("Could not resolve selector region :" + selector.getRegion(), e.getMessage());
             throw new InvalidParametersException(e);
         }
@@ -241,7 +241,7 @@ public class BDRCImageServiceImpl {
         Dimension targetSize;
         try {
             targetSize = selector.getSize().resolve(croppedDimensions, profile);
-        } catch (ResolvingException e) {
+        } catch (IIIFException e) {
             Log.error("Could not resolve selector size :" + selector.getSize(), e.getMessage());
             throw new InvalidParametersException(e);
         }
