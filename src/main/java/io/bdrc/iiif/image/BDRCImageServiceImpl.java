@@ -37,15 +37,12 @@ import com.sun.media.jai.codec.ImageEncodeParam;
 import com.sun.media.jai.codec.ImageEncoder;
 import com.sun.media.jai.codec.PNGEncodeParam;
 
-import de.digitalcollections.core.model.api.resource.exceptions.ResourceIOException;
-import de.digitalcollections.iiif.hymir.model.exception.InvalidParametersException;
-import de.digitalcollections.iiif.hymir.model.exception.UnsupportedFormatException;
-import de.digitalcollections.iiif.model.image.TileInfo;
-import de.digitalcollections.model.api.identifiable.resource.exceptions.ResourceNotFoundException;
 import de.digitalcollections.turbojpeg.imageio.TurboJpegImageReadParam;
 import de.digitalcollections.turbojpeg.imageio.TurboJpegImageReader;
 import io.bdrc.iiif.core.Application;
 import io.bdrc.iiif.exceptions.IIIFException;
+import io.bdrc.iiif.exceptions.InvalidParametersException;
+import io.bdrc.iiif.exceptions.UnsupportedFormatException;
 import io.bdrc.iiif.model.ImageApiProfile;
 import io.bdrc.iiif.model.ImageApiProfile.Format;
 import io.bdrc.iiif.model.ImageApiProfile.Quality;
@@ -54,6 +51,7 @@ import io.bdrc.iiif.model.ImageService;
 import io.bdrc.iiif.model.RegionRequest;
 import io.bdrc.iiif.model.Size;
 import io.bdrc.iiif.model.SizeRequest;
+import io.bdrc.iiif.model.TileInfo;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 import io.bdrc.iiif.resolver.ImageS3Service;
 
@@ -143,8 +141,7 @@ public class BDRCImageServiceImpl {
      * @throws ResourceNotFoundException
      * @throws ImageReadException
      **/
-    private static ImageReader_ICC getReader(String identifier)
-            throws UnsupportedFormatException, IOException, IIIFException, ResourceNotFoundException {
+    private static ImageReader_ICC getReader(String identifier) throws UnsupportedFormatException, IOException, IIIFException {
         long deb = System.currentTimeMillis();
         ICC_Profile icc = null;
         final String s3key;
@@ -180,13 +177,13 @@ public class BDRCImageServiceImpl {
     }
 
     public static ImageReader_ICC readImageInfo(String identifier, ImageService info, ImageReader_ICC imgReader)
-            throws UnsupportedFormatException, UnsupportedOperationException, IOException {
+            throws IOException, IIIFException, UnsupportedFormatException {
         try {
             imgReader = getReader(identifier);
             enrichInfo(imgReader.getReader(), info);
-        } catch (IIIFException | ResourceNotFoundException e) {
+        } catch (IIIFException e) {
             Log.error("Could not get Image Info", e.getMessage());
-            throw new ResourceIOException(e);
+            throw new IIIFException(e);
         }
         return imgReader;
     }
@@ -461,12 +458,12 @@ public class BDRCImageServiceImpl {
         }
     }
 
-    public static Instant getImageModificationDate(String identifier) throws ResourceNotFoundException {
+    public static Instant getImageModificationDate(String identifier) throws IIIFException {
         try {
             return Instant.ofEpochMilli(-1);
         } catch (Exception e) {
-            Log.error("Could not get Image modification date from resource for identifier " + identifier, "");
-            throw new ResourceNotFoundException();
+            Log.error("Could not get Image modification date from resource for identifier {}", identifier);
+            throw new IIIFException("Could not get Image modification date from resource for identifier " + identifier);
         }
     }
 }

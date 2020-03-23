@@ -1,4 +1,4 @@
-package de.digitalcollections.iiif.hymir.image.frontend;
+package io.bdrc.iiif.controllers;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -34,10 +34,6 @@ import org.springframework.web.context.request.WebRequest;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import de.digitalcollections.core.model.api.resource.exceptions.ResourceIOException;
-import de.digitalcollections.iiif.hymir.model.exception.InvalidParametersException;
-import de.digitalcollections.iiif.hymir.model.exception.UnsupportedFormatException;
-//import de.digitalcollections.iiif.model.image.ResolvingException;
 import de.digitalcollections.model.api.identifiable.resource.exceptions.ResourceNotFoundException;
 import io.bdrc.auth.Access;
 import io.bdrc.auth.AuthProps;
@@ -47,6 +43,8 @@ import io.bdrc.iiif.core.Application;
 import io.bdrc.iiif.core.EHServerCache;
 import io.bdrc.iiif.core.ResourceAccessValidation;
 import io.bdrc.iiif.exceptions.IIIFException;
+import io.bdrc.iiif.exceptions.InvalidParametersException;
+import io.bdrc.iiif.exceptions.UnsupportedFormatException;
 import io.bdrc.iiif.image.BDRCImageService;
 import io.bdrc.iiif.image.BDRCImageServiceImpl;
 import io.bdrc.iiif.image.ImageReader_ICC;
@@ -218,7 +216,7 @@ public class IIIFImageApiController {
         ImageReader_ICC imgReader = null;
         try {
             imgReader = BDRCImageServiceImpl.readImageInfo(identifier, info, null);
-        } catch (ResourceIOException e) {
+        } catch (IIIFException e) {
             log.error("Resource was not found for identifier " + identifier + " Message: " + e.getMessage());
             return new ResponseEntity<>(("Resource was not found for identifier " + identifier).getBytes(), HttpStatus.NOT_FOUND);
         }
@@ -281,7 +279,7 @@ public class IIIFImageApiController {
         HttpHeaders headers = new HttpHeaders();
         try {
             headers.setDate("Last-Modified", BDRCImageServiceImpl.getImageModificationDate(identifier).toEpochMilli());
-        } catch (ResourceNotFoundException e) {
+        } catch (IIIFException e) {
             log.error("Resource was not found for identifier " + identifier + " Message: " + e.getMessage());
             return new ResponseEntity<>("Resource was not found for identifier " + identifier, HttpStatus.NOT_FOUND);
         }

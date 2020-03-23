@@ -1,4 +1,4 @@
-package io.bdrc.iiif.archives;
+package io.bdrc.iiif.controllers;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -30,6 +30,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.digitalcollections.model.api.identifiable.resource.exceptions.ResourceNotFoundException;
 import io.bdrc.auth.Access;
 import io.bdrc.auth.Access.AccessLevel;
+import io.bdrc.iiif.archives.ArchiveBuilder;
+import io.bdrc.iiif.archives.PdfItemInfo;
 import io.bdrc.iiif.core.EHServerCache;
 import io.bdrc.iiif.core.ResourceAccessValidation;
 import io.bdrc.iiif.exceptions.IIIFException;

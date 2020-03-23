@@ -22,13 +22,13 @@ import org.springframework.web.context.request.WebRequest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import de.digitalcollections.iiif.hymir.model.exception.InvalidParametersException;
-import de.digitalcollections.iiif.hymir.model.exception.UnsupportedFormatException;
 import io.bdrc.auth.Access;
 import io.bdrc.auth.TokenValidation;
 import io.bdrc.iiif.auth.AuthServiceInfo;
 import io.bdrc.iiif.core.ResourceAccessValidation;
 import io.bdrc.iiif.exceptions.IIIFException;
+import io.bdrc.iiif.exceptions.InvalidParametersException;
+import io.bdrc.iiif.exceptions.UnsupportedFormatException;
 import io.bdrc.iiif.image.BDRCImageServiceImpl;
 import io.bdrc.iiif.model.ImageService;
 import io.bdrc.iiif.resolver.AccessType;
@@ -108,7 +108,6 @@ public class IIIFImageTestApiController {
             throws Exception {
         ObjectMapper objectMapper = new ObjectMapper();
         String pth = "/test/v2/" + identifier + "/info.json";
-        System.out.println("PATH >>>>> " + pth);
         ImageGroupInfo igi = new ImageGroupInfo();
         igi.access = AccessType.OPEN;
         igi.restrictedInChina = false;

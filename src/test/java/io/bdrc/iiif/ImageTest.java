@@ -39,8 +39,8 @@ import org.w3c.dom.NodeList;
 import com.twelvemonkeys.imageio.plugins.jpeg.JPEGImageReader;
 import com.twelvemonkeys.imageio.plugins.jpeg.JPEGImageWriter;
 
-import de.digitalcollections.iiif.hymir.model.exception.UnsupportedFormatException;
 import de.digitalcollections.turbojpeg.imageio.TurboJpegImageReader;
+import io.bdrc.iiif.exceptions.UnsupportedFormatException;
 
 public class ImageTest {
 

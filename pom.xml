@@ -12,7 +12,9 @@
     <maven.compiler.target>1.8</maven.compiler.target>
     <jena.version>3.9.0</jena.version>    
     <version.maven-compiler-plugin>3.8.0</version.maven-compiler-plugin>
+    <version.imgscalr-lib>4.2</version.imgscalr-lib>
     <version.spring-boot>2.0.2.RELEASE</version.spring-boot>
+    <version.twelvemonkeys>3.5</version.twelvemonkeys>
     <aws.version>1.11.433</aws.version>
   </properties>
   <parent>
@@ -39,7 +41,7 @@
         <artifactId>spring-boot-starter-web</artifactId>            
     </dependency>
     <!-- https://mvnrepository.com/artifact/de.digitalcollections/iiif-server-hymir -->
-    <dependency>
+    <!-- dependency>
         <groupId>de.digitalcollections</groupId>
         <artifactId>iiif-server-hymir</artifactId>
         <version>4.1.2</version> 
@@ -53,13 +55,45 @@
                 <artifactId>javamelody-spring-boot-starter</artifactId>
             </exclusion>
         </exclusions>       
-    </dependency>
+    </dependency-->
     <!-- https://mvnrepository.com/artifact/de.digitalcollections/digitalcollections-core-business-api -->
+    
     <dependency>
-        <groupId>de.digitalcollections</groupId>
-        <artifactId>digitalcollections-core-business-api</artifactId>
-        <version>1.2.5</version>
-    </dependency>    
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-registry-prometheus</artifactId>
+    </dependency>
+    
+    <dependency>
+      <groupId>org.imgscalr</groupId>
+      <artifactId>imgscalr-lib</artifactId>
+      <version>${version.imgscalr-lib}</version>
+    </dependency>
+    
+    <dependency>
+      <groupId>com.twelvemonkeys.imageio</groupId>
+      <artifactId>imageio-bmp</artifactId>
+      <version>${version.twelvemonkeys}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.twelvemonkeys.imageio</groupId>
+      <artifactId>imageio-jpeg</artifactId>
+      <version>${version.twelvemonkeys}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.twelvemonkeys.imageio</groupId>
+      <artifactId>imageio-tiff</artifactId>
+      <version>${version.twelvemonkeys}</version>
+    </dependency>
+    
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-thymeleaf</artifactId>
+    </dependency>
+      
     <dependency>
       <groupId>io.bdrc.libraries</groupId>
       <artifactId>bdrc-libraries</artifactId>
@@ -69,7 +103,7 @@
     <dependency>
         <groupId>de.digitalcollections.imageio</groupId>
         <artifactId>imageio-turbojpeg</artifactId>
-        <version>0.3.1</version>
+        <version>0.4.4</version>
     </dependency>
     <!-- https://mvnrepository.com/artifact/de.digitalcollections.imageio/imageio-openjpeg -->
     <dependency>

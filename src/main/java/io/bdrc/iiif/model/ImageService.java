@@ -11,7 +11,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.Lists;
 
 import de.digitalcollections.iiif.model.ImageContent;
-import de.digitalcollections.iiif.model.image.TileInfo;
 
 /**
  * A IIIF Image API service.

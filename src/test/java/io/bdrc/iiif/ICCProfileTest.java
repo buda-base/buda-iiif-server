@@ -15,7 +15,7 @@ import org.apache.commons.imaging.ColorTools;
 import org.apache.commons.imaging.ImageReadException;
 import org.apache.commons.imaging.Imaging;
 
-import de.digitalcollections.iiif.hymir.model.exception.UnsupportedFormatException;
+import io.bdrc.iiif.exceptions.UnsupportedFormatException;
 
 public class ICCProfileTest {
 
