@@ -1,4 +1,4 @@
-package io.bdrc.iiif.resolver;
+package io.bdrc.iiif.image.service;
 
 import static io.bdrc.iiif.resolver.AppConstants.BDR;
 import static io.bdrc.iiif.resolver.AppConstants.BDR_len;

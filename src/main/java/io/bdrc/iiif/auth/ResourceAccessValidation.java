@@ -1,5 +1,5 @@
 
-package io.bdrc.iiif.core;
+package io.bdrc.iiif.auth;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import io.bdrc.auth.Access;
 import io.bdrc.auth.Access.AccessLevel;
+import io.bdrc.iiif.core.GeoLocation;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 import io.bdrc.iiif.resolver.ImageGroupInfo;
 

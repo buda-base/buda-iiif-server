@@ -1,4 +1,4 @@
-package io.bdrc.iiif.image;
+package io.bdrc.iiif.model;
 
 import java.awt.Dimension;
 import java.awt.image.BufferedImage;
@@ -15,10 +15,22 @@ public class DecodedImage {
     final int rotation;
 
     // Small value type to hold information about decoding results
-    protected DecodedImage(BufferedImage img, Dimension targetSize, int rotation) {
+    public DecodedImage(BufferedImage img, Dimension targetSize, int rotation) {
         this.img = img;
         this.targetSize = targetSize;
         this.rotation = rotation;
+    }
+
+    public BufferedImage getImg() {
+        return img;
+    }
+
+    public Dimension getTargetSize() {
+        return targetSize;
+    }
+
+    public int getRotation() {
+        return rotation;
     }
 
 }

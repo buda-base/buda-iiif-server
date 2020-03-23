@@ -32,13 +32,13 @@ import io.bdrc.auth.Access;
 import io.bdrc.auth.Access.AccessLevel;
 import io.bdrc.iiif.archives.ArchiveBuilder;
 import io.bdrc.iiif.archives.PdfItemInfo;
+import io.bdrc.iiif.auth.ResourceAccessValidation;
 import io.bdrc.iiif.core.EHServerCache;
-import io.bdrc.iiif.core.ResourceAccessValidation;
 import io.bdrc.iiif.exceptions.IIIFException;
+import io.bdrc.iiif.image.service.ImageInfoListService;
 import io.bdrc.iiif.resolver.AppConstants;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 import io.bdrc.iiif.resolver.ImageInfo;
-import io.bdrc.iiif.resolver.ImageInfoListService;
 import io.bdrc.libraries.Identifier;
 
 @Controller

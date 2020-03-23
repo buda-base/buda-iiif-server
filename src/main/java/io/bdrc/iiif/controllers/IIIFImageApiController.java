@@ -39,23 +39,23 @@ import io.bdrc.auth.Access;
 import io.bdrc.auth.AuthProps;
 import io.bdrc.auth.TokenValidation;
 import io.bdrc.iiif.auth.AuthServiceInfo;
+import io.bdrc.iiif.auth.ResourceAccessValidation;
 import io.bdrc.iiif.core.Application;
 import io.bdrc.iiif.core.EHServerCache;
-import io.bdrc.iiif.core.ResourceAccessValidation;
 import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.iiif.exceptions.InvalidParametersException;
 import io.bdrc.iiif.exceptions.UnsupportedFormatException;
-import io.bdrc.iiif.image.BDRCImageService;
-import io.bdrc.iiif.image.BDRCImageServiceImpl;
-import io.bdrc.iiif.image.ImageReader_ICC;
+import io.bdrc.iiif.image.service.BDRCImageService;
+import io.bdrc.iiif.image.service.BDRCImageServiceImpl;
+import io.bdrc.iiif.image.service.ImageS3Service;
+import io.bdrc.iiif.image.service.BDRCImageService;
 import io.bdrc.iiif.metrics.ImageMetrics;
 import io.bdrc.iiif.model.ImageApiProfile;
 import io.bdrc.iiif.model.ImageApiSelector;
-import io.bdrc.iiif.model.ImageService;
+import io.bdrc.iiif.model.ImageReader_ICC;
 import io.bdrc.iiif.model.PropertyValue;
 import io.bdrc.iiif.resolver.AccessType;
 import io.bdrc.iiif.resolver.IdentifierInfo;
-import io.bdrc.iiif.resolver.ImageS3Service;
 
 @RestController
 @Component
@@ -149,7 +149,7 @@ public class IIIFImageApiController {
         ImageApiSelector selector = getImageApiSelector(identifier, region, size, rotation, quality, format);
         final ImageApiProfile profile = ImageApiProfile.LEVEL_TWO;
         // TODO: the first part seems ignored?
-        ImageService info = new ImageService("https://iiif.bdrc.io/" + identifier, profile);
+        BDRCImageService info = new BDRCImageService("https://iiif.bdrc.io/" + identifier, profile);
         headers.setContentType(MediaType.parseMediaType(selector.getFormat().getMimeType().getTypeName()));
         headers.set("Content-Disposition", "inline; filename=" + path.replaceFirst("/image/", "").replace('/', '_').replace(',', '_'));
         headers.add("Link", String.format("<%s>;rel=\"profile\"", profile.getIdentifier().toString()));

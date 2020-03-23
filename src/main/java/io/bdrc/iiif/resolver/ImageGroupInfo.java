@@ -15,6 +15,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.bdrc.iiif.exceptions.IIIFException;
+import io.bdrc.iiif.image.service.ImageGroupInfoService;
 
 public class ImageGroupInfo {
 

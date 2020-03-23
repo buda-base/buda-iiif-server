@@ -15,7 +15,7 @@ import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Primary;
 
 import io.bdrc.auth.rdf.RdfAuthModel;
-import io.bdrc.iiif.core.IIIFRdfAuthFilter;
+import io.bdrc.iiif.auth.IIIFRdfAuthFilter;
 
 
 @SpringBootApplication

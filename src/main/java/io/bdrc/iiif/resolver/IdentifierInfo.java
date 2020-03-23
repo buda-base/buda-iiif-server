@@ -14,6 +14,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.digitalcollections.model.api.identifiable.resource.exceptions.ResourceNotFoundException;
 import io.bdrc.iiif.core.Application;
 import io.bdrc.iiif.exceptions.IIIFException;
+import io.bdrc.iiif.image.service.ImageGroupInfoService;
+import io.bdrc.iiif.image.service.ImageInfoListService;
 
 public class IdentifierInfo {
 

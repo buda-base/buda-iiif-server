@@ -1,4 +1,4 @@
-package io.bdrc.iiif.resolver;
+package io.bdrc.iiif.image.service;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,6 +16,7 @@ import com.amazonaws.services.s3.model.S3Object;
 
 import io.bdrc.auth.AuthProps;
 import io.bdrc.iiif.exceptions.IIIFException;
+import io.bdrc.iiif.resolver.IdentifierInfo;
 
 public class ImageS3Service extends ConcurrentResourceService<byte[]> {
 

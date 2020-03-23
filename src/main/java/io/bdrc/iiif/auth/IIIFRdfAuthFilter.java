@@ -1,4 +1,4 @@
-package io.bdrc.iiif.core;
+package io.bdrc.iiif.auth;
 
 import java.io.IOException;
 

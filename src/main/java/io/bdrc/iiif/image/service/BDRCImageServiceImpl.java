@@ -1,4 +1,4 @@
-package io.bdrc.iiif.image;
+package io.bdrc.iiif.image.service;
 
 import java.awt.Dimension;
 import java.awt.Graphics2D;
@@ -43,17 +43,17 @@ import io.bdrc.iiif.core.Application;
 import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.iiif.exceptions.InvalidParametersException;
 import io.bdrc.iiif.exceptions.UnsupportedFormatException;
+import io.bdrc.iiif.model.DecodedImage;
 import io.bdrc.iiif.model.ImageApiProfile;
 import io.bdrc.iiif.model.ImageApiProfile.Format;
 import io.bdrc.iiif.model.ImageApiProfile.Quality;
 import io.bdrc.iiif.model.ImageApiSelector;
-import io.bdrc.iiif.model.ImageService;
+import io.bdrc.iiif.model.ImageReader_ICC;
 import io.bdrc.iiif.model.RegionRequest;
 import io.bdrc.iiif.model.Size;
 import io.bdrc.iiif.model.SizeRequest;
 import io.bdrc.iiif.model.TileInfo;
 import io.bdrc.iiif.resolver.IdentifierInfo;
-import io.bdrc.iiif.resolver.ImageS3Service;
 
 @Service
 @Primary
@@ -66,7 +66,7 @@ public class BDRCImageServiceImpl {
     private static int maxHeight;
 
     /** Update ImageService based on the image **/
-    private static void enrichInfo(ImageReader reader, ImageService info) throws IOException {
+    private static void enrichInfo(ImageReader reader, BDRCImageService info) throws IOException {
 
         ImageApiProfile profile = new ImageApiProfile();
         profile.addFeature(ImageApiProfile.Feature.BASE_URI_REDIRECT, ImageApiProfile.Feature.CORS, ImageApiProfile.Feature.JSONLD_MEDIA_TYPE,
@@ -176,7 +176,7 @@ public class BDRCImageServiceImpl {
         return new ImageReader_ICC(reader, icc);
     }
 
-    public static ImageReader_ICC readImageInfo(String identifier, ImageService info, ImageReader_ICC imgReader)
+    public static ImageReader_ICC readImageInfo(String identifier, BDRCImageService info, ImageReader_ICC imgReader)
             throws IOException, IIIFException, UnsupportedFormatException {
         try {
             imgReader = getReader(identifier);
@@ -376,8 +376,8 @@ public class BDRCImageServiceImpl {
             Application.logPerf("Entering Processimage.... with reader {} ", imgReader);
             DecodedImage img = readImage(identifier, selector, profile, imgReader);
             Application.logPerf("Done readingImage DecodedImage created");
-            BufferedImage outImg = transformImage(selector.getFormat(), img.img, img.targetSize, img.rotation, selector.getRotation().isMirror(),
-                    selector.getQuality());
+            BufferedImage outImg = transformImage(selector.getFormat(), img.getImg(), img.getTargetSize(), img.getRotation(),
+                    selector.getRotation().isMirror(), selector.getQuality());
             ImageWriter writer = null;
             Iterator<ImageWriter> writers = ImageIO.getImageWritersByMIMEType(selector.getFormat().getMimeType().getTypeName());
             while (writers.hasNext()) {

@@ -1,4 +1,4 @@
-package io.bdrc.iiif.resolver;
+package io.bdrc.iiif.image.service;
 
 import static io.bdrc.iiif.resolver.AppConstants.CACHEPREFIX_IIL;
 
@@ -26,6 +26,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.bdrc.auth.AuthProps;
 import io.bdrc.iiif.exceptions.IIIFException;
+import io.bdrc.iiif.resolver.ImageInfo;
 
 public class ImageInfoListService extends ConcurrentResourceService<List<ImageInfo>> {
 

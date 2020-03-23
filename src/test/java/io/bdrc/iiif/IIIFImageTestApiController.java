@@ -25,12 +25,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.bdrc.auth.Access;
 import io.bdrc.auth.TokenValidation;
 import io.bdrc.iiif.auth.AuthServiceInfo;
-import io.bdrc.iiif.core.ResourceAccessValidation;
+import io.bdrc.iiif.auth.ResourceAccessValidation;
 import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.iiif.exceptions.InvalidParametersException;
 import io.bdrc.iiif.exceptions.UnsupportedFormatException;
-import io.bdrc.iiif.image.BDRCImageServiceImpl;
-import io.bdrc.iiif.model.ImageService;
+import io.bdrc.iiif.image.service.BDRCImageServiceImpl;
+import io.bdrc.iiif.image.service.BDRCImageService;
 import io.bdrc.iiif.resolver.AccessType;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 import io.bdrc.iiif.resolver.ImageGroupInfo;
@@ -125,7 +125,7 @@ public class IIIFImageTestApiController {
         }
         String baseUrl = getUrlBase(req);
 
-        ImageService info = new ImageService(baseUrl + path.replace("/info.json", ""));
+        BDRCImageService info = new BDRCImageService(baseUrl + path.replace("/info.json", ""));
         if (unAuthorized && serviceInfo.authEnabled() && serviceInfo.hasValidProperties()) {
             info.addService(serviceInfo);
         }

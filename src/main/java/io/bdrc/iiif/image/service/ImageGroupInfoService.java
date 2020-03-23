@@ -1,4 +1,4 @@
-package io.bdrc.iiif.resolver;
+package io.bdrc.iiif.image.service;
 
 import static io.bdrc.iiif.resolver.AppConstants.CACHEPREFIX_VI;
 import static io.bdrc.iiif.resolver.AppConstants.LDS_VOLUME_QUERY;
@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.bdrc.iiif.exceptions.IIIFException;
+import io.bdrc.iiif.resolver.ImageGroupInfo;
 
 public class ImageGroupInfoService extends ConcurrentResourceService<ImageGroupInfo> {
 

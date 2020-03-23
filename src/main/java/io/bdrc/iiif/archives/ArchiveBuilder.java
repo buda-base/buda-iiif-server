@@ -31,9 +31,9 @@ import com.amazonaws.services.s3.AmazonS3;
 import io.bdrc.iiif.core.Application;
 import io.bdrc.iiif.core.EHServerCache;
 import io.bdrc.iiif.exceptions.IIIFException;
+import io.bdrc.iiif.image.service.ImageS3Service;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 import io.bdrc.iiif.resolver.ImageInfo;
-import io.bdrc.iiif.resolver.ImageS3Service;
 import io.bdrc.libraries.Identifier;
 
 public class ArchiveBuilder {

@@ -2,8 +2,8 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   
   <modelVersion>4.0.0</modelVersion>  
-  <groupId>de.digitalcollections</groupId>
-  <artifactId>buda-hymir</artifactId>
+  <groupId>io.bdrc.iiif</groupId>
+  <artifactId>buda-iiif-server</artifactId>
   <version>1.0.0-SNAPSHOT</version>
   <packaging>jar</packaging>  
   <properties>
@@ -19,13 +19,10 @@
   </properties>
   <parent>
     <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-parent</artifactId>
-    <!-- version should be the same as version.spring-boot, and the same
-         as the version indicated in hymir's pom -->
+    <artifactId>spring-boot-starter-parent</artifactId>    
     <relativePath></relativePath>
     <version>2.0.2.RELEASE</version>
   </parent>
-   
   <dependencies>
   	<dependency>
         <groupId>org.ehcache</groupId>
@@ -40,24 +37,6 @@
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-web</artifactId>            
     </dependency>
-    <!-- https://mvnrepository.com/artifact/de.digitalcollections/iiif-server-hymir -->
-    <!-- dependency>
-        <groupId>de.digitalcollections</groupId>
-        <artifactId>iiif-server-hymir</artifactId>
-        <version>4.1.2</version> 
-        <exclusions>
-            <exclusion>
-                <groupId>de.digitalcollections.imageio</groupId>
-                <artifactId>imageio-jnr</artifactId>
-            </exclusion>                    
-            <exclusion>
-                <groupId>net.bull.javamelody</groupId>
-                <artifactId>javamelody-spring-boot-starter</artifactId>
-            </exclusion>
-        </exclusions>       
-    </dependency-->
-    <!-- https://mvnrepository.com/artifact/de.digitalcollections/digitalcollections-core-business-api -->
-    
     <dependency>
       <groupId>io.micrometer</groupId>
       <artifactId>micrometer-core</artifactId>
