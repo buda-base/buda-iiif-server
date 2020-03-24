@@ -98,11 +98,10 @@ public class ArchivesController {
                 throw new IIIFException(404, 5000, e);
             }
             ResourceAccessValidation accValidation = new ResourceAccessValidation((Access) request.getAttribute("access"), inf);
-            AccessLevel al = accValidation.getAccess(request);
+            AccessLevel al = accValidation.getAccessLevel(request);
             if (al.equals(AccessLevel.NOACCESS) || al.equals(AccessLevel.MIXED)) {
                 return new ResponseEntity<>("Insufficient rights", HttpStatus.FORBIDDEN);
             }
-            List<String> imageList = getImageList(idf, inf, ili, al.equals(AccessLevel.FAIR_USE));
             if (al.equals(AccessLevel.FAIR_USE)) {
                 output = idf.getImageGroupId() + "FAIR_USE:" + bPage + "-" + ePage;// +"."+type;
             } else {
@@ -113,7 +112,7 @@ public class ArchivesController {
                 log.debug("PDF " + id + " from IIIF cache >>" + pdf_cached);
                 if (pdf_cached == null) {
                     // Build pdf since the pdf file doesn't exist yet
-                    ArchiveBuilder.buildPdf(inf, idf, output, (String) request.getAttribute("origin"));
+                    ArchiveBuilder.buildPdf(accValidation.getAccess(), inf, idf, output, (String) request.getAttribute("origin"));
                 }
             }
             if (type.equals(ArchiveBuilder.ZIP_TYPE)) {
@@ -121,7 +120,7 @@ public class ArchivesController {
                 log.debug("ZIP " + id + " from IIIF_ZIP cache >>" + zip_cached);
                 if (zip_cached == null) {
                     // Build pdf since the pdf file doesn't exist yet
-                    ArchiveBuilder.buildZip(imageList, inf, output, (String) request.getAttribute("origin"));
+                    ArchiveBuilder.buildZip(accValidation.getAccess(), inf, idf, output, (String) request.getAttribute("origin"));
                 }
             }
             // Create template and serve html link

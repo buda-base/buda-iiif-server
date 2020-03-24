@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import com.amazonaws.services.s3.AmazonS3;
 
+import io.bdrc.auth.Access;
 import io.bdrc.iiif.core.Application;
 import io.bdrc.iiif.core.EHServerCache;
 import io.bdrc.iiif.exceptions.IIIFException;
@@ -48,7 +49,7 @@ public class ArchiveBuilder {
     private static ExecutorService service = Executors.newFixedThreadPool(50);
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
-    public static void buildPdf(IdentifierInfo inf, Identifier idf, String output, String origin) throws Exception {
+    public static void buildPdf(Access acc, IdentifierInfo inf, Identifier idf, String output, String origin) throws Exception {
         long deb = System.currentTimeMillis();
         try {
             Application.logPerf("Starting building pdf {}", inf.volumeId);
@@ -57,9 +58,9 @@ public class ArchiveBuilder {
             Application.logPerf("S3 client obtained in building pdf {} after {} ", inf.volumeId, System.currentTimeMillis() - deb);
             TreeMap<Integer, Future<?>> t_map = new TreeMap<>();
             HashMap<String, ImageInfo> imgDim = new HashMap<>();
-            List<ImageInfo> imgInfo = inf.ensureImageListInfo();
+            List<ImageInfo> imgInfo = inf.ensureImageListInfo(acc);
             if (idf.getBPageNum() != null && idf.getEPageNum() != null) {
-                imgInfo = getLimitedList(inf.ensureImageListInfo(), idf.getBPageNum().intValue(), idf.getEPageNum().intValue());
+                imgInfo = getLimitedList(inf.ensureImageListInfo(acc), idf.getBPageNum().intValue(), idf.getEPageNum().intValue());
             }
             int i = 1;
             for (ImageInfo imgInf : imgInfo) {
@@ -123,7 +124,7 @@ public class ArchiveBuilder {
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public static void buildZip(List<String> imageList, IdentifierInfo inf, String output, String origin) throws IIIFException {
+    public static void buildZip(Access acc, IdentifierInfo inf, Identifier idf, String output, String origin) throws IIIFException {
         try {
             long deb = System.currentTimeMillis();
             Application.logPerf("Starting building zip {}", inf.volumeId);
@@ -131,12 +132,16 @@ public class ArchiveBuilder {
             Application.logPerf("S3 client obtained in building pdf {} after {} ", inf.volumeId, System.currentTimeMillis() - deb);
             TreeMap<Integer, Future<?>> t_map = new TreeMap<>();
             TreeMap<Integer, String> images = new TreeMap<>();
+            List<ImageInfo> imgInfo = inf.ensureImageListInfo(acc);
+            if (idf.getBPageNum() != null && idf.getEPageNum() != null) {
+                imgInfo = getLimitedList(inf.ensureImageListInfo(acc), idf.getBPageNum().intValue(), idf.getEPageNum().intValue());
+            }
             int i = 1;
-            for (String imageFileName : imageList) {
-                ArchiveImageProducer tmp = new ArchiveImageProducer(s3, inf, imageFileName, origin);
+            for (ImageInfo imf : imgInfo) {
+                ArchiveImageProducer tmp = new ArchiveImageProducer(s3, inf, imf.filename, origin);
                 Future<?> fut = service.submit((Callable) tmp);
                 t_map.put(i, fut);
-                images.put(i, imageFileName);
+                images.put(i, imf.filename);
                 i += 1;
             }
             EHServerCache.ZIP_JOBS.put(output, false);

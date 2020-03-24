@@ -11,6 +11,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.google.common.collect.Lists;
 
+import de.digitalcollections.iiif.model.PropertyValue;
+
 /** Abstract base type for services. */
 @JsonPropertyOrder({ "@context", "@id", "@type" })
 public abstract class Service {

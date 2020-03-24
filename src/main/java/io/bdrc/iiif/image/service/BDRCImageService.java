@@ -11,8 +11,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.Lists;
 
 import de.digitalcollections.iiif.model.ImageContent;
+import de.digitalcollections.iiif.model.PropertyValue;
 import io.bdrc.iiif.model.ImageApiProfile;
-import io.bdrc.iiif.model.PropertyValue;
 import io.bdrc.iiif.model.Service;
 import io.bdrc.iiif.model.Size;
 import io.bdrc.iiif.model.TileInfo;

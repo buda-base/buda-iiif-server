@@ -50,7 +50,14 @@ public class ResourceAccessValidation {
         this.igi = idInfo.igi;
     }
 
-    public AccessLevel getAccess(HttpServletRequest request) {
+    public Access getAccess() {
+        if (access == null) {
+            return new Access();
+        }
+        return access;
+    }
+
+    public AccessLevel getAccessLevel(HttpServletRequest request) {
         if (access == null)
             access = new Access();
         if (isRestrictedInChina) {
@@ -67,7 +74,7 @@ public class ResourceAccessValidation {
     }
 
     public boolean isAccessible(HttpServletRequest request) {
-        AccessLevel al = getAccess(request);
+        AccessLevel al = getAccessLevel(request);
         if (al.equals(AccessLevel.OPEN))
             return true;
         if (al.equals(AccessLevel.FAIR_USE)) {

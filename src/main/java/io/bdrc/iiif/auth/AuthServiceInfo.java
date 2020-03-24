@@ -11,9 +11,9 @@ import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import de.digitalcollections.iiif.model.PropertyValue;
 import io.bdrc.auth.AuthProps;
 import io.bdrc.iiif.model.Profile;
-import io.bdrc.iiif.model.PropertyValue;
 import io.bdrc.iiif.model.Service;
 
 @Component

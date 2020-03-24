@@ -34,6 +34,7 @@ import org.springframework.web.context.request.WebRequest;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import de.digitalcollections.iiif.model.PropertyValue;
 import de.digitalcollections.model.api.identifiable.resource.exceptions.ResourceNotFoundException;
 import io.bdrc.auth.Access;
 import io.bdrc.auth.AuthProps;
@@ -48,12 +49,10 @@ import io.bdrc.iiif.exceptions.UnsupportedFormatException;
 import io.bdrc.iiif.image.service.BDRCImageService;
 import io.bdrc.iiif.image.service.BDRCImageServiceImpl;
 import io.bdrc.iiif.image.service.ImageS3Service;
-import io.bdrc.iiif.image.service.BDRCImageService;
 import io.bdrc.iiif.metrics.ImageMetrics;
 import io.bdrc.iiif.model.ImageApiProfile;
 import io.bdrc.iiif.model.ImageApiSelector;
 import io.bdrc.iiif.model.ImageReader_ICC;
-import io.bdrc.iiif.model.PropertyValue;
 import io.bdrc.iiif.resolver.AccessType;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 
