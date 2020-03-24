@@ -17,6 +17,7 @@ import com.amazonaws.services.s3.model.S3Object;
 import io.bdrc.auth.AuthProps;
 import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.iiif.resolver.IdentifierInfo;
+import io.bdrc.libraries.GlobalHelpers;
 
 public class ImageS3Service extends ConcurrentResourceService<byte[]> {
 
@@ -48,7 +49,13 @@ public class ImageS3Service extends ConcurrentResourceService<byte[]> {
     public static String getKeyPrefix(final IdentifierInfo idf) {
         String w_id = idf.igi.imageInstanceId;
         w_id = w_id.substring(w_id.lastIndexOf('/') + 1);
-        final String md5firsttwo = ImageInfoListService.getFirstMd5Nums(w_id);
+        // final String md5firsttwo = ImageInfoListService.getFirstMd5Nums(w_id);
+        String md5firsttwo = "";
+        try {
+            md5firsttwo = GlobalHelpers.getTwoLettersBucket(w_id);
+        } catch (Exception e) {
+            // we do nothing, on purpose
+        }
         String imageGroupId = ImageInfoListService.getS3ImageGroupId(idf.igi.imageGroup);
         return "Works/" + md5firsttwo + "/" + w_id + "/images/" + w_id + "-" + imageGroupId + "/";
     }
