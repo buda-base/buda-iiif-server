@@ -44,14 +44,12 @@
     <dependency>
       <groupId>io.micrometer</groupId>
       <artifactId>micrometer-registry-prometheus</artifactId>
-    </dependency>
-    
+    </dependency>    
     <dependency>
       <groupId>org.imgscalr</groupId>
       <artifactId>imgscalr-lib</artifactId>
       <version>${version.imgscalr-lib}</version>
-    </dependency>
-    
+    </dependency>    
     <dependency>
       <groupId>com.twelvemonkeys.imageio</groupId>
       <artifactId>imageio-bmp</artifactId>
@@ -66,13 +64,11 @@
       <groupId>com.twelvemonkeys.imageio</groupId>
       <artifactId>imageio-tiff</artifactId>
       <version>${version.twelvemonkeys}</version>
-    </dependency>
-    
+    </dependency>    
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-thymeleaf</artifactId>
-    </dependency>
-      
+    </dependency>      
     <dependency>
       <groupId>io.bdrc.libraries</groupId>
       <artifactId>bdrc-libraries</artifactId>
@@ -112,13 +108,7 @@
         <groupId>org.apache.pdfbox</groupId>
         <artifactId>pdfbox</artifactId>
         <version>2.0.16</version>
-    </dependency>
-    <dependency>
-        <groupId>com.itextpdf</groupId>
-        <artifactId>itext7-core</artifactId>
-        <version>7.1.7</version>
-        <type>pom</type>
-    </dependency>
+    </dependency>    
     <!-- https://mvnrepository.com/artifact/org.apache.jena/jena-arq -->
       <dependency>
         <groupId>org.apache.jena</groupId>
@@ -135,13 +125,7 @@
     <dependency>
         <groupId>io.bdrc</groupId>
         <artifactId>bdrc-auth-lib</artifactId>
-        <version>1.3.0</version>
-        <!-- exclusions>
-        	<exclusion>
-        		<groupId>org.slf4j</groupId>
-        		<artifactId>slf4j-simple</artifactId>
-        	</exclusion>
-        </exclusions-->
+        <version>1.3.0</version>        
     </dependency>
     <!-- https://mvnrepository.com/artifact/com.maxmind.geoip2/geoip2 -->
     <dependency>
@@ -185,11 +169,11 @@
   <build>
     <plugins>
       <plugin>
-       <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                  <useSystemClassLoader>false</useSystemClassLoader>
-                </configuration>          
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+        <useSystemClassLoader>false</useSystemClassLoader>
+        </configuration>          
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -236,9 +220,9 @@
       </resource>
     </resources>
     <testResources>
-                <testResource>
-                    <directory>src/main/resources</directory>
-                </testResource>
+     <testResource>
+      <directory>src/main/resources</directory>
+      </testResource>           
     </testResources>
   </build>
   <repositories>
