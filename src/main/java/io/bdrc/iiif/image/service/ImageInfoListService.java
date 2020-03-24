@@ -27,6 +27,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.bdrc.auth.AuthProps;
 import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.iiif.resolver.ImageInfo;
+import io.bdrc.libraries.GlobalHelpers;
 
 public class ImageInfoListService extends ConcurrentResourceService<List<ImageInfo>> {
 
@@ -70,7 +71,12 @@ public class ImageInfoListService extends ConcurrentResourceService<List<ImageIn
     }
 
     public static String getKey(final String workLocalId, String imageGroupId) {
-        final String md5firsttwo = getFirstMd5Nums(workLocalId);
+        String md5firsttwo = "";
+        try {
+            md5firsttwo = GlobalHelpers.getTwoLettersBucket(workLocalId);
+        } catch (Exception e) {
+            // do nothing on purpose
+        }
         imageGroupId = getS3ImageGroupId(imageGroupId);
         return "Works/" + md5firsttwo + "/" + workLocalId + "/images/" + workLocalId + "-" + imageGroupId + "/dimensions.json";
     }

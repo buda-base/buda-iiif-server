@@ -48,8 +48,9 @@ public class ImageS3Service extends ConcurrentResourceService<byte[]> {
 
     public static String getKeyPrefix(final IdentifierInfo idf) {
         String w_id = idf.igi.imageInstanceId;
-        w_id = w_id.substring(w_id.lastIndexOf('/') + 1);
-        // final String md5firsttwo = ImageInfoListService.getFirstMd5Nums(w_id);
+        if (w_id.lastIndexOf('/') != -1) {
+            w_id = w_id.substring(w_id.lastIndexOf('/') + 1);
+        }
         String md5firsttwo = "";
         try {
             md5firsttwo = GlobalHelpers.getTwoLettersBucket(w_id);
