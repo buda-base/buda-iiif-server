@@ -4,10 +4,7 @@ import static io.bdrc.iiif.resolver.AppConstants.CACHEPREFIX_IIL;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.math.BigInteger;
-import java.nio.charset.Charset;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.regex.Pattern;
@@ -38,7 +35,6 @@ public class ImageInfoListService extends ConcurrentResourceService<List<ImageIn
     static MessageDigest md;
     static private final ObjectMapper om;
     private static final Logger logger = LoggerFactory.getLogger(ImageInfoListService.class);
-    private static final Charset utf8 = Charset.forName("UTF-8");
     public static final ImageInfoListService Instance = new ImageInfoListService();
 
     ImageInfoListService() {
@@ -47,19 +43,6 @@ public class ImageInfoListService extends ConcurrentResourceService<List<ImageIn
 
     static {
         om = new ObjectMapper();
-        try {
-            md = MessageDigest.getInstance("MD5");
-        } catch (NoSuchAlgorithmException e) {
-            logger.error("this shouldn't happen!", e);
-        }
-    }
-
-    static String getFirstMd5Nums(final String workLocalId) {
-        final byte[] bytesOfMessage;
-        bytesOfMessage = workLocalId.getBytes(utf8);
-        final byte[] hashBytes = md.digest(bytesOfMessage);
-        final BigInteger bigInt = new BigInteger(1, hashBytes);
-        return String.format("%032x", bigInt).substring(0, 2);
     }
 
     private static AmazonS3 getClient() {
@@ -72,11 +55,7 @@ public class ImageInfoListService extends ConcurrentResourceService<List<ImageIn
 
     public static String getKey(final String workLocalId, String imageGroupId) {
         String md5firsttwo = "";
-        try {
-            md5firsttwo = GlobalHelpers.getTwoLettersBucket(workLocalId);
-        } catch (Exception e) {
-            // do nothing on purpose
-        }
+        md5firsttwo = GlobalHelpers.getTwoLettersBucket(workLocalId);
         imageGroupId = getS3ImageGroupId(imageGroupId);
         return "Works/" + md5firsttwo + "/" + workLocalId + "/images/" + workLocalId + "-" + imageGroupId + "/dimensions.json";
     }

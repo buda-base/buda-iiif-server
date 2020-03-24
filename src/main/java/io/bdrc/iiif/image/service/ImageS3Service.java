@@ -52,11 +52,7 @@ public class ImageS3Service extends ConcurrentResourceService<byte[]> {
             w_id = w_id.substring(w_id.lastIndexOf('/') + 1);
         }
         String md5firsttwo = "";
-        try {
-            md5firsttwo = GlobalHelpers.getTwoLettersBucket(w_id);
-        } catch (Exception e) {
-            // we do nothing, on purpose
-        }
+        md5firsttwo = GlobalHelpers.getTwoLettersBucket(w_id);
         String imageGroupId = ImageInfoListService.getS3ImageGroupId(idf.igi.imageGroup);
         return "Works/" + md5firsttwo + "/" + w_id + "/images/" + w_id + "-" + imageGroupId + "/";
     }
