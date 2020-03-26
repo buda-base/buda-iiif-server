@@ -1,6 +1,7 @@
 package io.bdrc.iiif.resolver;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -13,6 +14,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.digitalcollections.model.api.identifiable.resource.exceptions.ResourceNotFoundException;
 import io.bdrc.auth.Access;
+import io.bdrc.auth.rdf.RdfConstants;
 import io.bdrc.iiif.core.Application;
 import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.iiif.image.service.ImageGroupInfoService;
@@ -45,13 +47,13 @@ public class IdentifierInfo {
         } catch (InterruptedException | ExecutionException e) {
             throw new IIIFException(404, 5000, e);
         }
-        if (igi.access.equals(AccessType.FAIR_USE) || AppConstants.IGSI.equals(prefix)) {
+        if (isFairUse() || AppConstants.IGSI.equals(prefix)) {
             try {
                 this.ili = ImageInfoListService.Instance.getAsync(igi.imageInstanceId.substring(AppConstants.BDR_len), igi.imageGroup).get();
             } catch (InterruptedException | ExecutionException e) {
                 throw new IIIFException(404, 5000, e);
             }
-            if (igi.access.equals(AccessType.FAIR_USE)) {
+            if (isFairUse()) {
                 this.igi.initAccessibleInFairUse(this.ili);
                 this.accessibleInFairUse = this.igi.isAccessibleInFairUse(this.imageId);
             }
@@ -59,6 +61,10 @@ public class IdentifierInfo {
                 computeImageName(this.ili);
             }
         }
+    }
+
+    public boolean isFairUse() {
+        return igi.access.equals(AccessType.FAIR_USE);
     }
 
     /*
@@ -77,15 +83,60 @@ public class IdentifierInfo {
      * fairUse.add(k, ili.get(t)); k++; } return fairUse; } else { return ili; } } }
      */
 
-    public List<ImageInfo> ensureImageListInfo(Access acc) throws IIIFException {
-        if (ili == null) {
-            try {
-                ili = ImageInfoListService.Instance.getAsync(igi.imageInstanceId.substring(AppConstants.BDR_len), igi.imageGroup).get();
-            } catch (InterruptedException | ExecutionException e) {
-                throw new IIIFException(404, 5000, e);
+    public List<ImageInfo> ensureImageListInfo(Access acc, int start, int end) throws IIIFException {
+        // get the full list;
+        List<ImageInfo> info = null;
+        try {
+            info = ImageInfoListService.Instance.getAsync(igi.imageInstanceId.substring(AppConstants.BDR_len), igi.imageGroup).get();
+        } catch (InterruptedException | ExecutionException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        // work is fair use but and user is not authorized to see it in full
+        // return full list
+        if (isFairUse() && !acc.hasResourceAccess(RdfConstants.FAIR_USE)) {
+            return getFairUseImageList(info, start, end);
+        }
+        // work is fair use but user is authorized to see it in full
+        // return full list
+        if (isFairUse() && acc.hasResourceAccess(RdfConstants.FAIR_USE)) {
+            return info;
+        }
+        return getImageListRange(info, start, end);
+    }
+
+    public List<ImageInfo> getImageListRange(List<ImageInfo> src, int start, int end) {
+        List<ImageInfo> info = new ArrayList<>();
+        int k = 0;
+        for (int x = start - 1; x < end; x++) {
+            info.add(k, src.get(x));
+            k++;
+        }
+        return info;
+    }
+
+    public List<ImageInfo> getFairUseImageList(List<ImageInfo> src, int start, int end) {
+        List<ImageInfo> info = new ArrayList<>();
+        if (src.size() <= 40) {
+            info = src;
+        } else {
+            if (end - start <= 40) {
+                for (int x = start - 1; x < end; x++) {
+                    info.add(x, src.get(x));
+                }
+            } else {
+                int k = 0;
+                for (int x = start - 1; x < (20 + start); x++) {
+                    info.add(k, src.get(x));
+                    k++;
+                }
+                for (int j = (end - 20); j < end; j++) {
+                    info.add(k, src.get(j));
+                    k++;
+                }
             }
         }
-        return ili;
+        return info;
     }
 
     public int getTotalPages() {

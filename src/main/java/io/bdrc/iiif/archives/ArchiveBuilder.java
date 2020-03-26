@@ -58,9 +58,9 @@ public class ArchiveBuilder {
             Application.logPerf("S3 client obtained in building pdf {} after {} ", inf.volumeId, System.currentTimeMillis() - deb);
             TreeMap<Integer, Future<?>> t_map = new TreeMap<>();
             HashMap<String, ImageInfo> imgDim = new HashMap<>();
-            List<ImageInfo> imgInfo = inf.ensureImageListInfo(acc);
+            List<ImageInfo> imgInfo = new ArrayList<>();
             if (idf.getBPageNum() != null && idf.getEPageNum() != null) {
-                imgInfo = getLimitedList(inf.ensureImageListInfo(acc), idf.getBPageNum().intValue(), idf.getEPageNum().intValue());
+                imgInfo = inf.ensureImageListInfo(acc, idf.getBPageNum().intValue(), idf.getEPageNum().intValue());
             }
             int i = 1;
             for (ImageInfo imgInf : imgInfo) {
@@ -136,9 +136,9 @@ public class ArchiveBuilder {
             Application.logPerf("S3 client obtained in building pdf {} after {} ", inf.volumeId, System.currentTimeMillis() - deb);
             TreeMap<Integer, Future<?>> t_map = new TreeMap<>();
             TreeMap<Integer, String> images = new TreeMap<>();
-            List<ImageInfo> imgInfo = inf.ensureImageListInfo(acc);
+            List<ImageInfo> imgInfo = new ArrayList<>();
             if (idf.getBPageNum() != null && idf.getEPageNum() != null) {
-                imgInfo = getLimitedList(inf.ensureImageListInfo(acc), idf.getBPageNum().intValue(), idf.getEPageNum().intValue());
+                imgInfo = inf.ensureImageListInfo(acc, idf.getBPageNum().intValue(), idf.getEPageNum().intValue());
             }
             int i = 1;
             for (ImageInfo imf : imgInfo) {
