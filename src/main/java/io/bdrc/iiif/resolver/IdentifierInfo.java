@@ -1,7 +1,6 @@
 package io.bdrc.iiif.resolver;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -14,7 +13,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.digitalcollections.model.api.identifiable.resource.exceptions.ResourceNotFoundException;
 import io.bdrc.auth.Access;
-import io.bdrc.auth.rdf.RdfConstants;
 import io.bdrc.iiif.core.Application;
 import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.iiif.image.service.ImageGroupInfoService;
@@ -63,8 +61,23 @@ public class IdentifierInfo {
         }
     }
 
+    /*
+     * public List<ImageInfo> ensureImageListInfo(Access acc) throws IIIFException {
+     * boolean fairUseOk = acc.hasResourceAccess(RdfConstants.FAIR_USE);
+     * System.out.println("ACCESS in IDENTIFIER INFO >>" + acc +
+     * " has faireuse access =" + acc.hasResourceAccess(RdfConstants.FAIR_USE)); if
+     * (!igi.access.equals(AccessType.FAIR_USE)) { return ili; } else { if (ili ==
+     * null) { try { ili =
+     * ImageInfoListService.Instance.getAsync(igi.imageInstanceId.substring(
+     * AppConstants.BDR_len), igi.imageGroup).get(); } catch (InterruptedException |
+     * ExecutionException e) { throw new IIIFException(404, 5000, e); } } if
+     * (!fairUseOk) { List<ImageInfo> fairUse = new ArrayList<>(); if (ili.size() <=
+     * 40) { return ili; } int k = 0; for (int x = 0; x < 20; x++) { fairUse.add(k,
+     * ili.get(x)); k++; } for (int t = ili.size() - 20; t < ili.size(); t++) {
+     * fairUse.add(k, ili.get(t)); k++; } return fairUse; } else { return ili; } } }
+     */
+
     public List<ImageInfo> ensureImageListInfo(Access acc) throws IIIFException {
-        boolean fairUseOk = acc.hasResourceAccess(RdfConstants.FAIR_USE);
         if (ili == null) {
             try {
                 ili = ImageInfoListService.Instance.getAsync(igi.imageInstanceId.substring(AppConstants.BDR_len), igi.imageGroup).get();
@@ -72,30 +85,7 @@ public class IdentifierInfo {
                 throw new IIIFException(404, 5000, e);
             }
         }
-        if (!fairUseOk) {
-            List<ImageInfo> fairUse = new ArrayList<>();
-            int k = 0;
-            int s = ili.size();
-            if (s > 20) {
-                s = 20;
-            }
-            for (int x = 0; x < s; x++) {
-                fairUse.add(k, ili.get(x));
-                k++;
-            }
-            if (ili.size() > 40) {
-                s = ili.size() - 20;
-            } else {
-                s = k + 1;
-            }
-            for (int t = s; t < ili.size(); t++) {
-                fairUse.add(k, ili.get(t));
-                k++;
-            }
-            return fairUse;
-        } else {
-            return ili;
-        }
+        return ili;
     }
 
     public int getTotalPages() {

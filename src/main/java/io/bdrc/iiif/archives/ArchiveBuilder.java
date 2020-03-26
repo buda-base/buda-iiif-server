@@ -117,8 +117,12 @@ public class ArchiveBuilder {
 
     public static List<ImageInfo> getLimitedList(List<ImageInfo> list, int begin, int end) {
         List<ImageInfo> imgInfo = new ArrayList<>();
-        for (int x = begin - 1; x < end; x++) {
-            imgInfo.add(list.get(x));
+        try {
+            for (int x = begin - 1; x < end; x++) {
+                imgInfo.add(list.get(x));
+            }
+        } catch (Exception e) {
+            return imgInfo;
         }
         return imgInfo;
     }

@@ -23,7 +23,7 @@ import io.bdrc.iiif.model.TileInfo;
  * <p>
  * See http://iiif.io/api/presentation/2.1/#image-resources
  */
-public class BDRCImageService extends Service {
+public class ImageService extends Service {
 
     // FIXME: This should be static, but for some reason Jackson ignores it if it's
     // not on the
@@ -56,12 +56,12 @@ public class BDRCImageService extends Service {
     private PropertyValue preferredFormats;
 
     @JsonCreator
-    public BDRCImageService(@JsonProperty("@id") String identifier) {
+    public ImageService(@JsonProperty("@id") String identifier) {
         super(URI.create(CONTEXT));
         this.setIdentifier(URI.create(identifier));
     }
 
-    public BDRCImageService(String identifier, ImageApiProfile profile) {
+    public ImageService(String identifier, ImageApiProfile profile) {
         this(identifier);
         this.addProfile(profile);
     }
@@ -90,7 +90,7 @@ public class BDRCImageService extends Service {
         this.tiles = tiles;
     }
 
-    public BDRCImageService addTile(TileInfo first, TileInfo... rest) {
+    public ImageService addTile(TileInfo first, TileInfo... rest) {
         if (this.tiles == null) {
             this.tiles = new ArrayList<>();
         }
@@ -106,7 +106,7 @@ public class BDRCImageService extends Service {
         this.sizes = sizes;
     }
 
-    public BDRCImageService addSize(Size first, Size... rest) {
+    public ImageService addSize(Size first, Size... rest) {
         if (this.sizes == null) {
             this.sizes = new ArrayList<>();
         }
@@ -122,7 +122,7 @@ public class BDRCImageService extends Service {
         this.services = services;
     }
 
-    public BDRCImageService addService(Service first, Service... rest) {
+    public ImageService addService(Service first, Service... rest) {
         if (this.services == null) {
             this.services = new ArrayList<>();
         }
@@ -143,7 +143,7 @@ public class BDRCImageService extends Service {
         this.attribution = attribution;
     }
 
-    public BDRCImageService addAttribution(String first, String... rest) {
+    public ImageService addAttribution(String first, String... rest) {
         if (this.attribution == null) {
             this.attribution = new PropertyValue();
         }
@@ -167,7 +167,7 @@ public class BDRCImageService extends Service {
         this.licenses = licenses;
     }
 
-    public BDRCImageService addLicense(String first, String... rest) {
+    public ImageService addLicense(String first, String... rest) {
         if (this.licenses == null) {
             this.licenses = new ArrayList<>();
         }
@@ -192,7 +192,7 @@ public class BDRCImageService extends Service {
         this.logos = logos;
     }
 
-    public BDRCImageService addLogo(String first, String... rest) {
+    public ImageService addLogo(String first, String... rest) {
         if (logos == null) {
             logos = new ArrayList<>();
         }
@@ -201,7 +201,7 @@ public class BDRCImageService extends Service {
         return this;
     }
 
-    public BDRCImageService addLogo(ImageContent first, ImageContent... rest) {
+    public ImageService addLogo(ImageContent first, ImageContent... rest) {
         if (this.logos == null) {
             this.logos = new ArrayList<>();
         }

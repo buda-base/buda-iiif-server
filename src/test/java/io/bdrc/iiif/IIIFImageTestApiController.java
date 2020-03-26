@@ -2,12 +2,14 @@ package io.bdrc.iiif;
 
 import java.io.IOException;
 import java.net.URLDecoder;
+import java.time.Instant;
 import java.util.Calendar;
 import java.util.concurrent.TimeUnit;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.jena.atlas.logging.Log;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.CacheControl;
@@ -29,8 +31,13 @@ import io.bdrc.iiif.auth.ResourceAccessValidation;
 import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.iiif.exceptions.InvalidParametersException;
 import io.bdrc.iiif.exceptions.UnsupportedFormatException;
-import io.bdrc.iiif.image.service.BDRCImageServiceImpl;
-import io.bdrc.iiif.image.service.BDRCImageService;
+import io.bdrc.iiif.image.service.ImageService;
+import io.bdrc.iiif.image.service.ReadImageProcess;
+import io.bdrc.iiif.model.ImageApiProfile.Format;
+import io.bdrc.iiif.model.ImageApiProfile.Quality;
+import io.bdrc.iiif.model.ImageApiSelector;
+import io.bdrc.iiif.model.RegionRequest;
+import io.bdrc.iiif.model.SizeRequest;
 import io.bdrc.iiif.resolver.AccessType;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 import io.bdrc.iiif.resolver.ImageGroupInfo;
@@ -115,7 +122,7 @@ public class IIIFImageTestApiController {
         IdentifierInfo idf = new IdentifierInfo(identifier, igi);
         ResourceAccessValidation accValidation = new ResourceAccessValidation((Access) req.getAttribute("access"), idf);
         boolean unAuthorized = !accValidation.isAccessible(req);
-        long modified = BDRCImageServiceImpl.getImageModificationDate(identifier).toEpochMilli();
+        long modified = getImageModificationDate(identifier).toEpochMilli();
         webRequest.checkNotModified(modified);
         String path;
         if (req.getPathInfo() != null) {
@@ -125,11 +132,11 @@ public class IIIFImageTestApiController {
         }
         String baseUrl = getUrlBase(req);
 
-        BDRCImageService info = new BDRCImageService(baseUrl + path.replace("/info.json", ""));
+        ImageService info = new ImageService(baseUrl + path.replace("/info.json", ""));
         if (unAuthorized && serviceInfo.authEnabled() && serviceInfo.hasValidProperties()) {
             info.addService(serviceInfo);
         }
-        BDRCImageServiceImpl.readImageInfo(identifier, info, null);
+        ReadImageProcess.readImageInfo(identifier, info, null);
         HttpHeaders headers = new HttpHeaders();
         headers.setDate("Last-Modified", modified);
         String contentType = req.getHeader("Accept");
@@ -181,5 +188,44 @@ public class IIIFImageTestApiController {
             return null;
         }
         return null;
+    }
+
+    // here we return a boolean telling us if the requested image is different from
+    // the original image
+    // on S3
+    public static boolean requestDiffersFromOriginal(final String identifier, final ImageApiSelector selector) {
+        if (formatDiffer(identifier, selector))
+            return true;
+        if (selector.getQuality() != Quality.DEFAULT) // TODO: this could be improved but we can keep that for later
+            return true;
+        if (selector.getRotation().getRotation() != 0.)
+            return true;
+        if (!selector.getRegion().equals(new RegionRequest())) // TODO: same here, could be improved by reading the
+                                                               // dimensions of the image
+            return true;
+        if (!selector.getSize().equals(new SizeRequest()) && !selector.getSize().equals(new SizeRequest(true)))
+            return true;
+        return false;
+    }
+
+    public static boolean formatDiffer(final String identifier, final ImageApiSelector selector) {
+        final Format outputF = selector.getFormat();
+        final String lastFour = identifier.substring(identifier.length() - 4).toLowerCase();
+        if (outputF == Format.JPG && (lastFour.equals(".jpg") || lastFour.equals("jpeg")))
+            return false;
+        if (outputF == Format.PNG && lastFour.equals(".png"))
+            return false;
+        if (outputF == Format.TIF && (lastFour.equals(".tif") || lastFour.equals("tiff")))
+            return false;
+        return true;
+    }
+
+    public static Instant getImageModificationDate(String identifier) throws IIIFException {
+        try {
+            return Instant.ofEpochMilli(-1);
+        } catch (Exception e) {
+            Log.error("Could not get Image modification date from resource for identifier {}", identifier);
+            throw new IIIFException("Could not get Image modification date from resource for identifier " + identifier);
+        }
     }
 }

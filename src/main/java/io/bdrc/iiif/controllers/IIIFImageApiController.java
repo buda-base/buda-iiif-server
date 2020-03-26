@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.time.Instant;
 import java.util.Calendar;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -15,6 +16,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.imaging.ImageReadException;
 import org.apache.http.client.ClientProtocolException;
+import org.apache.jena.atlas.logging.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,13 +48,19 @@ import io.bdrc.iiif.core.EHServerCache;
 import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.iiif.exceptions.InvalidParametersException;
 import io.bdrc.iiif.exceptions.UnsupportedFormatException;
-import io.bdrc.iiif.image.service.BDRCImageService;
-import io.bdrc.iiif.image.service.BDRCImageServiceImpl;
 import io.bdrc.iiif.image.service.ImageS3Service;
+import io.bdrc.iiif.image.service.ImageService;
+import io.bdrc.iiif.image.service.ReadImageProcess;
+import io.bdrc.iiif.image.service.WriteImageProcess;
 import io.bdrc.iiif.metrics.ImageMetrics;
+import io.bdrc.iiif.model.DecodedImage;
 import io.bdrc.iiif.model.ImageApiProfile;
+import io.bdrc.iiif.model.ImageApiProfile.Format;
+import io.bdrc.iiif.model.ImageApiProfile.Quality;
 import io.bdrc.iiif.model.ImageApiSelector;
 import io.bdrc.iiif.model.ImageReader_ICC;
+import io.bdrc.iiif.model.RegionRequest;
+import io.bdrc.iiif.model.SizeRequest;
 import io.bdrc.iiif.resolver.AccessType;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 
@@ -148,7 +156,7 @@ public class IIIFImageApiController {
         ImageApiSelector selector = getImageApiSelector(identifier, region, size, rotation, quality, format);
         final ImageApiProfile profile = ImageApiProfile.LEVEL_TWO;
         // TODO: the first part seems ignored?
-        BDRCImageService info = new BDRCImageService("https://iiif.bdrc.io/" + identifier, profile);
+        ImageService info = new ImageService("https://iiif.bdrc.io/" + identifier, profile);
         headers.setContentType(MediaType.parseMediaType(selector.getFormat().getMimeType().getTypeName()));
         headers.set("Content-Disposition", "inline; filename=" + path.replaceFirst("/image/", "").replace('/', '_').replace(',', '_'));
         headers.add("Link", String.format("<%s>;rel=\"profile\"", profile.getIdentifier().toString()));
@@ -189,7 +197,7 @@ public class IIIFImageApiController {
 
         // Now a shortcut:
 
-        if (!BDRCImageServiceImpl.requestDiffersFromOriginal(identifier, selector)) {
+        if (!requestDiffersFromOriginal(identifier, selector)) {
             // let's get our hands dirty
             final String s3key;
             final ImageS3Service service;
@@ -214,7 +222,7 @@ public class IIIFImageApiController {
         deb1 = System.currentTimeMillis();
         ImageReader_ICC imgReader = null;
         try {
-            imgReader = BDRCImageServiceImpl.readImageInfo(identifier, info, null);
+            imgReader = ReadImageProcess.readImageInfo(identifier, info, null);
         } catch (IIIFException e) {
             log.error("Resource was not found for identifier " + identifier + " Message: " + e.getMessage());
             return new ResponseEntity<>(("Resource was not found for identifier " + identifier).getBytes(), HttpStatus.NOT_FOUND);
@@ -227,7 +235,8 @@ public class IIIFImageApiController {
         deb1 = System.currentTimeMillis();
         Application.logPerf("processing image output stream for {}", identifier);
         ByteArrayOutputStream os = new ByteArrayOutputStream();
-        BDRCImageServiceImpl.processImage(identifier, selector, profile, os, imgReader, request.getRequestURI());
+        DecodedImage decImg = ReadImageProcess.readImage(identifier, selector, profile, imgReader);
+        WriteImageProcess.processImage(decImg, identifier, selector, os, request.getRequestURI());
         Application.logPerf("ended processing image after {} ms for {}", (System.currentTimeMillis() - deb1), identifier);
         Application.logPerf("Total request time {} ms ", (System.currentTimeMillis() - deb), identifier);
         imgReader.getReader().dispose();
@@ -266,7 +275,7 @@ public class IIIFImageApiController {
         if (req.getPathInfo() != null) {
             path = req.getPathInfo();
         }
-        final BDRCImageService info = new BDRCImageService(getUrlBase(req) + path.replace("/info.json", ""));
+        final ImageService info = new ImageService(getUrlBase(req) + path.replace("/info.json", ""));
         if (unAuthorized && serviceInfo.authEnabled() && serviceInfo.hasValidProperties()) {
             info.addService(serviceInfo);
         }
@@ -274,10 +283,10 @@ public class IIIFImageApiController {
             info.setPreferredFormats(pngHint);
         }
         Application.logPerf("getInfo read ImageInfo for {}", identifier);
-        BDRCImageServiceImpl.readImageInfo(identifier, info, null);
+        ReadImageProcess.readImageInfo(identifier, info, null);
         HttpHeaders headers = new HttpHeaders();
         try {
-            headers.setDate("Last-Modified", BDRCImageServiceImpl.getImageModificationDate(identifier).toEpochMilli());
+            headers.setDate("Last-Modified", getImageModificationDate(identifier).toEpochMilli());
         } catch (IIIFException e) {
             log.error("Resource was not found for identifier " + identifier + " Message: " + e.getMessage());
             return new ResponseEntity<>("Resource was not found for identifier " + identifier, HttpStatus.NOT_FOUND);
@@ -343,7 +352,7 @@ public class IIIFImageApiController {
         return (int) (expires - current);
     }
 
-    String getToken(String header) {
+    private String getToken(String header) {
         try {
             if (header != null) {
                 return header.split(" ")[1];
@@ -373,5 +382,44 @@ public class IIIFImageApiController {
             throw new InvalidParametersException(e);
         }
         return selector;
+    }
+
+    // here we return a boolean telling us if the requested image is different from
+    // the original image
+    // on S3
+    public static boolean requestDiffersFromOriginal(final String identifier, final ImageApiSelector selector) {
+        if (formatDiffer(identifier, selector))
+            return true;
+        if (selector.getQuality() != Quality.DEFAULT) // TODO: this could be improved but we can keep that for later
+            return true;
+        if (selector.getRotation().getRotation() != 0.)
+            return true;
+        if (!selector.getRegion().equals(new RegionRequest())) // TODO: same here, could be improved by reading the
+                                                               // dimensions of the image
+            return true;
+        if (!selector.getSize().equals(new SizeRequest()) && !selector.getSize().equals(new SizeRequest(true)))
+            return true;
+        return false;
+    }
+
+    public static boolean formatDiffer(final String identifier, final ImageApiSelector selector) {
+        final Format outputF = selector.getFormat();
+        final String lastFour = identifier.substring(identifier.length() - 4).toLowerCase();
+        if (outputF == Format.JPG && (lastFour.equals(".jpg") || lastFour.equals("jpeg")))
+            return false;
+        if (outputF == Format.PNG && lastFour.equals(".png"))
+            return false;
+        if (outputF == Format.TIF && (lastFour.equals(".tif") || lastFour.equals("tiff")))
+            return false;
+        return true;
+    }
+
+    public static Instant getImageModificationDate(String identifier) throws IIIFException {
+        try {
+            return Instant.ofEpochMilli(-1);
+        } catch (Exception e) {
+            Log.error("Could not get Image modification date from resource for identifier {}", identifier);
+            throw new IIIFException("Could not get Image modification date from resource for identifier " + identifier);
+        }
     }
 }
