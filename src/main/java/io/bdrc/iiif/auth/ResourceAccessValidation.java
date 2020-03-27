@@ -70,6 +70,7 @@ public class ResourceAccessValidation {
                 return AccessLevel.NOACCESS;
             }
         }
+
         return access.hasResourceAccess(accessShort, statusShort, imageInstanceUri);
     }
 
@@ -78,7 +79,13 @@ public class ResourceAccessValidation {
         if (al.equals(AccessLevel.OPEN))
             return true;
         if (al.equals(AccessLevel.FAIR_USE)) {
+            if (access.matchResourcePermissions(accessShort)) {
+                return true;
+            }
             try {
+                // This alone do not check against the user profile as the list
+                // is built through identifierInfo regardless that user profile
+
                 return this.igi.isAccessibleInFairUse(imageFileName);
             } catch (Exception e) {
                 log.error("error when looking at fair use case: ", e);

@@ -67,22 +67,6 @@ public class IdentifierInfo {
         return igi.access.equals(AccessType.FAIR_USE);
     }
 
-    /*
-     * public List<ImageInfo> ensureImageListInfo(Access acc) throws IIIFException {
-     * boolean fairUseOk = acc.hasResourceAccess(RdfConstants.FAIR_USE);
-     * System.out.println("ACCESS in IDENTIFIER INFO >>" + acc +
-     * " has faireuse access =" + acc.hasResourceAccess(RdfConstants.FAIR_USE)); if
-     * (!igi.access.equals(AccessType.FAIR_USE)) { return ili; } else { if (ili ==
-     * null) { try { ili =
-     * ImageInfoListService.Instance.getAsync(igi.imageInstanceId.substring(
-     * AppConstants.BDR_len), igi.imageGroup).get(); } catch (InterruptedException |
-     * ExecutionException e) { throw new IIIFException(404, 5000, e); } } if
-     * (!fairUseOk) { List<ImageInfo> fairUse = new ArrayList<>(); if (ili.size() <=
-     * 40) { return ili; } int k = 0; for (int x = 0; x < 20; x++) { fairUse.add(k,
-     * ili.get(x)); k++; } for (int t = ili.size() - 20; t < ili.size(); t++) {
-     * fairUse.add(k, ili.get(t)); k++; } return fairUse; } else { return ili; } } }
-     */
-
     public List<ImageInfo> ensureImageListInfo(Access acc, int start, int end) throws IIIFException {
         // get the full list;
         List<ImageInfo> info = null;
