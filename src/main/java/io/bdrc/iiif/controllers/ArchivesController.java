@@ -87,10 +87,18 @@ public class ArchivesController {
         // Case volume imageRange
         case Identifier.MANIFEST_ID_VOLUMEID:
         case Identifier.MANIFEST_ID_WORK_IN_VOLUMEID:
-            int bPage = idf.getBPageNum().intValue();
-            int ePage = idf.getEPageNum().intValue();
-            log.info("Pdf requested start page {} and end page {}", bPage, ePage);
             IdentifierInfo inf = new IdentifierInfo(idf.getImageGroupId());
+            Integer bPage = idf.getBPageNum();
+            if (bPage == null) {
+                bPage = new Integer(1);
+            }
+            Integer ePage = idf.getEPageNum();
+            if (ePage == null) {
+                ePage = inf.getTotalPages();
+            }
+            log.info("Pdf requested numPage in identifierInfo {}", inf);
+            log.info("Pdf requested start page {} and end page {}", bPage.intValue(), ePage.intValue());
+
             List<ImageInfo> ili = null;
             try {
                 ili = ImageInfoListService.Instance.getAsync(inf.igi.imageInstanceId.substring(AppConstants.BDR_len), inf.igi.imageGroup).get();
@@ -103,9 +111,9 @@ public class ArchivesController {
                 return new ResponseEntity<>("Insufficient rights", HttpStatus.FORBIDDEN);
             }
             if (al.equals(AccessLevel.FAIR_USE)) {
-                output = idf.getImageGroupId() + "FAIR_USE:" + bPage + "-" + ePage;// +"."+type;
+                output = idf.getImageGroupId() + "FAIR_USE:" + bPage.intValue() + "-" + ePage.intValue();// +"."+type;
             } else {
-                output = idf.getImageGroupId() + ":" + bPage + "-" + ePage;// +"."+type;
+                output = idf.getImageGroupId() + ":" + bPage.intValue() + "-" + ePage.intValue();// +"."+type;
             }
             if (type.equals(ArchiveBuilder.PDF_TYPE)) {
                 Object pdf_cached = EHServerCache.IIIF.get(output);
