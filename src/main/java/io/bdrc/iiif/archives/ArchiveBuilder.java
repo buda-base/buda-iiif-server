@@ -59,8 +59,20 @@ public class ArchiveBuilder {
             TreeMap<Integer, Future<?>> t_map = new TreeMap<>();
             HashMap<String, ImageInfo> imgDim = new HashMap<>();
             List<ImageInfo> imgInfo = new ArrayList<>();
-            if (idf.getBPageNum() != null && idf.getEPageNum() != null) {
-                imgInfo = inf.ensureImageListInfo(acc, idf.getBPageNum().intValue(), idf.getEPageNum().intValue());
+            Integer startPage = null;
+            if (idf.getBPageNum() != null) {
+                startPage = idf.getBPageNum();
+            } else {
+                startPage = new Integer(1);
+            }
+            Integer endPage = null;
+            if (idf.getEPageNum() != null) {
+                endPage = idf.getEPageNum();
+            } else {
+                endPage = inf.getTotalPages();
+            }
+            if (endPage != null) {
+                imgInfo = inf.ensureImageListInfo(acc, startPage.intValue(), endPage.intValue());
             }
             int i = 1;
             for (ImageInfo imgInf : imgInfo) {
@@ -137,8 +149,20 @@ public class ArchiveBuilder {
             TreeMap<Integer, Future<?>> t_map = new TreeMap<>();
             TreeMap<Integer, String> images = new TreeMap<>();
             List<ImageInfo> imgInfo = new ArrayList<>();
-            if (idf.getBPageNum() != null && idf.getEPageNum() != null) {
-                imgInfo = inf.ensureImageListInfo(acc, idf.getBPageNum().intValue(), idf.getEPageNum().intValue());
+            Integer startPage = null;
+            if (idf.getBPageNum() != null) {
+                startPage = idf.getBPageNum();
+            } else {
+                startPage = new Integer(1);
+            }
+            Integer endPage = null;
+            if (idf.getEPageNum() != null) {
+                endPage = idf.getEPageNum();
+            } else {
+                endPage = inf.getTotalPages();
+            }
+            if (endPage != null) {
+                imgInfo = inf.ensureImageListInfo(acc, startPage.intValue(), endPage.intValue());
             }
             int i = 1;
             for (ImageInfo imf : imgInfo) {

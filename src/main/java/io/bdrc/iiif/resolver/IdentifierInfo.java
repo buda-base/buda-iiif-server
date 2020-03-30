@@ -105,8 +105,10 @@ public class IdentifierInfo {
             info = src;
         } else {
             if (end - start <= 40) {
-                for (int x = start - 1; x < end; x++) {
-                    info.add(x, src.get(x));
+                int y = 0;
+                for (int x = start; x < end; x++) {
+                    info.add(y, src.get(x - 1));
+                    y++;
                 }
             } else {
                 int k = 0;
@@ -123,8 +125,12 @@ public class IdentifierInfo {
         return info;
     }
 
-    public int getTotalPages() {
-        return igi.totalPages;
+    public Integer getTotalPages() {
+        if (igi != null) {
+            return igi.totalPages;
+        } else {
+            return null;
+        }
     }
 
     public String getCanonical() throws ClientProtocolException, IOException, IIIFException, ResourceNotFoundException {
