@@ -180,13 +180,22 @@ public class ArchivesController {
     @RequestMapping(value = "/download/job/{type}/{id}", method = { RequestMethod.GET, RequestMethod.HEAD })
     public ResponseEntity<String> jobState(@PathVariable String id, @PathVariable String type) throws Exception {
         Identifier idf = new Identifier(id, Identifier.MANIFEST_ID);
-        String url = "download/file/" + type + "/" + idf.getImageGroupId() + ":" + idf.getBPageNum() + "-" + idf.getEPageNum() + "." + type;
+        Integer bPage = idf.getBPageNum();
+        if (bPage == null) {
+            bPage = new Integer(1);
+        }
+        Integer ePage = idf.getEPageNum();
+        if (ePage == null) {
+            IdentifierInfo inf = new IdentifierInfo(idf.getImageGroupId());
+            ePage = inf.getTotalPages();
+        }
+        String url = "download/file/" + type + "/" + idf.getImageGroupId() + ":" + bPage + "-" + ePage + "." + type;
         boolean done = false;
         if (type.equals(ArchiveBuilder.PDF_TYPE)) {
-            done = ArchiveBuilder.isPdfDone(idf.getImageGroupId() + ":" + idf.getBPageNum() + "-" + idf.getEPageNum() + ".pdf");
+            done = ArchiveBuilder.isPdfDone(idf.getImageGroupId() + ":" + bPage + "-" + ePage + ".pdf");
         }
         if (type.equals(ArchiveBuilder.ZIP_TYPE)) {
-            done = ArchiveBuilder.isZipDone(idf.getImageGroupId() + ":" + idf.getBPageNum() + "-" + idf.getEPageNum() + ".zip");
+            done = ArchiveBuilder.isZipDone(idf.getImageGroupId() + ":" + bPage + "-" + ePage + ".zip");
         }
         HashMap<String, Object> json = new HashMap<>();
         json.put("done", done);
