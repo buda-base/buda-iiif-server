@@ -58,22 +58,7 @@ public class ArchiveBuilder {
             Application.logPerf("S3 client obtained in building pdf {} after {} ", inf.volumeId, System.currentTimeMillis() - deb);
             TreeMap<Integer, Future<?>> t_map = new TreeMap<>();
             HashMap<String, ImageInfo> imgDim = new HashMap<>();
-            List<ImageInfo> imgInfo = new ArrayList<>();
-            Integer startPage = null;
-            if (idf.getBPageNum() != null) {
-                startPage = idf.getBPageNum();
-            } else {
-                startPage = new Integer(1);
-            }
-            Integer endPage = null;
-            if (idf.getEPageNum() != null) {
-                endPage = idf.getEPageNum();
-            } else {
-                endPage = inf.getTotalPages();
-            }
-            if (endPage != null) {
-                imgInfo = inf.ensureImageListInfo(acc, startPage.intValue(), endPage.intValue());
-            }
+            List<ImageInfo> imgInfo = getImageInfos(idf, inf, acc);
             int i = 1;
             for (ImageInfo imgInf : imgInfo) {
                 imgDim.put(imgInf.filename, imgInf);
@@ -148,22 +133,7 @@ public class ArchiveBuilder {
             Application.logPerf("S3 client obtained in building pdf {} after {} ", inf.volumeId, System.currentTimeMillis() - deb);
             TreeMap<Integer, Future<?>> t_map = new TreeMap<>();
             TreeMap<Integer, String> images = new TreeMap<>();
-            List<ImageInfo> imgInfo = new ArrayList<>();
-            Integer startPage = null;
-            if (idf.getBPageNum() != null) {
-                startPage = idf.getBPageNum();
-            } else {
-                startPage = new Integer(1);
-            }
-            Integer endPage = null;
-            if (idf.getEPageNum() != null) {
-                endPage = idf.getEPageNum();
-            } else {
-                endPage = inf.getTotalPages();
-            }
-            if (endPage != null) {
-                imgInfo = inf.ensureImageListInfo(acc, startPage.intValue(), endPage.intValue());
-            }
+            List<ImageInfo> imgInfo = getImageInfos(idf, inf, acc);
             int i = 1;
             for (ImageInfo imf : imgInfo) {
                 ArchiveImageProducer tmp = new ArchiveImageProducer(s3, inf, imf.filename, origin);
@@ -209,6 +179,22 @@ public class ArchiveBuilder {
             log.error("Error while building zip archives ", e.getMessage());
             throw new IIIFException(500, IIIFException.GENERIC_APP_ERROR_CODE, e);
         }
+    }
+
+    private static List<ImageInfo> getImageInfos(Identifier idf, IdentifierInfo inf, Access acc) throws IIIFException {
+        Integer startPage = null;
+        if (idf.getBPageNum() != null) {
+            startPage = idf.getBPageNum();
+        } else {
+            startPage = new Integer(1);
+        }
+        Integer endPage = null;
+        if (idf.getEPageNum() != null) {
+            endPage = idf.getEPageNum();
+        } else {
+            endPage = inf.getTotalPages();
+        }
+        return inf.ensureImageListInfo(acc, startPage.intValue(), endPage.intValue());
     }
 
     public static byte[] toByteArray(BufferedImage img) throws IOException {
