@@ -53,7 +53,7 @@ public class EHServerCache {
 
         PersistentCacheManager iiif = CacheManagerBuilder.newCacheManagerBuilder()
                 .with(CacheManagerBuilder.persistence(System.getProperty("user.dir") + File.separator + "EH_IIIF")).build(true);
-        IIIF = iiif_img.createCache("iiif", CacheConfigurationBuilder.newCacheConfigurationBuilder(String.class, byte[].class,
+        IIIF = iiif.createCache("iiif", CacheConfigurationBuilder.newCacheConfigurationBuilder(String.class, byte[].class,
                 ResourcePoolsBuilder.newResourcePoolsBuilder().heap(500, EntryUnit.ENTRIES).disk(5000, MemoryUnit.MB, true)));
         MAP.put("iiif", IIIF);
 
@@ -85,6 +85,7 @@ public class EHServerCache {
         IMAGE_LIST_INFO = cacheManager.createCache("imageListInfo", CacheConfigurationBuilder.newCacheConfigurationBuilder(String.class, List.class,
                 ResourcePoolsBuilder.newResourcePoolsBuilder().heap(500, EntryUnit.ENTRIES)));
         MAP.put("imageListInfo", IMAGE_LIST_INFO);
+
     }
 
     public static Cache getCache(String name) {

@@ -3,7 +3,6 @@ package io.bdrc.iiif.archives;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.TreeMap;
@@ -110,18 +109,6 @@ public class ArchiveBuilder {
             throw new IIIFException(500, IIIFException.GENERIC_APP_ERROR_CODE, e);
         }
 
-    }
-
-    public static List<ImageInfo> getLimitedList(List<ImageInfo> list, int begin, int end) {
-        List<ImageInfo> imgInfo = new ArrayList<>();
-        try {
-            for (int x = begin - 1; x < end; x++) {
-                imgInfo.add(list.get(x));
-            }
-        } catch (Exception e) {
-            return imgInfo;
-        }
-        return imgInfo;
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })

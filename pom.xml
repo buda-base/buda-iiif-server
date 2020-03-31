@@ -23,10 +23,12 @@
     <relativePath></relativePath>
     <version>2.0.2.RELEASE</version>
   </parent>
-  <dependencies>
-  	<dependency>
+  <dependencies>  	
+    <!-- https://mvnrepository.com/artifact/org.ehcache/ehcache -->
+    <dependency>
         <groupId>org.ehcache</groupId>
-        <artifactId>ehcache</artifactId>        
+        <artifactId>ehcache</artifactId>
+        <version>3.8.1</version><!--$NO-MVN-MAN-VER$-->
     </dependency>    
     <dependency>
         <groupId>org.springframework.boot</groupId>
