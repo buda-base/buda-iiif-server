@@ -202,7 +202,9 @@ public class ArchiveBuilder {
             zipOut.close();
             Application.logPerf("zip document finished and closed for {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
             EHServerCache.IIIF_ZIP.put(output.substring(3), baos.toByteArray());
+            log.info("Put zip file in cache with key {}", output.substring(3));
             EHServerCache.ZIP_JOBS.put(output, true);
+            log.info("Put true in zip jobs cache for {}", output);
         } catch (IOException | ExecutionException | InterruptedException e) {
             log.error("Error while building zip archives ", e.getMessage());
             throw new IIIFException(500, IIIFException.GENERIC_APP_ERROR_CODE, e);

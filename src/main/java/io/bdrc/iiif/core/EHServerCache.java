@@ -40,19 +40,19 @@ public class EHServerCache {
 
         /**** PERSISTENT CACHES ***/
         PersistentCacheManager iiif_img = CacheManagerBuilder.newCacheManagerBuilder()
-                .with(CacheManagerBuilder.persistence(System.getProperty("iiifserv.configpath") + File.separator + "EH_IIIF_IMG")).build(true);
+                .with(CacheManagerBuilder.persistence(System.getProperty("user.dir") + File.separator + "EH_IIIF_IMG")).build(true);
         IIIF_IMG = iiif_img.createCache("iiif_img", CacheConfigurationBuilder.newCacheConfigurationBuilder(String.class, byte[].class,
-                ResourcePoolsBuilder.newResourcePoolsBuilder().heap(500, EntryUnit.ENTRIES).disk(10000, MemoryUnit.MB, true)));
+                ResourcePoolsBuilder.newResourcePoolsBuilder().heap(2000, EntryUnit.ENTRIES).disk(15000, MemoryUnit.MB, true)));
         MAP.put("iiif_img", IIIF_IMG);
 
         PersistentCacheManager iiif_zip = CacheManagerBuilder.newCacheManagerBuilder()
-                .with(CacheManagerBuilder.persistence(System.getProperty("iiifserv.configpath") + File.separator + "EH_IIIF_ZIP")).build(true);
+                .with(CacheManagerBuilder.persistence(System.getProperty("user.dir") + File.separator + "EH_IIIF_ZIP")).build(true);
         IIIF_ZIP = iiif_zip.createCache("iiif_zip", CacheConfigurationBuilder.newCacheConfigurationBuilder(String.class, byte[].class,
                 ResourcePoolsBuilder.newResourcePoolsBuilder().heap(500, EntryUnit.ENTRIES).disk(5000, MemoryUnit.MB, true)));
         MAP.put("iiif_zip", IIIF_ZIP);
 
         PersistentCacheManager iiif = CacheManagerBuilder.newCacheManagerBuilder()
-                .with(CacheManagerBuilder.persistence(System.getProperty("iiifserv.configpath") + File.separator + "EH_IIIF")).build(true);
+                .with(CacheManagerBuilder.persistence(System.getProperty("user.dir") + File.separator + "EH_IIIF")).build(true);
         IIIF = iiif_img.createCache("iiif", CacheConfigurationBuilder.newCacheConfigurationBuilder(String.class, byte[].class,
                 ResourcePoolsBuilder.newResourcePoolsBuilder().heap(500, EntryUnit.ENTRIES).disk(5000, MemoryUnit.MB, true)));
         MAP.put("iiif", IIIF);

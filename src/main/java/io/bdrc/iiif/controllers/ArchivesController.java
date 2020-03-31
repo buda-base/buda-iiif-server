@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -159,10 +158,11 @@ public class ArchivesController {
         byte[] array = null;
         if (type.equals(ArchiveBuilder.PDF_TYPE)) {
             array = (byte[]) EHServerCache.IIIF.get(name.substring(4));
-            log.debug("READ from cache " + IIIF + " name=" + name + " " + array);
+            log.info("READ for key {} from cache " + IIIF + " name=" + name + " " + array, name.substring(4));
         }
         if (type.equals(ArchiveBuilder.ZIP_TYPE)) {
             array = (byte[]) EHServerCache.IIIF_ZIP.get(name.substring(3));
+            log.info("READ for key {} from cache " + IIIF_ZIP + " name=" + name + " " + array, name.substring(3));
         }
         HttpHeaders headers = new HttpHeaders();
         if (array == null) {
@@ -255,39 +255,6 @@ public class ArchivesController {
 
     public static String getShortName(String st) {
         return st.substring(st.lastIndexOf("/") + 1);
-    }
-
-    private List<String> getImageList(Identifier id, IdentifierInfo idf, List<ImageInfo> ili, boolean fairUse) {
-        final int totalPages = ili.size();
-        final List<String> res = new ArrayList<>();
-        int beginIndex = id.getBPageNum() == null ? 1 + idf.igi.pagesIntroTbrc : id.getBPageNum().intValue();
-        int endIndex = id.getEPageNum() == null ? totalPages : Math.min(totalPages, id.getEPageNum().intValue());
-        if (!fairUse) {
-            for (int imgSeqNum = beginIndex; imgSeqNum <= endIndex; imgSeqNum++) {
-                res.add(ili.get(imgSeqNum - 1).filename);
-            }
-            return res;
-        }
-        final int firstUnaccessiblePage = AppConstants.FAIRUSE_PAGES_S + idf.igi.pagesIntroTbrc + 1;
-        final int lastUnaccessiblePage = totalPages - AppConstants.FAIRUSE_PAGES_E;
-        // first part: min(firstUnaccessiblePage+1,beginIndex) to
-        // min(endIndex,firstUnaccessiblePage+1)
-        for (int imgSeqNum = Math.min(firstUnaccessiblePage, beginIndex); imgSeqNum <= Math.min(endIndex, firstUnaccessiblePage - 1); imgSeqNum++) {
-            res.add(ili.get(imgSeqNum).filename);
-        }
-        // then copyright page, if either beginIndex or endIndex is
-        // > FAIRUSE_PAGES_S+tbrcintro and < vi.totalPages-FAIRUSE_PAGES_E
-        if ((beginIndex >= firstUnaccessiblePage && beginIndex <= lastUnaccessiblePage)
-                || (endIndex >= firstUnaccessiblePage && endIndex <= lastUnaccessiblePage)
-                || (beginIndex < firstUnaccessiblePage && endIndex > lastUnaccessiblePage)) {
-            // TODO: add copyright page
-        }
-        // last part: max(beginIndex,lastUnaccessiblePage) to
-        // max(endIndex,lastUnaccessiblePage)
-        for (int imgSeqNum = Math.max(lastUnaccessiblePage + 1, beginIndex); imgSeqNum <= Math.max(endIndex, lastUnaccessiblePage); imgSeqNum++) {
-            res.add(ili.get(imgSeqNum).filename);
-        }
-        return res;
     }
 
 }
