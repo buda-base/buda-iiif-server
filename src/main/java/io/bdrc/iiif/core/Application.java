@@ -19,6 +19,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.event.EventListener;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
 import io.bdrc.auth.AuthProps;
 import io.bdrc.auth.rdf.RdfAuthModel;
@@ -27,8 +28,9 @@ import io.bdrc.iiif.metrics.ImageMetrics;
 @SpringBootApplication
 @Configuration
 @EnableAutoConfiguration
+@EnableWebMvc
 @Primary
-@ComponentScan(basePackages = { "io.bdrc.iiif", "de.digitalcollections.iiif.hymir", "de.digitalcollections.iiif.myhymir" })
+@ComponentScan(basePackages = { "io.bdrc.iiif" })
 
 //REMINDER : DO NOT REMOVE THE FOLLOWING COMMENTS
 /*
