@@ -12,6 +12,9 @@ import org.ehcache.config.builders.CacheManagerBuilder;
 import org.ehcache.config.builders.ResourcePoolsBuilder;
 import org.ehcache.config.units.EntryUnit;
 import org.ehcache.config.units.MemoryUnit;
+import org.ehcache.core.spi.service.StatisticsService;
+import org.ehcache.core.statistics.CacheStatistics;
+import org.ehcache.core.statistics.DefaultStatisticsService;
 
 import io.bdrc.iiif.archives.ArchiveInfo;
 import io.bdrc.iiif.archives.PdfItemInfo;
@@ -32,26 +35,28 @@ public class EHServerCache {
     public static Cache<String, ImageGroupInfo> IMAGE_GROUP_INFO;
     public static Cache<String, List> IMAGE_LIST_INFO;
     private static HashMap<String, Cache> MAP;
+    private static StatisticsService statsService;
 
     static {
         MAP = new HashMap<>();
-        CacheManager cacheManager = CacheManagerBuilder.newCacheManagerBuilder().build();
+        statsService = new DefaultStatisticsService();
+        CacheManager cacheManager = CacheManagerBuilder.newCacheManagerBuilder().using(statsService).build();
         cacheManager.init();
 
         /**** PERSISTENT CACHES ***/
-        PersistentCacheManager iiif_img = CacheManagerBuilder.newCacheManagerBuilder()
+        PersistentCacheManager iiif_img = CacheManagerBuilder.newCacheManagerBuilder().using(statsService)
                 .with(CacheManagerBuilder.persistence(System.getProperty("user.dir") + File.separator + "EH_IIIF_IMG")).build(true);
         IIIF_IMG = iiif_img.createCache("iiif_img", CacheConfigurationBuilder.newCacheConfigurationBuilder(String.class, byte[].class,
                 ResourcePoolsBuilder.newResourcePoolsBuilder().heap(2000, EntryUnit.ENTRIES).disk(15000, MemoryUnit.MB, true)));
         MAP.put("iiif_img", IIIF_IMG);
 
-        PersistentCacheManager iiif_zip = CacheManagerBuilder.newCacheManagerBuilder()
+        PersistentCacheManager iiif_zip = CacheManagerBuilder.newCacheManagerBuilder().using(statsService)
                 .with(CacheManagerBuilder.persistence(System.getProperty("user.dir") + File.separator + "EH_IIIF_ZIP")).build(true);
         IIIF_ZIP = iiif_zip.createCache("iiif_zip", CacheConfigurationBuilder.newCacheConfigurationBuilder(String.class, byte[].class,
                 ResourcePoolsBuilder.newResourcePoolsBuilder().heap(500, EntryUnit.ENTRIES).disk(5000, MemoryUnit.MB, true)));
         MAP.put("iiif_zip", IIIF_ZIP);
 
-        PersistentCacheManager iiif = CacheManagerBuilder.newCacheManagerBuilder()
+        PersistentCacheManager iiif = CacheManagerBuilder.newCacheManagerBuilder().using(statsService)
                 .with(CacheManagerBuilder.persistence(System.getProperty("user.dir") + File.separator + "EH_IIIF")).build(true);
         IIIF = iiif.createCache("iiif", CacheConfigurationBuilder.newCacheConfigurationBuilder(String.class, byte[].class,
                 ResourcePoolsBuilder.newResourcePoolsBuilder().heap(500, EntryUnit.ENTRIES).disk(5000, MemoryUnit.MB, true)));
@@ -90,6 +95,10 @@ public class EHServerCache {
 
     public static Cache getCache(String name) {
         return MAP.get(name);
+    }
+
+    public static CacheStatistics getCacheStatistics(String name) {
+        return statsService.getCacheStatistics(name);
     }
 
     public static boolean clearCache() {
