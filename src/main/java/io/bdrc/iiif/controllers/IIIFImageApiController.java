@@ -32,6 +32,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.ModelAndView;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -52,6 +53,7 @@ import io.bdrc.iiif.image.service.ImageS3Service;
 import io.bdrc.iiif.image.service.ImageService;
 import io.bdrc.iiif.image.service.ReadImageProcess;
 import io.bdrc.iiif.image.service.WriteImageProcess;
+import io.bdrc.iiif.metrics.CacheAndMemoryMetrics;
 import io.bdrc.iiif.metrics.ImageMetrics;
 import io.bdrc.iiif.model.DecodedImage;
 import io.bdrc.iiif.model.ImageApiProfile;
@@ -338,13 +340,15 @@ public class IIIFImageApiController {
         return resp;
     }
 
-    /*
-     * @GetMapping(value = "cache/view", produces = MediaType.TEXT_HTML_VALUE)
-     * public ModelAndView getCacheInfo() { log.info("Call to getCacheInfo()");
-     * ModelAndView model = new ModelAndView(); CacheAccessModel cam = new
-     * CacheAccessModel(); model.addObject("model", cam);
-     * model.setViewName("cache"); return model; }
-     */
+    @RequestMapping(value = "cache/view", method = RequestMethod.GET, produces = MediaType.TEXT_HTML_VALUE)
+    public ModelAndView getCacheInfo() {
+        log.info("Call to getCacheInfo()");
+        ModelAndView model = new ModelAndView();
+        CacheAndMemoryMetrics cam = new CacheAndMemoryMetrics();
+        model.addObject("model", cam);
+        model.setViewName("cache");
+        return model;
+    }
 
     public int computeExpires(TokenValidation tkVal) {
         long expires = tkVal.getVerifiedJwt().getExpiresAt().toInstant().getEpochSecond();
