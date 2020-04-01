@@ -1,5 +1,6 @@
 <%@page contentType="text/html"%>
 <%@page pageEncoding="UTF-8"%>
+<%@page import="io.bdrc.iiif.core.EHServerCache"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
@@ -62,17 +63,26 @@ input[type=submit]:hover {
 <body>
 <h2>Cache and memory monitoring</h2>
 <h3>CACHE INFO/STATS</h3>
+<c:forEach items="${EHServerCache.getDiskCachesNames()}" var="k">
+  <c:set var="st" value="${EHServerCache.getCacheStatistics(k)}"/>
 <table style="width: 60%;">
-<tr><th colspan="2">Cache status and statistics</th></tr>
+<tr><th colspan="2">Cache status and statistics for ${k}</th></tr>
+
 <tr><td><b>Cache status</b></td><td></td><td></td></tr>
 <tr><td><b>Created Time</b></td><td></td><td>Cache region creation Time</td></tr>
 <tr><td><b>Last Accessed Time</b></td><td></td><td>last time the cache was used</td></tr>
 <tr><td><b>Objects</b></td><td></td><td>The total number of objects held by the cache</td></tr>
-<tr><td><b>Miss expired</b></td><td></td><td>Number of times a requested element was found but was expired</td></tr>
-<tr><td><b>Miss not found</b></td><td></td><td>Number of times a requested element was not found</td></tr>
-<tr><td><b>Found aux</b></td><td></td><td>Number of times a requested item was found in an auxiliary cache</td></tr>
-<tr><td><b>Found ram</b></td><td></td><td>Number of times a requested item was found in the memory cache</td></tr>
+<tr><td><b>Cache hits</b></td><td>${st.getCacheHits()}</td><td>How many hits occurred on the cache since its creation or the latest "clear"</td></tr>
+<tr><td><b>Cache hits %</b></td><td>${st.getCacheHitPercentage()}</td><td>The percentage of hits compared to all gets since the cache creation or the latest "clear"</td></tr>
+<tr><td><b>Misses</b></td><td>${st.getCacheMisses()}</td><td>How many misses occurred on the cache since its creation or the latest "clear"</td></tr>
+<tr><td><b>Misses %</b></td><td>${st.getCacheMissPercentage()}</td><td>The percentage of misses compared to all gets since the cache creation or the latest "clear"</td></tr>
+<tr><td><b>Gets</b></td><td>${st.getCacheGets()}</td><td>How many gets occurred on the cache since its creation or the latest "clear"</td></tr>
+<tr><td><b>Puts</b></td><td>${st.getCachePuts()}</td><td>How many puts occurred on the cache since its creation or the latest "clear"</td></tr>
+<tr><td><b>Removals</b></td><td>${st.getCacheRemovals()}</td><td>How many removals occurred on the cache since its creation or the latest "clear"</td></tr>
+<tr><td><b>Evictions</b></td><td>${st.getCacheEvictions()}</td><td>How many evictions occurred on the cache since its creation or the latest "clear"</td></tr>
+<tr><td><b>Expirations</b></td><td>${st.getCacheExpirations()}</td><td>How many expirations occurred on the cache since its creation or the latest "clear"</td></tr>
 </table>
+</c:forEach>
 <br>
 <h3>MEMORY WATCH</h3>
 <table style="width: 40%;">

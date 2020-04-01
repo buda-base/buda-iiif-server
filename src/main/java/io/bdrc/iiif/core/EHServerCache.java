@@ -1,6 +1,7 @@
 package io.bdrc.iiif.core;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
@@ -42,6 +43,8 @@ public class EHServerCache {
 
     static {
         MAP = new HashMap<>();
+        MAP_DISK = new HashMap<>();
+        MAP_MEM = new HashMap<>();
         statsService = new DefaultStatisticsService();
         CacheManager cacheManager = CacheManagerBuilder.newCacheManagerBuilder().using(statsService).build();
         cacheManager.init();
@@ -114,15 +117,39 @@ public class EHServerCache {
         return MAP_DISK.keySet();
     }
 
+    public static List<Cache> getAllDiskCaches() {
+        List<Cache> caches = new ArrayList<>();
+        for (String name : getDiskCachesNames()) {
+            caches.add(MAP_DISK.get(name));
+        }
+        return caches;
+    }
+
     public static Set<String> getMemoryCachesNames() {
         return MAP_MEM.keySet();
+    }
+
+    public static List<Cache> getAllMemoryCaches() {
+        List<Cache> caches = new ArrayList<>();
+        for (String name : getMemoryCachesNames()) {
+            caches.add(MAP_MEM.get(name));
+        }
+        return caches;
     }
 
     public static Set<String> getAllCachesNames() {
         return MAP.keySet();
     }
 
-    public static HashMap<String, Cache> getDiskCaches(String name) {
+    public static List<Cache> getAllAnyCaches() {
+        List<Cache> caches = new ArrayList<>();
+        for (String name : getAllCachesNames()) {
+            caches.add(MAP.get(name));
+        }
+        return caches;
+    }
+
+    public static HashMap<String, Cache> getDiskCaches() {
         return MAP_DISK;
     }
 
