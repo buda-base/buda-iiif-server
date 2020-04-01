@@ -75,6 +75,12 @@
       <groupId>io.bdrc.libraries</groupId>
       <artifactId>bdrc-libraries</artifactId>
       <version>0.13.1</version>
+      <exclusions>      
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-log4j12</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <!-- https://mvnrepository.com/artifact/de.digitalcollections.imageio/imageio-turbojpeg -->
     <dependency>
