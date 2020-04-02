@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.ehcache.Cache;
@@ -17,6 +18,7 @@ import org.ehcache.config.units.MemoryUnit;
 import org.ehcache.core.spi.service.StatisticsService;
 import org.ehcache.core.statistics.CacheStatistics;
 import org.ehcache.core.statistics.DefaultStatisticsService;
+import org.ehcache.core.statistics.TierStatistics;
 
 import io.bdrc.iiif.archives.ArchiveInfo;
 import io.bdrc.iiif.archives.PdfItemInfo;
@@ -163,6 +165,10 @@ public class EHServerCache {
 
     public static CacheStatistics getCacheStatistics(String name) {
         return statsService.getCacheStatistics(name);
+    }
+
+    public static Map<String, TierStatistics> getTierStatistics(String name) {
+        return statsService.getCacheStatistics(name).getTierStatistics();
     }
 
     public static boolean clearCache() {
