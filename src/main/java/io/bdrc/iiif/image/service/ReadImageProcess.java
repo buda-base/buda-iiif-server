@@ -6,6 +6,7 @@ import java.awt.color.ICC_Profile;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.concurrent.ExecutionException;
 
 import javax.imageio.ImageIO;
@@ -16,7 +17,8 @@ import javax.imageio.stream.ImageInputStream;
 import org.apache.commons.imaging.ColorTools;
 import org.apache.commons.imaging.ImageReadException;
 import org.apache.commons.imaging.Imaging;
-import org.apache.jena.atlas.logging.Log;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 
 import com.google.common.collect.Streams;
@@ -36,6 +38,8 @@ import io.bdrc.iiif.model.TileInfo;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 
 public class ReadImageProcess {
+
+    private static final Logger log = LoggerFactory.getLogger(ReadImageProcess.class);
 
     @Value("${custom.iiif.image.maxWidth:65500}")
     private static int maxWidth;
@@ -116,7 +120,7 @@ public class ReadImageProcess {
             imgReader = getReader(identifier);
             enrichInfo(imgReader.getReader(), info);
         } catch (IIIFException e) {
-            Log.error("Could not get Image Info", e.getMessage());
+            log.error("Could not get Image Info", e.getMessage());
             throw new IIIFException(e);
         }
         return imgReader;
@@ -141,6 +145,13 @@ public class ReadImageProcess {
             IdentifierInfo idf = new IdentifierInfo(identifier);
             s3key = ImageS3Service.getKey(idf);
             service = ImageS3Service.InstanceArchive;
+            log.debug("IN READ IDENTIFIER IMAGE NAME >> {}", idf.imageName);
+            if (idf.imageName != null) {
+                Iterator<ImageReader> it = ImageIO.getImageReadersByFormatName(idf.imageName.substring(idf.imageName.lastIndexOf(".") + 1));
+                while (it.hasNext()) {
+                    log.debug("IN READ READER >> {}", it.next());
+                }
+            }
         }
         byte[] bytes = null;
         try {
@@ -148,7 +159,6 @@ public class ReadImageProcess {
         } catch (InterruptedException | ExecutionException e) {
             throw new IIIFException(404, 5000, e);
         }
-
         ImageInputStream iis = ImageIO.createImageInputStream(new ByteArrayInputStream(bytes));
         ImageReader reader = Streams.stream(ImageIO.getImageReaders(iis)).findFirst().orElseThrow(UnsupportedFormatException::new);
         reader.setInput(iis);
@@ -169,7 +179,7 @@ public class ReadImageProcess {
         long deb = System.currentTimeMillis();
         Application.logPerf("Entering readImage for creating DecodedImage");
         if ((selector.getRotation().getRotation() % 90) != 0) {
-            Log.error("Rotation is not a multiple of 90 degrees for selector " + selector.toString(), "");
+            log.error("Rotation is not a multiple of 90 degrees for selector {}", selector.toString(), "");
             throw new UnsupportedOperationException("Can only rotate by multiples of 90 degrees.");
         }
         Dimension nativeDimensions = new Dimension(imgReader.getReader().getWidth(0), imgReader.getReader().getHeight(0));
@@ -177,7 +187,7 @@ public class ReadImageProcess {
         try {
             targetRegion = selector.getRegion().resolve(nativeDimensions);
         } catch (IIIFException e) {
-            Log.error("Could not resolve selector region :" + selector.getRegion(), e.getMessage());
+            log.error("Could not resolve selector region : {}", selector.getRegion(), e.getMessage());
             throw new InvalidParametersException(e);
         }
         Dimension croppedDimensions = new Dimension(targetRegion.width, targetRegion.height);
@@ -185,7 +195,7 @@ public class ReadImageProcess {
         try {
             targetSize = selector.getSize().resolve(croppedDimensions, profile);
         } catch (IIIFException e) {
-            Log.error("Could not resolve selector size :" + selector.getSize(), e.getMessage());
+            log.error("Could not resolve selector size : {}", selector.getSize(), e.getMessage());
             throw new InvalidParametersException(e);
         }
 
@@ -236,7 +246,7 @@ public class ReadImageProcess {
         try {
             targetRegion = selector.getRegion().resolve(nativeDimensions);
         } catch (IIIFException e) {
-            Log.error("Could not get image ReadParam", e.getMessage());
+            log.error("Could not get image ReadParam {}", e.getMessage());
             throw new InvalidParametersException(e);
         }
         // IIIF regions are always relative to the native size, while ImageIO regions
