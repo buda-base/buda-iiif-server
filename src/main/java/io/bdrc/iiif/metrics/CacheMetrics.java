@@ -1,8 +1,8 @@
 package io.bdrc.iiif.metrics;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Set;
 
 import org.apache.http.client.ClientProtocolException;
 import org.slf4j.Logger;
@@ -12,29 +12,33 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.bdrc.iiif.core.Application;
+import io.bdrc.iiif.core.EHServerCache;
 import io.bdrc.iiif.exceptions.IIIFException;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Metrics;
 
-public class ImageMetrics {
+public class CacheMetrics {
 
-    private static final Logger log = LoggerFactory.getLogger(ImageMetrics.class);
-    public static ArrayList<String> counters;
-
-    public final static String IMG_CALLS_COMMON = "image.calls";
-    public final static String IMG_CALLS_ARCHIVES = "image.calls.archives";
+    private static final Logger log = LoggerFactory.getLogger(CacheMetrics.class);
+    public static Set<String> counters;
 
     static {
-        counters = new ArrayList<>();
-        counters.add(IMG_CALLS_COMMON);
-        counters.add(IMG_CALLS_ARCHIVES);
+        counters = EHServerCache.getAllCaches().keySet();
     }
 
-    public static void imageCount(String countName, String origin) throws IIIFException {
+    public static void cacheGet(String cacheName) throws IIIFException {
         if ("true".equals(Application.getProperty("metricsEnabled"))) {
-            Counter cnt = Metrics.counter("image.calls", "context", origin);
+            Counter cnt = Metrics.counter(cacheName + ".gets");
             cnt.increment();
-            log.debug("Incremented image counter {}; it's value is now {}", cnt.getId(), cnt.count());
+            log.debug("Incremented cache get counter {}; it's value is now {}", cnt.getId(), cnt.count());
+        }
+    }
+
+    public static void cachePut(String cacheName) throws IIIFException {
+        if ("true".equals(Application.getProperty("metricsEnabled"))) {
+            Counter cnt = Metrics.counter(cacheName + ".puts");
+            cnt.increment();
+            log.debug("Incremented cache put counter {}; it's value is now {}", cnt.getId(), cnt.count());
         }
     }
 

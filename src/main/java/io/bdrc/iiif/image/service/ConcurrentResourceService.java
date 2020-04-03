@@ -32,7 +32,13 @@ public class ConcurrentResourceService<T> {
 
     @SuppressWarnings("unchecked")
     T getFromCache(final String resId) {
-        return (T) EHServerCache.getCache(cacheName).get(cachePrefix + resId);
+        T t = null;
+        try {
+            t = (T) EHServerCache.getCache(cacheName).get(cachePrefix + resId);
+        } catch (IIIFException e) {
+            logger.error("getFromCache, error getting object from cache", e);
+        }
+        return t;
     }
 
     @SuppressWarnings("unchecked")

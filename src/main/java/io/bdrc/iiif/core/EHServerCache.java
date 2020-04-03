@@ -24,7 +24,7 @@ import io.bdrc.iiif.archives.ArchiveInfo;
 import io.bdrc.iiif.archives.PdfItemInfo;
 import io.bdrc.iiif.resolver.ImageGroupInfo;
 
-@SuppressWarnings("rawtypes")
+@SuppressWarnings({ "rawtypes", "unchecked" })
 public class EHServerCache {
 
     public static Cache<String, byte[]> IIIF_IMG;
@@ -36,9 +36,9 @@ public class EHServerCache {
     public static Cache<String, ArchiveInfo> ARCHIVE_INFO;
     public static Cache<String, ImageGroupInfo> IMAGE_GROUP_INFO;
     public static Cache<String, List> IMAGE_LIST_INFO;
-    private static HashMap<String, Cache> MAP;
-    private static HashMap<String, Cache> MAP_DISK;
-    private static HashMap<String, Cache> MAP_MEM;
+    private static HashMap<String, CacheWrapper> MAP;
+    private static HashMap<String, CacheWrapper> MAP_DISK;
+    private static HashMap<String, CacheWrapper> MAP_MEM;
     private static StatisticsService statsService;
 
     static {
@@ -54,57 +54,57 @@ public class EHServerCache {
                 .with(CacheManagerBuilder.persistence(System.getProperty("user.dir") + File.separator + "EH_IIIF_IMG")).build(true);
         IIIF_IMG = iiif_img.createCache("iiif_img", CacheConfigurationBuilder.newCacheConfigurationBuilder(String.class, byte[].class,
                 ResourcePoolsBuilder.newResourcePoolsBuilder().heap(2000, EntryUnit.ENTRIES).disk(15000, MemoryUnit.MB, true)));
-        MAP.put("iiif_img", IIIF_IMG);
-        MAP_DISK.put("iiif_img", IIIF_IMG);
+        MAP.put("iiif_img", new CacheWrapper(IIIF_IMG, "iiif_img"));
+        MAP_DISK.put("iiif_img", new CacheWrapper(IIIF_IMG, "iiif_img"));
 
         PersistentCacheManager iiif_zip = CacheManagerBuilder.newCacheManagerBuilder().using(statsService)
                 .with(CacheManagerBuilder.persistence(System.getProperty("user.dir") + File.separator + "EH_IIIF_ZIP")).build(true);
         IIIF_ZIP = iiif_zip.createCache("iiif_zip", CacheConfigurationBuilder.newCacheConfigurationBuilder(String.class, byte[].class,
                 ResourcePoolsBuilder.newResourcePoolsBuilder().heap(500, EntryUnit.ENTRIES).disk(5000, MemoryUnit.MB, true)));
-        MAP.put("iiif_zip", IIIF_ZIP);
-        MAP_DISK.put("iiif_zip", IIIF_ZIP);
+        MAP.put("iiif_zip", new CacheWrapper(IIIF_ZIP, "iiif_zip"));
+        MAP_DISK.put("iiif_zip", new CacheWrapper(IIIF_ZIP, "iiif_zip"));
 
         PersistentCacheManager iiif = CacheManagerBuilder.newCacheManagerBuilder().using(statsService)
                 .with(CacheManagerBuilder.persistence(System.getProperty("user.dir") + File.separator + "EH_IIIF")).build(true);
         IIIF = iiif.createCache("iiif", CacheConfigurationBuilder.newCacheConfigurationBuilder(String.class, byte[].class,
                 ResourcePoolsBuilder.newResourcePoolsBuilder().heap(500, EntryUnit.ENTRIES).disk(5000, MemoryUnit.MB, true)));
-        MAP.put("iiif", IIIF);
-        MAP_DISK.put("iiif", IIIF);
+        MAP.put("iiif", new CacheWrapper(IIIF, "iiif"));
+        MAP_DISK.put("iiif", new CacheWrapper(IIIF, "iiif"));
 
         /**** MEMORY CACHES ***/
         PDF_ITEM_INFO = cacheManager.createCache("pdfItemInfo", CacheConfigurationBuilder.newCacheConfigurationBuilder(String.class,
                 PdfItemInfo.class, ResourcePoolsBuilder.newResourcePoolsBuilder().heap(500, EntryUnit.ENTRIES)));
-        MAP.put("pdfItemInfo", PDF_ITEM_INFO);
-        MAP_MEM.put("pdfItemInfo", PDF_ITEM_INFO);
+        MAP.put("pdfItemInfo", new CacheWrapper(PDF_ITEM_INFO, "pdfItemInfo"));
+        MAP_MEM.put("pdfItemInfo", new CacheWrapper(PDF_ITEM_INFO, "pdfItemInfo"));
 
         PDF_JOBS = cacheManager.createCache("pdfjobs", CacheConfigurationBuilder.newCacheConfigurationBuilder(String.class, Boolean.class,
                 ResourcePoolsBuilder.newResourcePoolsBuilder().heap(500, EntryUnit.ENTRIES)));
-        MAP.put("pdfjobs", PDF_JOBS);
-        MAP_MEM.put("pdfjobs", PDF_JOBS);
+        MAP.put("pdfjobs", new CacheWrapper(PDF_JOBS, "pdfjobs"));
+        MAP_MEM.put("pdfjobs", new CacheWrapper(PDF_JOBS, "pdfjobs"));
 
         ZIP_JOBS = cacheManager.createCache("zipjobs", CacheConfigurationBuilder.newCacheConfigurationBuilder(String.class, Boolean.class,
                 ResourcePoolsBuilder.newResourcePoolsBuilder().heap(500, EntryUnit.ENTRIES)));
-        MAP.put("zipjobs", ZIP_JOBS);
-        MAP_MEM.put("zipjobs", ZIP_JOBS);
+        MAP.put("zipjobs", new CacheWrapper(ZIP_JOBS, "zipjobs"));
+        MAP_MEM.put("zipjobs", new CacheWrapper(ZIP_JOBS, "zipjobs"));
 
         ARCHIVE_INFO = cacheManager.createCache("archiveInfo", CacheConfigurationBuilder.newCacheConfigurationBuilder(String.class, ArchiveInfo.class,
                 ResourcePoolsBuilder.newResourcePoolsBuilder().heap(500, EntryUnit.ENTRIES)));
-        MAP.put("archiveInfo", ARCHIVE_INFO);
-        MAP_MEM.put("archiveInfo", ARCHIVE_INFO);
+        MAP.put("archiveInfo", new CacheWrapper(ARCHIVE_INFO, "archiveInfo"));
+        MAP_MEM.put("archiveInfo", new CacheWrapper(ARCHIVE_INFO, "archiveInfo"));
 
         IMAGE_GROUP_INFO = cacheManager.createCache("imageGroupInfo", CacheConfigurationBuilder.newCacheConfigurationBuilder(String.class,
                 ImageGroupInfo.class, ResourcePoolsBuilder.newResourcePoolsBuilder().heap(500, EntryUnit.ENTRIES)));
-        MAP.put("imageGroupInfo", IMAGE_GROUP_INFO);
-        MAP_MEM.put("imageGroupInfo", IMAGE_GROUP_INFO);
+        MAP.put("imageGroupInfo", new CacheWrapper(IMAGE_GROUP_INFO, "imageGroupInfo"));
+        MAP_MEM.put("imageGroupInfo", new CacheWrapper(IMAGE_GROUP_INFO, "imageGroupInfo"));
 
         IMAGE_LIST_INFO = cacheManager.createCache("imageListInfo", CacheConfigurationBuilder.newCacheConfigurationBuilder(String.class, List.class,
                 ResourcePoolsBuilder.newResourcePoolsBuilder().heap(500, EntryUnit.ENTRIES)));
-        MAP.put("imageListInfo", IMAGE_LIST_INFO);
-        MAP_MEM.put("imageListInfo", IMAGE_LIST_INFO);
+        MAP.put("imageListInfo", new CacheWrapper(IMAGE_LIST_INFO, "imageListInfo"));
+        MAP_MEM.put("imageListInfo", new CacheWrapper(IMAGE_LIST_INFO, "imageListInfo"));
 
     }
 
-    public static Cache getCache(String name) {
+    public static CacheWrapper getCache(String name) {
         return MAP.get(name);
     }
 
@@ -112,8 +112,8 @@ public class EHServerCache {
         return MAP_DISK.keySet();
     }
 
-    public static List<Cache> getAllDiskCaches() {
-        List<Cache> caches = new ArrayList<>();
+    public static List<CacheWrapper> getAllDiskCaches() {
+        List<CacheWrapper> caches = new ArrayList<>();
         for (String name : getDiskCachesNames()) {
             caches.add(MAP_DISK.get(name));
         }
@@ -124,8 +124,8 @@ public class EHServerCache {
         return MAP_MEM.keySet();
     }
 
-    public static List<Cache> getAllMemoryCaches() {
-        List<Cache> caches = new ArrayList<>();
+    public static List<CacheWrapper> getAllMemoryCaches() {
+        List<CacheWrapper> caches = new ArrayList<>();
         for (String name : getMemoryCachesNames()) {
             caches.add(MAP_MEM.get(name));
         }
@@ -136,23 +136,23 @@ public class EHServerCache {
         return MAP.keySet();
     }
 
-    public static List<Cache> getAllAnyCaches() {
-        List<Cache> caches = new ArrayList<>();
+    public static List<CacheWrapper> getAllAnyCaches() {
+        List<CacheWrapper> caches = new ArrayList<>();
         for (String name : getAllCachesNames()) {
             caches.add(MAP.get(name));
         }
         return caches;
     }
 
-    public static HashMap<String, Cache> getDiskCaches() {
+    public static HashMap<String, CacheWrapper> getDiskCaches() {
         return MAP_DISK;
     }
 
-    public static HashMap<String, Cache> getMemoryCaches() {
+    public static HashMap<String, CacheWrapper> getMemoryCaches() {
         return MAP_MEM;
     }
 
-    public static HashMap<String, Cache> getAllCaches() {
+    public static HashMap<String, CacheWrapper> getAllCaches() {
         return MAP;
     }
 
