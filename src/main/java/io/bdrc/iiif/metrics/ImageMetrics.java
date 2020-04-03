@@ -22,14 +22,12 @@ public class ImageMetrics {
     public static ArrayList<String> counters;
 
     public final static String IMG_CALLS_COMMON = "image.calls";
-    public final static String IMG_CALLS_PDF = "image.calls.pdf";
-    public final static String IMG_CALLS_ZIP = "image.calls.zip";
+    public final static String IMG_CALLS_ARCHIVES = "image.calls.archives";
 
     static {
         counters = new ArrayList<>();
         counters.add(IMG_CALLS_COMMON);
-        counters.add(IMG_CALLS_PDF);
-        counters.add(IMG_CALLS_ZIP);
+        counters.add(IMG_CALLS_ARCHIVES);
     }
 
     public static void imageCount(String countName, String origin) throws IIIFException {

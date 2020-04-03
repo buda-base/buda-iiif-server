@@ -53,7 +53,7 @@ import io.bdrc.iiif.image.service.ImageS3Service;
 import io.bdrc.iiif.image.service.ImageService;
 import io.bdrc.iiif.image.service.ReadImageProcess;
 import io.bdrc.iiif.image.service.WriteImageProcess;
-import io.bdrc.iiif.metrics.CacheAndMemoryMetrics;
+import io.bdrc.iiif.metrics.JVMMetrics;
 import io.bdrc.iiif.metrics.ImageMetrics;
 import io.bdrc.iiif.model.DecodedImage;
 import io.bdrc.iiif.model.ImageApiProfile;
@@ -344,7 +344,7 @@ public class IIIFImageApiController {
     public ModelAndView getCacheInfo() {
         log.info("Call to getCacheInfo()");
         ModelAndView model = new ModelAndView();
-        CacheAndMemoryMetrics cam = new CacheAndMemoryMetrics();
+        JVMMetrics cam = new JVMMetrics();
         model.addObject("model", cam);
         model.setViewName("cache");
         return model;

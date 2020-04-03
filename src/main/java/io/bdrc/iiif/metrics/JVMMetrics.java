@@ -10,23 +10,11 @@ import java.util.List;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 
-public class CacheAndMemoryMetrics {
+public class JVMMetrics {
 
-    public CacheAndMemoryMetrics() {
+    public JVMMetrics() {
         super();
-    }
-
-    /**
-     * Cache config
-     */
-
-    /**
-     * Cache stats
-     */
-
-    /**
-     * Memory stuff
-     */
+    }   
 
     public MemoryUsage getHeap() {
         return ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();

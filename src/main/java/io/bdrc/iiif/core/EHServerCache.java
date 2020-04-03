@@ -22,7 +22,6 @@ import org.ehcache.core.statistics.TierStatistics;
 
 import io.bdrc.iiif.archives.ArchiveInfo;
 import io.bdrc.iiif.archives.PdfItemInfo;
-import io.bdrc.iiif.resolver.IdentifierInfo;
 import io.bdrc.iiif.resolver.ImageGroupInfo;
 
 @SuppressWarnings("rawtypes")
@@ -35,7 +34,6 @@ public class EHServerCache {
     public static Cache<String, Boolean> PDF_JOBS;
     public static Cache<String, Boolean> ZIP_JOBS;
     public static Cache<String, ArchiveInfo> ARCHIVE_INFO;
-    public static Cache<String, IdentifierInfo> IDENTIFIER;
     public static Cache<String, ImageGroupInfo> IMAGE_GROUP_INFO;
     public static Cache<String, List> IMAGE_LIST_INFO;
     private static HashMap<String, Cache> MAP;
@@ -93,11 +91,6 @@ public class EHServerCache {
                 ResourcePoolsBuilder.newResourcePoolsBuilder().heap(500, EntryUnit.ENTRIES)));
         MAP.put("archiveInfo", ARCHIVE_INFO);
         MAP_MEM.put("archiveInfo", ARCHIVE_INFO);
-
-        IDENTIFIER = cacheManager.createCache("identifierInfo", CacheConfigurationBuilder.newCacheConfigurationBuilder(String.class,
-                IdentifierInfo.class, ResourcePoolsBuilder.newResourcePoolsBuilder().heap(500, EntryUnit.ENTRIES)));
-        MAP.put("identifierInfo", IDENTIFIER);
-        MAP_MEM.put("identifierInfo", IDENTIFIER);
 
         IMAGE_GROUP_INFO = cacheManager.createCache("imageGroupInfo", CacheConfigurationBuilder.newCacheConfigurationBuilder(String.class,
                 ImageGroupInfo.class, ResourcePoolsBuilder.newResourcePoolsBuilder().heap(500, EntryUnit.ENTRIES)));
@@ -180,7 +173,6 @@ public class EHServerCache {
             PDF_JOBS.clear();
             ZIP_JOBS.clear();
             ARCHIVE_INFO.clear();
-            IDENTIFIER.clear();
             return true;
         } catch (Exception ex) {
             return false;
