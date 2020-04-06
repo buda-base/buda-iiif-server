@@ -21,7 +21,8 @@ public class CacheWrapper<K, V> {
         return cache.get(key);
     }
 
-    public void put(K key, V value) {
+    public void put(K key, V value) throws IIIFException {
+        CacheMetrics.cachePut(cacheName);
         cache.put(key, value);
     }
 
