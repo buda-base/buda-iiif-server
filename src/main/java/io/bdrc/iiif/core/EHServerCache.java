@@ -41,7 +41,7 @@ public class EHServerCache {
     private static HashMap<String, CacheWrapper> MAP_MEM;
     private static StatisticsService statsService;
 
-    static {
+    public static void init() {
         MAP = new HashMap<>();
         MAP_DISK = new HashMap<>();
         MAP_MEM = new HashMap<>();

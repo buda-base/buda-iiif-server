@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
+import java.util.Timer;
 
 import org.apache.http.client.ClientProtocolException;
 import org.slf4j.Logger;
@@ -24,6 +25,7 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import io.bdrc.auth.AuthProps;
 import io.bdrc.auth.rdf.RdfAuthModel;
 import io.bdrc.iiif.metrics.ImageMetrics;
+import io.bdrc.iiif.metrics.MetricsTask;
 
 @SpringBootApplication
 @Configuration
@@ -69,6 +71,9 @@ public class Application extends SpringBootServletInitializer {
         if (props.getProperty("logPerf") != null) {
             logPerf = Boolean.parseBoolean(props.getProperty("logPerf"));
         }
+        // every minute ?
+        EHServerCache.init();
+        new Timer(true).schedule(new MetricsTask(), 0, 60000);
         SpringApplication.run(Application.class, args);
         logPerf("Application main", "Test PERF Log ");
     }

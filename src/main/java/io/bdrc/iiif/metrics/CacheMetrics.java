@@ -2,6 +2,7 @@ package io.bdrc.iiif.metrics;
 
 import java.util.Map;
 
+import org.ehcache.core.statistics.CacheStatistics;
 import org.ehcache.core.statistics.TierStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,11 +39,27 @@ public class CacheMetrics {
     public static void updateIfDiskCache(String cacheName) {
         if (EHServerCache.getDiskCachesNames().contains(cacheName)) {
             Map<String, TierStatistics> stats = EHServerCache.getTierStatistics(cacheName);
-            Counter cnt = Metrics.counter(cacheName + ".disk_allocated");
-            cnt.increment(stats.get(DISK_ALLOCATED).getOccupiedByteSize() - cnt.count());
-            Counter cnt1 = Metrics.counter(cacheName + ".disk_occupied");
-            cnt1.increment(stats.get(DISK_OCCUPIED).getOccupiedByteSize() - cnt1.count());
+            if (stats.get(DISK_ALLOCATED) != null) {
+                Counter cnt = Metrics.counter(cacheName + ".disk_allocated");
+                cnt.increment(stats.get(DISK_ALLOCATED).getOccupiedByteSize() - cnt.count());
+            }
+            if (stats.get(DISK_OCCUPIED) != null) {
+                Counter cnt1 = Metrics.counter(cacheName + ".disk_occupied");
+                cnt1.increment(stats.get(DISK_OCCUPIED).getOccupiedByteSize() - cnt1.count());
+            }
         }
+    }
+
+    public static void updateCommonsCache(String cacheName) {
+        CacheStatistics stats = EHServerCache.getCacheStatistics(cacheName);
+        Metrics.gauge(cacheName + ".hitsPercent", stats.getCacheHitPercentage());
+        Metrics.gauge(cacheName + ".missesPercent", stats.getCacheMissPercentage());
+        Counter removals = Metrics.counter(cacheName + ".removals");
+        removals.increment(stats.getCacheRemovals() - removals.count());
+        Counter evictions = Metrics.counter(cacheName + ".evictions");
+        evictions.increment(stats.getCacheEvictions() - evictions.count());
+        Counter expirations = Metrics.counter(cacheName + ".expirations");
+        expirations.increment(stats.getCacheExpirations() - expirations.count());
     }
 
 }
