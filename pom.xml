@@ -44,22 +44,7 @@
                 <artifactId>logback-core</artifactId>
             </exclusion-->            
         </exclusions>
-    </dependency>
-    <dependency>
-        <groupId>de.digitalcollections</groupId>
-        <artifactId>iiif-server-hymir</artifactId>
-        <version>4.1.2</version> 
-        <exclusions>
-            <exclusion>
-                <groupId>de.digitalcollections.imageio</groupId>
-                <artifactId>imageio-jnr</artifactId>
-            </exclusion>                    
-            <exclusion>
-                <groupId>net.bull.javamelody</groupId>
-                <artifactId>javamelody-spring-boot-starter</artifactId>
-            </exclusion>
-        </exclusions>       
-    </dependency>
+    </dependency>    
     <dependency>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-actuator</artifactId>        
