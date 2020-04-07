@@ -18,7 +18,7 @@ import io.micrometer.core.instrument.Metrics;
 
 public class ImageMetrics {
 
-    private static final Logger log = LoggerFactory.getLogger(ImageMetrics.class);
+    private static final Logger log = LoggerFactory.getLogger("default");
     public static ArrayList<String> counters;
 
     public final static String IMG_CALLS_COMMON = "image.calls";
@@ -34,7 +34,7 @@ public class ImageMetrics {
         if ("true".equals(Application.getProperty("metricsEnabled"))) {
             Counter cnt = Metrics.counter("image.calls", "context", origin);
             cnt.increment();
-            log.debug("Incremented image counter {}; it's value is now {}", cnt.getId(), cnt.count());
+            log.info("Incremented image counter {}; it's value is now {}", cnt.getId(), cnt.count());
         }
     }
 
