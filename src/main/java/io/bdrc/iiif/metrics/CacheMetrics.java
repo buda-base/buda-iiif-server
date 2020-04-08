@@ -11,14 +11,20 @@ import io.bdrc.iiif.core.Application;
 import io.bdrc.iiif.core.EHServerCache;
 import io.bdrc.iiif.exceptions.IIIFException;
 import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Metrics;
 
 public class CacheMetrics {
 
     public static final String DISK_ALLOCATED = "Disk:AllocatedByteSize";
     public static final String DISK_OCCUPIED = "Disk:OccupiedByteSize";
-
     private static final Logger log = LoggerFactory.getLogger(CacheMetrics.class);
+
+    static {
+        for (MeterRegistry mr : Metrics.globalRegistry.getRegistries()) {
+            log.debug("METER  REGISTRY in CacheMetrics >> {}" + mr);
+        }
+    }
 
     public static void cacheGet(String cacheName) throws IIIFException {
         if ("true".equals(Application.getProperty("metricsEnabled"))) {
@@ -54,9 +60,9 @@ public class CacheMetrics {
 
     public static void updateCommonsCache(String cacheName) {
         CacheStatistics stats = EHServerCache.getCacheStatistics(cacheName);
-        Metrics.gauge(cacheName + ".hitsPercent", stats.getCacheHitPercentage());
+        Metrics.gauge(cacheName + ".hitsPercent", Float.class, (i) -> stats.getCacheHitPercentage());
         log.info("Added gauge value for gauge {}; its value is now {}", cacheName + ".hitsPercent", stats.getCacheHitPercentage());
-        Metrics.gauge(cacheName + ".missesPercent", stats.getCacheMissPercentage());
+        Metrics.gauge(cacheName + ".missesPercent", Float.class, (i) -> stats.getCacheMissPercentage());
         log.info("Added gauge value for gauge {}; its value is now {}", cacheName + ".missesPercent", stats.getCacheMissPercentage());
         Counter removals = Metrics.counter(cacheName + ".removals");
         removals.increment(stats.getCacheRemovals() - removals.count());
