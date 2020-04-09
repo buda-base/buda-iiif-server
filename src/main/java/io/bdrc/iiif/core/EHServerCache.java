@@ -24,6 +24,8 @@ import org.slf4j.LoggerFactory;
 
 import io.bdrc.iiif.archives.ArchiveInfo;
 import io.bdrc.iiif.archives.PdfItemInfo;
+import io.bdrc.iiif.exceptions.IIIFException;
+import io.bdrc.iiif.metrics.CacheMetrics;
 import io.bdrc.iiif.resolver.ImageGroupInfo;
 
 @SuppressWarnings({ "rawtypes", "unchecked" })
@@ -181,6 +183,18 @@ public class EHServerCache {
     public static Map<String, TierStatistics> getTierStatistics(String name) {
         log.info("TIER STATISTICS FOR {} are {}", name, CACHE_STATS.get(name).getTierStatistics());
         return CACHE_STATS.get(name).getTierStatistics();
+    }
+
+    public static Object get(String cacheName, String key) throws IIIFException {
+        log.info("EHServerCACHE get from {} with key {}", cacheName, key);
+        CacheMetrics.cacheGet(cacheName);
+        return getCache(cacheName).get(key);
+    }
+
+    public static void put(String cacheName, String key, Object obj) throws IIIFException {
+        log.info("EHServerCACHE put in {} for key {}", cacheName, key);
+        CacheMetrics.cachePut(cacheName);
+        getCache(cacheName).put(key, obj);
     }
 
     public static boolean clearCache() {

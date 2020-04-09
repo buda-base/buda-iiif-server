@@ -24,7 +24,7 @@ import io.bdrc.iiif.resolver.IdentifierInfo;
 public class ArchiveImageProducer implements Callable {
 
     final static String S3_BUCKET = "archive.tbrc.org";
-    public static final String IIIF_IMG = "IIIF_IMG";
+    public static final String IIIF_IMG = "iiif_img";
     public final static Logger log = LoggerFactory.getLogger(ArchiveImageProducer.class);
 
     AmazonS3 s3;
@@ -49,7 +49,7 @@ public class ArchiveImageProducer implements Callable {
         obj[1] = imageName;
         byte[] imgbytes = null;
         try {
-            imgbytes = (byte[]) EHServerCache.IIIF_IMG.get(id);
+            imgbytes = (byte[]) EHServerCache.get(IIIF_IMG, id);
             if (imgbytes != null) {
                 log.debug("Got " + id + " from cache ...");
                 ImageMetrics.imageCount(ImageMetrics.IMG_CALLS_COMMON, origin);
@@ -59,7 +59,7 @@ public class ArchiveImageProducer implements Callable {
             imgbytes = ImageS3Service.InstanceArchive.getFromApi(id);
             obj[0] = imgbytes;
             log.debug("Got " + id + " from S3 ...added to cache");
-            EHServerCache.IIIF_IMG.put(id, imgbytes);
+            EHServerCache.put(IIIF_IMG, id, imgbytes);
             ImageMetrics.imageCount(ImageMetrics.IMG_CALLS_ARCHIVES, origin);
         } catch (IIIFException e) {
             log.error("Could not get Image as bytes for id=" + id, e.getMessage());

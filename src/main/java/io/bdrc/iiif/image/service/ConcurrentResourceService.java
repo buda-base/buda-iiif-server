@@ -34,17 +34,16 @@ public class ConcurrentResourceService<T> {
     T getFromCache(final String resId) {
         T t = null;
         try {
-            t = (T) EHServerCache.getCache(cacheName).get(cachePrefix + resId);
+            t = (T) EHServerCache.get(cacheName, cachePrefix + resId);
         } catch (IIIFException e) {
             logger.error("getFromCache, error getting object from cache", e);
         }
         return t;
     }
 
-    @SuppressWarnings("unchecked")
     void putInCache(final String resId, final T res) {
         try {
-            EHServerCache.getCache(cacheName).put(cachePrefix + resId, res);
+            EHServerCache.put(cacheName, cachePrefix + resId, res);
         } catch (Exception e) {
             logger.error("putInCache, error adding to cache", e);
         }
@@ -70,7 +69,7 @@ public class ConcurrentResourceService<T> {
         }
         resT = getFromApi(resId);
         try {
-            EHServerCache.getCache(cacheName).put(resId, resT);
+            EHServerCache.put(cacheName, resId, resT);
         } catch (Exception e) {
             logger.error("getSync, error adding to cache", e);
         }
