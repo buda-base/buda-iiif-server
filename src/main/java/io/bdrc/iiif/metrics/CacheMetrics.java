@@ -16,8 +16,6 @@ import io.micrometer.core.instrument.Metrics;
 
 public class CacheMetrics {
 
-    public static final String DISK_ALLOCATED = "Disk:AllocatedByteSize";
-    public static final String DISK_OCCUPIED = "Disk:OccupiedByteSize";
     private static final Logger log = LoggerFactory.getLogger(CacheMetrics.class);
 
     static {
@@ -43,16 +41,14 @@ public class CacheMetrics {
     }
 
     public static void updateIfDiskCache(String cacheName) {
-        if (EHServerCache.getDiskCachesNames().contains(cacheName)) {
-            Map<String, TierStatistics> stats = EHServerCache.getTierStatistics(cacheName);
-            if (stats.get(DISK_ALLOCATED) != null) {
+        Map<String, TierStatistics> stats = EHServerCache.getTierStatistics(cacheName);
+        if (stats != null) {
+            if (stats.get("Disk") != null) {
                 Counter cnt = Metrics.counter(cacheName + ".disk_allocated");
-                cnt.increment(stats.get(DISK_ALLOCATED).getOccupiedByteSize() - cnt.count());
+                cnt.increment(stats.get("Disk").getOccupiedByteSize() - cnt.count());
                 log.info("Incremented disk cache put counter {}; its value is now {}", cnt.getId(), cnt.count());
-            }
-            if (stats.get(DISK_OCCUPIED) != null) {
                 Counter cnt1 = Metrics.counter(cacheName + ".disk_occupied");
-                cnt1.increment(stats.get(DISK_OCCUPIED).getOccupiedByteSize() - cnt1.count());
+                cnt1.increment(stats.get("Disk").getOccupiedByteSize() - cnt1.count());
                 log.info("Incremented disk cache put counter {}; its value is now {}", cnt1.getId(), cnt1.count());
             }
         }

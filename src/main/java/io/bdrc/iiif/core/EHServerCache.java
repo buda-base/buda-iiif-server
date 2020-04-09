@@ -19,6 +19,8 @@ import org.ehcache.core.spi.service.StatisticsService;
 import org.ehcache.core.statistics.CacheStatistics;
 import org.ehcache.core.statistics.DefaultStatisticsService;
 import org.ehcache.core.statistics.TierStatistics;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.bdrc.iiif.archives.ArchiveInfo;
 import io.bdrc.iiif.archives.PdfItemInfo;
@@ -26,6 +28,8 @@ import io.bdrc.iiif.resolver.ImageGroupInfo;
 
 @SuppressWarnings({ "rawtypes", "unchecked" })
 public class EHServerCache {
+
+    private static final Logger log = LoggerFactory.getLogger(EHServerCache.class);
 
     public static Cache<String, byte[]> IIIF_IMG;
     public static Cache<String, byte[]> IIIF_ZIP;
@@ -170,10 +174,12 @@ public class EHServerCache {
     }
 
     public static CacheStatistics getCacheStatistics(String name) {
+        log.info("CACHE STATISTICS FOR {} are {}", name, CACHE_STATS.get(name));
         return CACHE_STATS.get(name);
     }
 
     public static Map<String, TierStatistics> getTierStatistics(String name) {
+        log.info("TIER STATISTICS FOR {} are {}", name, CACHE_STATS.get(name).getTierStatistics());
         return CACHE_STATS.get(name).getTierStatistics();
     }
 
