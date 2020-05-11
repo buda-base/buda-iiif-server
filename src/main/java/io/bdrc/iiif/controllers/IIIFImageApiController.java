@@ -239,7 +239,7 @@ public class IIIFImageApiController {
         Application.logPerf("processing image output stream for {}", identifier);
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         DecodedImage decImg = ReadImageProcess.readImage(identifier, selector, profile, imgReader);
-        WriteImageProcess.processImage(decImg, identifier, selector, os, request.getRequestURI());
+        WriteImageProcess.processImage(decImg, identifier, selector, profile, os, imgReader);
         Application.logPerf("ended processing image after {} ms for {}", (System.currentTimeMillis() - deb1), identifier);
         Application.logPerf("Total request time {} ms ", (System.currentTimeMillis() - deb), identifier);
         imgReader.getReader().dispose();

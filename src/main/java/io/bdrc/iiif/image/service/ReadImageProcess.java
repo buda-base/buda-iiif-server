@@ -3,7 +3,6 @@ package io.bdrc.iiif.image.service;
 import java.awt.Dimension;
 import java.awt.Rectangle;
 import java.awt.color.ICC_Profile;
-import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.Iterator;
@@ -14,7 +13,6 @@ import javax.imageio.ImageReadParam;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
 
-import org.apache.commons.imaging.ColorTools;
 import org.apache.commons.imaging.ImageReadException;
 import org.apache.commons.imaging.Imaging;
 import org.slf4j.Logger;
@@ -137,17 +135,19 @@ public class ReadImageProcess {
         long deb = System.currentTimeMillis();
         ICC_Profile icc = null;
         final String s3key;
+        String ext = "";
         final ImageS3Service service;
         if (identifier.startsWith("static::")) {
             s3key = identifier.substring(8);
             service = ImageS3Service.InstanceStatic;
         } else {
             IdentifierInfo idf = new IdentifierInfo(identifier);
+            ext = idf.imageName.substring(idf.imageName.lastIndexOf(".") + 1);
             s3key = ImageS3Service.getKey(idf);
             service = ImageS3Service.InstanceArchive;
             log.debug("IN READ IDENTIFIER IMAGE NAME >> {}", idf.imageName);
             if (idf.imageName != null) {
-                Iterator<ImageReader> it = ImageIO.getImageReadersByFormatName(idf.imageName.substring(idf.imageName.lastIndexOf(".") + 1));
+                Iterator<ImageReader> it = ImageIO.getImageReadersByFormatName(ext);
                 while (it.hasNext()) {
                     log.debug("IN READ READER >> {}", it.next());
                 }
@@ -160,7 +160,18 @@ public class ReadImageProcess {
             throw new IIIFException(404, 5000, e);
         }
         ImageInputStream iis = ImageIO.createImageInputStream(new ByteArrayInputStream(bytes));
-        ImageReader reader = Streams.stream(ImageIO.getImageReaders(iis)).findFirst().orElseThrow(UnsupportedFormatException::new);
+        ImageReader reader = null;
+        if (ext.equals("jpg")) {
+            Iterator<ImageReader> itr = ImageIO.getImageReaders(iis);
+            while (itr.hasNext()) {
+                reader = itr.next();
+                if (reader.getClass().equals(TurboJpegImageReader.class)) {
+                    break;
+                }
+            }
+        } else {
+            reader = Streams.stream(ImageIO.getImageReaders(iis)).findFirst().orElseThrow(UnsupportedFormatException::new);
+        }
         reader.setInput(iis);
         if (reader.getClass().equals(TurboJpegImageReader.class)) {
             try {
@@ -224,13 +235,7 @@ public class ReadImageProcess {
             rotation = 0;
         }
         Application.logPerf("Done readingImage computing DecodedImage after {} ms", System.currentTimeMillis() - deb);
-        if (imgReader.getIcc() == null) {
-            return new DecodedImage(imgReader.getReader().read(imageIndex, readParam), targetSize, rotation);
-        } else {
-            BufferedImage bi = imgReader.getReader().read(imageIndex);
-            bi = new ColorTools().relabelColorSpace(bi, imgReader.getIcc());
-            return new DecodedImage(bi, targetSize, rotation);
-        }
+        return new DecodedImage(imgReader.getReader().read(imageIndex, readParam), targetSize, rotation);
     }
 
     /**

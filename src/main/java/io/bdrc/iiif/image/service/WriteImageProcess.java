@@ -13,9 +13,12 @@ import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageOutputStream;
 
+import org.apache.commons.imaging.ColorTools;
 import org.apache.commons.imaging.ImageReadException;
 import org.apache.jena.atlas.logging.Log;
 import org.imgscalr.Scalr;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
@@ -32,10 +35,13 @@ import io.bdrc.iiif.model.DecodedImage;
 import io.bdrc.iiif.model.ImageApiProfile;
 import io.bdrc.iiif.model.ImageApiProfile.Format;
 import io.bdrc.iiif.model.ImageApiSelector;
+import io.bdrc.iiif.model.ImageReader_ICC;
 
 @Service
 @Primary
 public class WriteImageProcess {
+
+    private static final Logger log = LoggerFactory.getLogger(WriteImageProcess.class);
 
     /** Apply transformations to an decoded image **/
     private static BufferedImage transformImage(Format format, BufferedImage inputImage, Dimension targetSize, int rotation, boolean mirror,
@@ -94,12 +100,18 @@ public class WriteImageProcess {
         return img;
     }
 
-    public static void processImage(DecodedImage img, String identifier, ImageApiSelector selector, OutputStream os, String uri)
+    public static void processImage(DecodedImage img, String identifier, ImageApiSelector selector, ImageApiProfile profile, OutputStream os,
+            ImageReader_ICC imgReader)
             throws InvalidParametersException, UnsupportedOperationException, UnsupportedFormatException, IOException, ImageReadException {
         long deb = System.currentTimeMillis();
         try {
+            log.info("Processing Image for identifier >> {} ", identifier);
+
             BufferedImage outImg = transformImage(selector.getFormat(), img.getImg(), img.getTargetSize(), img.getRotation(),
                     selector.getRotation().isMirror(), selector.getQuality());
+            if (imgReader.getIcc() != null) {
+                outImg = new ColorTools().relabelColorSpace(outImg, imgReader.getIcc());
+            }
             ImageWriter writer = null;
             Iterator<ImageWriter> writers = ImageIO.getImageWritersByMIMEType(selector.getFormat().getMimeType().getTypeName());
             while (writers.hasNext()) {
@@ -113,7 +125,7 @@ public class WriteImageProcess {
             switch (selector.getFormat()) {
 
             case PNG:
-                Application.logPerf("USING JAI PNG for {} ", identifier);
+                Application.logPerf("USING PNG JAI ENCODER for {} ", identifier);
                 ImageEncodeParam param = PNGEncodeParam.getDefaultEncodeParam(outImg);
                 String format = "PNG";
                 ImageEncoder encoder = ImageCodec.createImageEncoder(format, os, param);
@@ -128,23 +140,13 @@ public class WriteImageProcess {
                     ImageWriter w = it1.next();
                     if (w.getClass().getName().equals("com.twelvemonkeys.imageio.plugins.jpeg.JPEGImageWriter")) {
                         wtr = w;
+                        break;
                     }
-                    Application.logPerf("Should use WRITERS for JPEG >> {} with quality {}", wtr, outImg.getType());
-                    Application.logPerf("WRITERS---> in list {}", w.getClass().getName());
                 }
-                if (outImg.getType() != BufferedImage.TYPE_BYTE_GRAY) {
-                    wtr = ImageIO.getImageWritersByMIMEType("image/jpeg").next();
-                }
-                Application.logPerf("USING JPEG WRITER {} for {}", wtr, identifier);
-                Application.logPerf("use jpg writer vendor {}, version {}", wtr.getOriginatingProvider().getVendorName(),
-                        wtr.getOriginatingProvider().getVersion());
-                // This setting, using 0.75f as compression quality produces the same
-                // as the default setting, with no writeParam --> writer.write(outImg)
-
+                log.info("WRITER for JPEG >> {} with quality {}", wtr, outImg.getType());
                 ImageWriteParam jpgWriteParam = wtr.getDefaultWriteParam();
                 jpgWriteParam.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
                 jpgWriteParam.setCompressionQuality(0.75f);
-
                 ImageOutputStream is = ImageIO.createImageOutputStream(os);
                 wtr.setOutput(is);
                 wtr.write(null, new IIOImage(outImg, null, null), jpgWriteParam);
@@ -154,7 +156,7 @@ public class WriteImageProcess {
 
             case WEBP:
                 writer = ImageIO.getImageWritersByMIMEType("image/webp").next();
-                Application.logPerf("Using WRITER for WEBP >>" + writer);
+                log.info("WRITER for WEBP >> {} with quality {}", writer, outImg.getType());
                 ImageWriteParam pr = writer.getDefaultWriteParam();
                 WebPWriteParam writeParam = (WebPWriteParam) pr;
                 writeParam.setCompressionMode(WebPWriteParam.MODE_DEFAULT);

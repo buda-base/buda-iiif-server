@@ -15,7 +15,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.digitalcollections.model.api.identifiable.resource.exceptions.ResourceNotFoundException;
 import io.bdrc.auth.Access;
 import io.bdrc.auth.rdf.RdfConstants;
-import io.bdrc.iiif.core.Application;
 import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.iiif.image.service.ImageGroupInfoService;
 import io.bdrc.iiif.image.service.ImageInfoListService;
@@ -212,13 +211,4 @@ public class IdentifierInfo {
         }
     }
 
-    public static void main(String[] args) throws ClientProtocolException, IOException, IIIFException, ResourceNotFoundException {
-        Application.initForTests();
-        IdentifierInfo info = new IdentifierInfo("bdr:I0988");
-        System.out.println("INFO >> " + info);
-        // EHServerCache.IDENTIFIER.put("ID_" + 415289, info);
-        // info = EHServerCache.IDENTIFIER.get("ID_" + 415289);
-        // System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>");
-        // System.out.println(info);
-    }
 }
