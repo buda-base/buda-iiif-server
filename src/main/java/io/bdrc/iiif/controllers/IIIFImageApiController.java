@@ -53,8 +53,8 @@ import io.bdrc.iiif.image.service.ImageS3Service;
 import io.bdrc.iiif.image.service.ImageService;
 import io.bdrc.iiif.image.service.ReadImageProcess;
 import io.bdrc.iiif.image.service.WriteImageProcess;
-import io.bdrc.iiif.metrics.JVMMetrics;
 import io.bdrc.iiif.metrics.ImageMetrics;
+import io.bdrc.iiif.metrics.JVMMetrics;
 import io.bdrc.iiif.model.DecodedImage;
 import io.bdrc.iiif.model.ImageApiProfile;
 import io.bdrc.iiif.model.ImageApiProfile.Format;
@@ -147,6 +147,7 @@ public class IIIFImageApiController {
             @PathVariable String rotation, @PathVariable String quality, @PathVariable String format, HttpServletRequest request,
             HttpServletResponse response, WebRequest webRequest) throws ClientProtocolException, IOException, IIIFException,
             InvalidParametersException, UnsupportedOperationException, UnsupportedFormatException, ResourceNotFoundException, ImageReadException {
+        log.info("main endpoint getImageRepresentation() for id {}", identifier);
         long deb = System.currentTimeMillis();
         boolean staticImg = false;
         String path = request.getServletPath();
@@ -256,6 +257,7 @@ public class IIIFImageApiController {
     @RequestMapping(value = "{identifier}/info.json", method = { RequestMethod.GET, RequestMethod.HEAD })
     public ResponseEntity<String> getInfo(@PathVariable String identifier, HttpServletRequest req, HttpServletResponse res, WebRequest webRequest)
             throws ClientProtocolException, IOException, IIIFException, UnsupportedOperationException, UnsupportedFormatException {
+        log.info("{identifier}/info.json endpoint getInfo() for id {}", identifier);
         long deb = System.currentTimeMillis();
         ObjectMapper objectMapper = new ObjectMapper();
         String img = "";
@@ -323,14 +325,14 @@ public class IIIFImageApiController {
     }
 
     @RequestMapping(value = "{identifier}", method = { RequestMethod.GET, RequestMethod.HEAD })
-    public String getInfoRedirect(@PathVariable String identifier, HttpServletResponse response) {
-        // response.setHeader("Access-Control-Allow-Origin", "*");
-        // return "redirect:/image/" + VERSION + "/" + identifier + "/info.json";
-        return "redirect:/" + identifier + "/info.json";
+    public void getInfoRedirect(@PathVariable String identifier, HttpServletRequest request, HttpServletResponse response) throws IOException {
+        log.info("Identifier endpoint getInfoRedirect {} , {}", identifier, request.getServletPath());
+        response.sendRedirect(request.getServletPath() + "/info.json");
     }
 
     @RequestMapping(value = "cache/clear", method = RequestMethod.POST)
     ResponseEntity<String> clearCache(HttpServletRequest req, HttpServletResponse response) {
+        log.info("cache/clear endpoint clearCache()");
         ResponseEntity<String> resp = null;
         if (EHServerCache.clearCache()) {
             resp = new ResponseEntity<>("OK", HttpStatus.OK);

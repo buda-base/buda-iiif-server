@@ -28,7 +28,7 @@ public class CacheMetrics {
         if ("true".equals(Application.getProperty("metricsEnabled"))) {
             Counter cnt = Metrics.counter(cacheName + ".cache", "action", "get");
             cnt.increment();
-            log.info("Incremented cache get counter {}; its value is now {}", cnt.getId(), cnt.count());
+            log.debug("Incremented cache get counter {}; its value is now {}", cnt.getId(), cnt.count());
         }
     }
 
@@ -36,7 +36,7 @@ public class CacheMetrics {
         if ("true".equals(Application.getProperty("metricsEnabled"))) {
             Counter cnt = Metrics.counter(cacheName + ".cache", "action", "put");
             cnt.increment();
-            log.info("Incremented cache put counter {}; its value is now {}", cnt.getId(), cnt.count());
+            log.debug("Incremented cache put counter {}; its value is now {}", cnt.getId(), cnt.count());
         }
     }
 
@@ -46,10 +46,10 @@ public class CacheMetrics {
             if (stats.get("Disk") != null) {
                 Counter cnt = Metrics.counter(cacheName + ".disk_allocated");
                 cnt.increment(stats.get("Disk").getOccupiedByteSize() - cnt.count());
-                log.info("Incremented disk cache put counter {}; its value is now {}", cnt.getId(), cnt.count());
+                log.debug("Incremented disk cache put counter {}; its value is now {}", cnt.getId(), cnt.count());
                 Counter cnt1 = Metrics.counter(cacheName + ".disk_occupied");
                 cnt1.increment(stats.get("Disk").getOccupiedByteSize() - cnt1.count());
-                log.info("Incremented disk cache put counter {}; its value is now {}", cnt1.getId(), cnt1.count());
+                log.debug("Incremented disk cache put counter {}; its value is now {}", cnt1.getId(), cnt1.count());
             }
         }
     }
@@ -57,18 +57,18 @@ public class CacheMetrics {
     public static void updateCommonsCache(String cacheName) {
         CacheStatistics stats = EHServerCache.getCacheStatistics(cacheName);
         Metrics.gauge(cacheName + ".hitsPercent", Float.class, (i) -> stats.getCacheHitPercentage());
-        log.info("Added gauge value for gauge {}; its value is now {}", cacheName + ".hitsPercent", stats.getCacheHitPercentage());
+        log.debug("Added gauge value for gauge {}; its value is now {}", cacheName + ".hitsPercent", stats.getCacheHitPercentage());
         Metrics.gauge(cacheName + ".missesPercent", Float.class, (i) -> stats.getCacheMissPercentage());
-        log.info("Added gauge value for gauge {}; its value is now {}", cacheName + ".missesPercent", stats.getCacheMissPercentage());
+        log.debug("Added gauge value for gauge {}; its value is now {}", cacheName + ".missesPercent", stats.getCacheMissPercentage());
         Counter removals = Metrics.counter(cacheName + ".removals");
         removals.increment(stats.getCacheRemovals() - removals.count());
-        log.info("Incremented common cache put counter {}; its value is now {}", removals.getId(), removals.count());
+        log.debug("Incremented common cache put counter {}; its value is now {}", removals.getId(), removals.count());
         Counter evictions = Metrics.counter(cacheName + ".evictions");
         evictions.increment(stats.getCacheEvictions() - evictions.count());
-        log.info("Incremented common cache put counter {}; its value is now {}", evictions.getId(), evictions.count());
+        log.debug("Incremented common cache put counter {}; its value is now {}", evictions.getId(), evictions.count());
         Counter expirations = Metrics.counter(cacheName + ".expirations");
         expirations.increment(stats.getCacheExpirations() - expirations.count());
-        log.info("Incremented common cache put counter {}; its value is now {}", expirations.getId(), expirations.count());
+        log.debug("Incremented common cache put counter {}; its value is now {}", expirations.getId(), expirations.count());
     }
 
 }

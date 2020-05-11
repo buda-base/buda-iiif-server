@@ -176,23 +176,23 @@ public class EHServerCache {
     }
 
     public static CacheStatistics getCacheStatistics(String name) {
-        log.info("CACHE STATISTICS FOR {} are {}", name, CACHE_STATS.get(name));
+        log.debug("CACHE STATISTICS FOR {} are {}", name, CACHE_STATS.get(name));
         return CACHE_STATS.get(name);
     }
 
     public static Map<String, TierStatistics> getTierStatistics(String name) {
-        log.info("TIER STATISTICS FOR {} are {}", name, CACHE_STATS.get(name).getTierStatistics());
+        log.debug("TIER STATISTICS FOR {} are {}", name, CACHE_STATS.get(name).getTierStatistics());
         return CACHE_STATS.get(name).getTierStatistics();
     }
 
     public static Object get(String cacheName, String key) throws IIIFException {
-        log.info("EHServerCACHE get from {} with key {}", cacheName, key);
+        log.debug("EHServerCACHE get from {} with key {}", cacheName, key);
         CacheMetrics.cacheGet(cacheName);
         return getCache(cacheName).get(key);
     }
 
     public static void put(String cacheName, String key, Object obj) throws IIIFException {
-        log.info("EHServerCACHE put in {} for key {}", cacheName, key);
+        log.debug("EHServerCACHE put in {} for key {}", cacheName, key);
         CacheMetrics.cachePut(cacheName);
         getCache(cacheName).put(key, obj);
     }
