@@ -103,10 +103,4 @@ public class ResourceAccessValidation {
                 + imageInstanceUri + ", imageFileName=" + imageFileName + ", igi=" + igi + ", isRestrictedInChina=" + isRestrictedInChina + "]";
     }
 
-    /*
-     * @Override public String toString() { try { return new
-     * ObjectMapper().writeValueAsString(this); } catch (JsonProcessingException e)
-     * { return "toString objectmapper exception, this shouldn't happen"; } }
-     */
-
 }
