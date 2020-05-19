@@ -68,13 +68,6 @@ public class Application extends SpringBootServletInitializer {
         } catch (Exception ex) {
             // do nothing, continue props initialization
         }
-        System.out.println("Scanning for plugins");
-        javax.imageio.ImageIO.scanForPlugins();
-        Iterator<ImageReader> it = ImageIO.getImageReadersBySuffix("jpeg");
-        System.out.println("Readers by suffix >>" + ImageIO.getImageReadersBySuffix("jpeg"));
-        while (it.hasNext()) {
-            System.out.println("Reader " + it.next());
-        }
         AuthProps.init(props);
         if ("true".equals(props.getProperty("authEnabled"))) {
             RdfAuthModel.init();
@@ -117,6 +110,13 @@ public class Application extends SpringBootServletInitializer {
     public void postStartup() throws ClientProtocolException, IOException {
         if ("true".equals(props.getProperty("metricsEnabled"))) {
             ImageMetrics.init();
+        }
+        System.out.println("Scanning for plugins");
+        javax.imageio.ImageIO.scanForPlugins();
+        Iterator<ImageReader> it = ImageIO.getImageReadersBySuffix("jpeg");
+        System.out.println("Readers by suffix >>" + ImageIO.getImageReadersBySuffix("jpeg"));
+        while (it.hasNext()) {
+            System.out.println("Reader " + it.next());
         }
     }
 
