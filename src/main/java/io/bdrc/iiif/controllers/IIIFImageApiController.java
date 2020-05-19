@@ -274,7 +274,7 @@ public class IIIFImageApiController {
         if (!staticImg) {
             ResourceAccessValidation accValidation = null;
             accValidation = new ResourceAccessValidation((Access) req.getAttribute("access"), idi, img);
-            unAuthorized = !accValidation.isAccessible(req);
+            unAuthorized = !accValidation.isAccessible(req) && !((Access) req.getAttribute("access")).getUser().isAdmin();
         }
 
         String path = req.getServletPath();
