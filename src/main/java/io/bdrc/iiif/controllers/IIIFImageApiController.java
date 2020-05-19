@@ -175,7 +175,7 @@ public class IIIFImageApiController {
             accValidation = new ResourceAccessValidation((Access) request.getAttribute("access"), idi, img);
             log.info("Access Validation is {} and is Accessible={}", accValidation, accValidation.isAccessible(request));
             identifier = URLDecoder.decode(identifier, "UTF-8");
-            if (!accValidation.isAccessible(request)) {
+            if (!accValidation.isAccessible(request) && !((Access) request.getAttribute("access")).getUser().isAdmin()) {
                 HttpHeaders headers1 = new HttpHeaders();
                 headers1.setCacheControl(CacheControl.noCache());
                 if (serviceInfo.authEnabled() && serviceInfo.hasValidProperties()) {
