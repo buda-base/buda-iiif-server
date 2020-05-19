@@ -76,16 +76,18 @@ public class ResourceAccessValidation {
 
     public boolean isAccessible(HttpServletRequest request) {
         AccessLevel al = getAccessLevel(request);
-        log.info("Is accessible accessLevel is {}", al);
+        log.info("Is accessible accessLevel is {} and accessShort={}", al, accessShort);
         if (al.equals(AccessLevel.OPEN))
             return true;
         if (al.equals(AccessLevel.FAIR_USE)) {
+            log.info("Matches Res Permissions is {}  for {} and Access {}", access.matchResourcePermissions(accessShort), access);
             if (access.matchResourcePermissions(accessShort)) {
                 return true;
             }
             try {
                 // This alone do not check against the user profile as the list
                 // is built through identifierInfo regardless that user profile
+                log.info("Does not match Res Permissions so returning new test from igi: {} ", this.igi.isAccessibleInFairUse(imageFileName));
                 return this.igi.isAccessibleInFairUse(imageFileName);
             } catch (Exception e) {
                 log.error("error when looking at fair use case: ", e);
