@@ -175,7 +175,7 @@ public class IIIFImageApiController {
             accValidation = new ResourceAccessValidation((Access) request.getAttribute("access"), idi, img);
             log.info("Access Validation is {} and is Accessible={}", accValidation, accValidation.isAccessible(request));
             identifier = URLDecoder.decode(identifier, "UTF-8");
-            if (!accValidation.isAccessible(request) && !((Access) request.getAttribute("access")).getUser().isAdmin()) {
+            if (!accValidation.isAccessible(request)) {
                 HttpHeaders headers1 = new HttpHeaders();
                 headers1.setCacheControl(CacheControl.noCache());
                 if (serviceInfo.authEnabled() && serviceInfo.hasValidProperties()) {
@@ -274,7 +274,7 @@ public class IIIFImageApiController {
         if (!staticImg) {
             ResourceAccessValidation accValidation = null;
             accValidation = new ResourceAccessValidation((Access) req.getAttribute("access"), idi, img);
-            unAuthorized = !accValidation.isAccessible(req) && !((Access) req.getAttribute("access")).getUser().isAdmin();
+            unAuthorized = !accValidation.isAccessible(req);
         }
 
         String path = req.getServletPath();
