@@ -4,12 +4,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Iterator;
 import java.util.Properties;
 import java.util.Timer;
-
-import javax.imageio.ImageIO;
-import javax.imageio.ImageReader;
 
 import org.apache.http.client.ClientProtocolException;
 import org.slf4j.Logger;
@@ -110,13 +106,6 @@ public class Application extends SpringBootServletInitializer {
     public void postStartup() throws ClientProtocolException, IOException {
         if ("true".equals(props.getProperty("metricsEnabled"))) {
             ImageMetrics.init();
-        }
-        System.out.println("Scanning for plugins");
-        javax.imageio.ImageIO.scanForPlugins();
-        Iterator<ImageReader> it = ImageIO.getImageReadersBySuffix("jpeg");
-        System.out.println("Readers by suffix >>" + ImageIO.getImageReadersBySuffix("jpeg"));
-        while (it.hasNext()) {
-            System.out.println("Reader " + it.next());
         }
     }
 
