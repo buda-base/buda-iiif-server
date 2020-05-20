@@ -85,7 +85,7 @@ public class IdentifierInfo {
         // work is fair use but user is authorized to see it in full
         // return full list
         log.info("USER HAS FAIR USE RESOURCE ACCESS {} and IS ADMIN {}", acc.hasResourceAccess(RdfConstants.FAIR_USE), acc.getUser().isAdmin());
-        if (isFairUse() && (acc.hasResourceAccess(RdfConstants.FAIR_USE) || acc.getUser().isAdmin())) {
+        if (isFairUse() && acc.hasResourceAccess(RdfConstants.FAIR_USE)) {
             return info;
         }
         return getImageListRange(info, start, end);

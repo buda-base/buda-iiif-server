@@ -171,7 +171,6 @@ public class IIIFImageApiController {
         IdentifierInfo idi = null;
         if (!staticImg) {
             idi = new IdentifierInfo(identifier);
-            log.info("Identifier info is {}", idi);
             accValidation = new ResourceAccessValidation((Access) request.getAttribute("access"), idi, img);
             log.info("Access Validation is {} and is Accessible={}", accValidation, accValidation.isAccessible(request));
             identifier = URLDecoder.decode(identifier, "UTF-8");
