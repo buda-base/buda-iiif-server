@@ -71,17 +71,20 @@ public class IdentifierInfo {
         List<ImageInfo> info = null;
         try {
             info = ImageInfoListService.Instance.getAsync(igi.imageInstanceId.substring(AppConstants.BDR_len), igi.imageGroup).get();
+            log.info("IDENTIFIER IBFO LIST SIZE {}", info.size());
         } catch (InterruptedException | ExecutionException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
         // work is fair use but and user is not authorized to see it in full
         // return full list
+        log.info("USER HAS FAIR USE RESOURCE ACCESS {}", acc.hasResourceAccess(RdfConstants.FAIR_USE));
         if (isFairUse() && !acc.hasResourceAccess(RdfConstants.FAIR_USE)) {
             return getFairUseImageList(info, start, end);
         }
         // work is fair use but user is authorized to see it in full
         // return full list
+        log.info("USER HAS FAIR USE RESOURCE ACCESS {} and IS ADMIN {}", acc.hasResourceAccess(RdfConstants.FAIR_USE), acc.getUser().isAdmin());
         if (isFairUse() && (acc.hasResourceAccess(RdfConstants.FAIR_USE) || acc.getUser().isAdmin())) {
             return info;
         }
