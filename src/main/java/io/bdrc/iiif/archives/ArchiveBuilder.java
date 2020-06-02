@@ -60,13 +60,15 @@ public class ArchiveBuilder {
             List<ImageInfo> imgInfo = getImageInfos(idf, inf, acc);
             int i = 1;
             for (ImageInfo imgInf : imgInfo) {
-                imgDim.put(imgInf.filename, imgInf);
-                ArchiveImageProducer tmp = null;
-                tmp = new ArchiveImageProducer(s3, inf, imgInf.filename, origin);
-                log.info("added Future for image {}", imgInf.filename);
-                Future<?> fut = service.submit((Callable) tmp);
-                t_map.put(i, fut);
-                i += 1;
+                if (imgInf.size == null || (imgInf.size != null && imgInf.size <= Integer.parseInt(Application.getProperty("imgSizeLimit")))) {
+                    imgDim.put(imgInf.filename, imgInf);
+                    ArchiveImageProducer tmp = null;
+                    tmp = new ArchiveImageProducer(s3, inf, imgInf.filename, origin);
+                    log.info("added Future for image {} of size {}", imgInf.filename, imgInf.size);
+                    Future<?> fut = service.submit((Callable) tmp);
+                    t_map.put(i, fut);
+                    i += 1;
+                }
             }
             log.info("Setting output {} to false", output);
             EHServerCache.PDF_JOBS.put(output, false);
