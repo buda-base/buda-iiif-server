@@ -71,7 +71,6 @@ public class IdentifierInfo {
         List<ImageInfo> info = null;
         try {
             info = ImageInfoListService.Instance.getAsync(igi.imageInstanceId.substring(AppConstants.BDR_len), igi.imageGroup).get();
-            log.info("IDENTIFIER IBFO LIST SIZE {}", info.size());
         } catch (InterruptedException | ExecutionException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -80,8 +79,8 @@ public class IdentifierInfo {
         // return full list
         log.info("USER HAS FAIR USE RESOURCE ACCESS {}", acc.hasResourceAccess(RdfConstants.FAIR_USE));
         if (isFairUse() && !acc.hasResourceAccess(RdfConstants.FAIR_USE)) {
-            // return getFairUseImageList(info, start, end);
-            return getFairUseImageList(info, 1, getTotalPages().intValue());
+            log.debug("START {}, END {}", start, end);
+            return getFairUseImageList(info, start, end);
         }
         // work is fair use but user is authorized to see it in full
         // return full list
@@ -102,26 +101,40 @@ public class IdentifierInfo {
         return info;
     }
 
-    public List<ImageInfo> getFairUseImageList(List<ImageInfo> src, int start, int end) {
+    public List<ImageInfo> getFairUseImageList(List<ImageInfo> src) {
         List<ImageInfo> info = new ArrayList<>();
+        int max = src.size();
         if (src.size() <= 40) {
             info = src;
         } else {
-            if (end - start <= 40) {
-                int y = 0;
-                for (int x = start; x < end; x++) {
-                    info.add(y, src.get(x - 1));
+            int k = 0;
+            for (int x = 0; x < 20; x++) {
+                info.add(k, src.get(x));
+                k++;
+            }
+            for (int j = (max - 21); j < max; j++) {
+                info.add(k, src.get(j));
+                k++;
+            }
+        }
+        return info;
+    }
+
+    public List<ImageInfo> getFairUseImageList(List<ImageInfo> src, int start, int end) {
+        List<ImageInfo> info = new ArrayList<>();
+        log.info("SRC size : {}", src.size());
+        if (src.size() <= 40) {
+            info = src;
+        } else {
+            int y = 0;
+            for (int x = start - 1; x < 20; x++) {
+                info.add(y, src.get(x));
+                y++;
+            }
+            if (end > (src.size() - 20)) {
+                for (int j = end - 20; j < src.size(); j++) {
+                    info.add(y, src.get(j));
                     y++;
-                }
-            } else {
-                int k = 0;
-                for (int x = start - 1; x < (20 + start); x++) {
-                    info.add(k, src.get(x));
-                    k++;
-                }
-                for (int j = (end - 20); j < end; j++) {
-                    info.add(k, src.get(j));
-                    k++;
                 }
             }
         }
