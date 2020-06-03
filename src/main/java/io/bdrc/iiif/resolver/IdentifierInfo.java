@@ -80,7 +80,8 @@ public class IdentifierInfo {
         // return full list
         log.info("USER HAS FAIR USE RESOURCE ACCESS {}", acc.hasResourceAccess(RdfConstants.FAIR_USE));
         if (isFairUse() && !acc.hasResourceAccess(RdfConstants.FAIR_USE)) {
-            return getFairUseImageList(info, start, end);
+            // return getFairUseImageList(info, start, end);
+            return getFairUseImageList(info, 1, getTotalPages().intValue());
         }
         // work is fair use but user is authorized to see it in full
         // return full list
