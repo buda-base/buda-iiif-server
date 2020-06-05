@@ -31,7 +31,7 @@ import io.bdrc.auth.Access;
 import io.bdrc.iiif.core.Application;
 import io.bdrc.iiif.core.EHServerCache;
 import io.bdrc.iiif.exceptions.IIIFException;
-import io.bdrc.iiif.image.service.ImageS3Service;
+import io.bdrc.iiif.image.service.ImageProviderService;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 import io.bdrc.iiif.resolver.ImageInfo;
 import io.bdrc.libraries.Identifier;
@@ -53,7 +53,7 @@ public class ArchiveBuilder {
         try {
             Application.logPerf("Starting building pdf {}", inf.volumeId);
             ExecutorService service = Executors.newFixedThreadPool(25);
-            AmazonS3 s3 = ImageS3Service.getClient();
+            AmazonS3 s3 = ImageProviderService.getClient();
             Application.logPerf("S3 client obtained in building pdf {} after {} ", inf.volumeId, System.currentTimeMillis() - deb);
             TreeMap<Integer, Future<?>> t_map = new TreeMap<>();
             HashMap<String, ImageInfo> imgDim = new HashMap<>();
@@ -118,7 +118,7 @@ public class ArchiveBuilder {
         try {
             long deb = System.currentTimeMillis();
             Application.logPerf("Starting building zip {}", inf.volumeId);
-            AmazonS3 s3 = ImageS3Service.getClient();
+            AmazonS3 s3 = ImageProviderService.getClient();
             Application.logPerf("S3 client obtained in building pdf {} after {} ", inf.volumeId, System.currentTimeMillis() - deb);
             TreeMap<Integer, Future<?>> t_map = new TreeMap<>();
             TreeMap<Integer, String> images = new TreeMap<>();

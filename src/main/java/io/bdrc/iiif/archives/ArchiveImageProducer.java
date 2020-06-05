@@ -16,7 +16,7 @@ import com.amazonaws.services.s3.AmazonS3;
 
 import io.bdrc.iiif.core.EHServerCache;
 import io.bdrc.iiif.exceptions.IIIFException;
-import io.bdrc.iiif.image.service.ImageS3Service;
+import io.bdrc.iiif.image.service.ImageProviderService;
 import io.bdrc.iiif.metrics.ImageMetrics;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 
@@ -36,7 +36,7 @@ public class ArchiveImageProducer implements Callable {
 
     public ArchiveImageProducer(AmazonS3 s3, IdentifierInfo inf, String imgId, String origin) throws IIIFException {
         this.s3 = s3;
-        this.id = ImageS3Service.getKeyPrefix(inf) + imgId;
+        this.id = ImageProviderService.getKeyPrefix(inf) + imgId;
         this.imageName = id.substring(id.lastIndexOf("/") + 1);
         this.origin = origin;
         if (id.endsWith(".tif") || id.endsWith(".tiff")) {
@@ -56,7 +56,7 @@ public class ArchiveImageProducer implements Callable {
                 obj[0] = imgbytes;
                 return obj;
             }
-            imgbytes = ImageS3Service.InstanceArchive.getFromApi(id);
+            imgbytes = ImageProviderService.InstanceArchive.getFromApi(id);
             obj[0] = imgbytes;
             log.debug("Got " + id + " from S3 ...added to cache");
             EHServerCache.put(IIIF_IMG, id, imgbytes);

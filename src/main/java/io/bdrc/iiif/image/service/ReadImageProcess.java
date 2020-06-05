@@ -136,15 +136,15 @@ public class ReadImageProcess {
         ICC_Profile icc = null;
         final String s3key;
         String ext = "";
-        final ImageS3Service service;
+        final ImageProviderService service;
         if (identifier.startsWith("static::")) {
             s3key = identifier.substring(8);
-            service = ImageS3Service.InstanceStatic;
+            service = ImageProviderService.InstanceStatic;
         } else {
             IdentifierInfo idf = new IdentifierInfo(identifier);
             ext = idf.imageName.substring(idf.imageName.lastIndexOf(".") + 1);
-            s3key = ImageS3Service.getKey(idf);
-            service = ImageS3Service.InstanceArchive;
+            s3key = ImageProviderService.getKey(idf);
+            service = ImageProviderService.InstanceArchive;
             log.debug("IN READ IDENTIFIER IMAGE NAME >> {}", idf.imageName);
             if (idf.imageName != null) {
                 Iterator<ImageReader> it = ImageIO.getImageReadersByFormatName(ext);

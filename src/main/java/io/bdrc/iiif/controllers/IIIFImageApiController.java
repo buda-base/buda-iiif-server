@@ -49,7 +49,7 @@ import io.bdrc.iiif.core.EHServerCache;
 import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.iiif.exceptions.InvalidParametersException;
 import io.bdrc.iiif.exceptions.UnsupportedFormatException;
-import io.bdrc.iiif.image.service.ImageS3Service;
+import io.bdrc.iiif.image.service.ImageProviderService;
 import io.bdrc.iiif.image.service.ImageService;
 import io.bdrc.iiif.image.service.ReadImageProcess;
 import io.bdrc.iiif.image.service.WriteImageProcess;
@@ -187,7 +187,7 @@ public class IIIFImageApiController {
             headers.setCacheControl(CacheControl.maxAge(maxAge, TimeUnit.MILLISECONDS).cachePrivate());
         } else {
             headers.setCacheControl(CacheControl.maxAge(maxAge, TimeUnit.MILLISECONDS).cachePublic());
-            ImageS3Service service = ImageS3Service.InstanceStatic;
+            ImageProviderService service = ImageProviderService.InstanceStatic;
         }
         if (idi != null) {
             if (idi.igi.access.equals(AccessType.OPEN)) {
@@ -204,13 +204,13 @@ public class IIIFImageApiController {
         if (!requestDiffersFromOriginal(identifier, selector)) {
             // let's get our hands dirty
             final String s3key;
-            final ImageS3Service service;
+            final ImageProviderService service;
             if (identifier.startsWith("static::")) {
                 s3key = identifier.substring(8);
-                service = ImageS3Service.InstanceStatic;
+                service = ImageProviderService.InstanceStatic;
             } else {
-                s3key = ImageS3Service.getKey(idi);
-                service = ImageS3Service.InstanceArchive;
+                s3key = ImageProviderService.getKey(idi);
+                service = ImageProviderService.InstanceArchive;
             }
             byte[] bytes = null;
             try {
