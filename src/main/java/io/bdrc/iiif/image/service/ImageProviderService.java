@@ -36,9 +36,6 @@ public class ImageProviderService extends ConcurrentResourceService<byte[]> {
     private static AmazonS3ClientBuilder clientBuilder = AmazonS3ClientBuilder.standard().withRegion(AuthProps.getProperty("awsRegion"))
             .withClientConfiguration(config);
 
-    public static final String DISK_SOURCE = "disk";
-    public static final String S3_SOURCE = "s3";
-
     ImageProviderService(final String bucketName, final String cachePrefix) {
         super("iiif_img", cachePrefix);
         this.bucketName = bucketName;
@@ -67,7 +64,7 @@ public class ImageProviderService extends ConcurrentResourceService<byte[]> {
     final public byte[] getFromApi(final String s3key) throws IIIFException {
         String source = Application.getProperty("imageSourceType");
         switch (source) {
-        case S3_SOURCE:
+        case Application.S3_SOURCE:
             final AmazonS3 s3Client = getClient();
             logger.info("fetching s3 key {}", s3key);
             final S3Object object;
@@ -89,15 +86,17 @@ public class ImageProviderService extends ConcurrentResourceService<byte[]> {
                 e.printStackTrace();
             }
 
-        case DISK_SOURCE:
+        case Application.DISK_SOURCE:
             try {
                 String rootDir = Application.getProperty("imageSourceDiskRootDir");
                 return getImageAsBytes(rootDir + s3key);
             } catch (Exception e) {
                 throw new IIIFException(500, 5000, e);
             }
+        default:
+            return new byte[0];
         }
-        return null;
+
     }
 
     public static byte[] getImageAsBytes(String filePath) throws Exception {

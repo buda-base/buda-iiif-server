@@ -2,9 +2,12 @@ package io.bdrc.iiif.image.service;
 
 import static io.bdrc.iiif.resolver.AppConstants.CACHEPREFIX_IIL;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.MessageDigest;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.regex.Pattern;
@@ -22,6 +25,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.bdrc.auth.AuthProps;
+import io.bdrc.iiif.core.Application;
 import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.iiif.resolver.ImageInfo;
 import io.bdrc.libraries.GlobalHelpers;
@@ -77,29 +81,47 @@ public class ImageInfoListService extends ConcurrentResourceService<List<ImageIn
 
     @Override
     final public List<ImageInfo> getFromApi(final String s3key) throws IIIFException {
-        final AmazonS3 s3Client = getClient();
-        logger.info("fetching s3 key {}", s3key);
-        final S3Object object;
-        try {
-            object = s3Client.getObject(new GetObjectRequest(bucketName, s3key));
-        } catch (AmazonS3Exception e) {
-            if (e.getErrorCode().equals("NoSuchKey")) {
-                logger.error("NoSuchKey: {}", s3key);
-                throw new IIIFException(404, 5000, "sorry, BDRC did not complete the data migration for this Work");
-            } else {
+        String source = Application.getProperty("imageSourceType");
+        switch (source) {
+        case Application.S3_SOURCE:
+            final AmazonS3 s3Client = getClient();
+            logger.info("fetching s3 key {}", s3key);
+            final S3Object object;
+            try {
+                object = s3Client.getObject(new GetObjectRequest(bucketName, s3key));
+            } catch (AmazonS3Exception e) {
+                if (e.getErrorCode().equals("NoSuchKey")) {
+                    logger.error("NoSuchKey: {}", s3key);
+                    throw new IIIFException(404, 5000, "sorry, BDRC did not complete the data migration for this Work");
+                } else {
+                    throw new IIIFException(500, 5000, e);
+                }
+            }
+            final InputStream objectData = object.getObjectContent();
+            try {
+                final GZIPInputStream gis = new GZIPInputStream(objectData);
+                final List<ImageInfo> imageList = om.readValue(gis, new TypeReference<List<ImageInfo>>() {
+                });
+                objectData.close();
+                imageList.removeIf(imageInfo -> imageInfo.filename.endsWith("json"));
+                return imageList;
+            } catch (IOException e) {
                 throw new IIIFException(500, 5000, e);
             }
-        }
-        final InputStream objectData = object.getObjectContent();
-        try {
-            final GZIPInputStream gis = new GZIPInputStream(objectData);
-            final List<ImageInfo> imageList = om.readValue(gis, new TypeReference<List<ImageInfo>>() {
-            });
-            objectData.close();
-            imageList.removeIf(imageInfo -> imageInfo.filename.endsWith("json"));
-            return imageList;
-        } catch (IOException e) {
-            throw new IIIFException(500, 5000, e);
+        case Application.DISK_SOURCE:
+            try {
+                String rootDir = Application.getProperty("imageSourceDiskRootDir");
+                FileInputStream in = new FileInputStream(new File(rootDir + s3key));
+                final GZIPInputStream gis = new GZIPInputStream(in);
+                final List<ImageInfo> imageList = om.readValue(gis, new TypeReference<List<ImageInfo>>() {
+                });
+                imageList.removeIf(imageInfo -> imageInfo.filename.endsWith("json"));
+                return imageList;
+            } catch (Exception e) {
+                throw new IIIFException(500, 5000, e);
+            }
+        default:
+            return new ArrayList<>();
         }
     }
 
