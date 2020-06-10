@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import io.bdrc.auth.Access;
 import io.bdrc.auth.Access.AccessLevel;
+import io.bdrc.iiif.core.Application;
 import io.bdrc.iiif.core.GeoLocation;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 import io.bdrc.iiif.resolver.ImageGroupInfo;
@@ -61,12 +62,16 @@ public class ResourceAccessValidation {
         if (access == null)
             access = new Access();
         if (isRestrictedInChina) {
-            String test = GeoLocation.getCountryName(request.getHeader("X-Real-IP"));
-            log.info("TEST IP from X-Real-IP header: {} and country: {}", request.getHeader("X-Real-IP"), test);
-            if (test == null || CHINA.equalsIgnoreCase(test)) {
-                // if Geolocation country name is null (i.e throws -for instance- an IP parsing
-                // exception)
-                // then access is denied
+            if (!Application.isInChina()) {
+                String test = GeoLocation.getCountryName(request.getHeader("X-Real-IP"));
+                log.info("TEST IP from X-Real-IP header: {} and country: {}", request.getHeader("X-Real-IP"), test);
+                if (test == null || CHINA.equalsIgnoreCase(test)) {
+                    // if Geolocation country name is null (i.e throws -for instance- an IP parsing
+                    // exception)
+                    // then access is denied
+                    return AccessLevel.NOACCESS;
+                }
+            } else {
                 return AccessLevel.NOACCESS;
             }
         }

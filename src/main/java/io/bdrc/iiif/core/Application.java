@@ -67,7 +67,7 @@ public class Application extends SpringBootServletInitializer {
             // do nothing, continue props initialization
         }
         AuthProps.init(props);
-        if ("true".equals(props.getProperty("authEnabled"))) {
+        if ("true".equals(props.getProperty("authEnabled")) && !isInChina()) {
             RdfAuthModel.init();
         }
         if (props.getProperty("logPerf") != null) {
@@ -126,6 +126,16 @@ public class Application extends SpringBootServletInitializer {
 
     public static String getProperty(String key) {
         return props.getProperty(key);
+    }
+
+    public static boolean isInChina() {
+        String val = props.getProperty("serverLocation");
+        if (val != null) {
+            if (val.equals("china")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
