@@ -76,7 +76,7 @@
     <dependency>
       <groupId>io.bdrc.libraries</groupId>
       <artifactId>bdrc-libraries</artifactId>
-      <version>0.13.4</version>
+      <version>0.13.1</version>
       <exclusions>      
         <exclusion>
           <groupId>org.slf4j</groupId>
