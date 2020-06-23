@@ -4,7 +4,9 @@ import java.awt.Dimension;
 import java.awt.Rectangle;
 import java.awt.color.ICC_Profile;
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.util.Iterator;
 import java.util.concurrent.ExecutionException;
 
@@ -235,7 +237,17 @@ public class ReadImageProcess {
             rotation = 0;
         }
         Application.logPerf("Done readingImage computing DecodedImage after {} ms", System.currentTimeMillis() - deb);
-        return new DecodedImage(imgReader.getReader().read(imageIndex, readParam), targetSize, rotation);
+        DecodedImage dimg = null;
+        try {
+            dimg = new DecodedImage(imgReader.getReader().read(imageIndex, readParam), targetSize, rotation);
+        } catch (Exception ex) {
+            RandomAccessFile raf = new RandomAccessFile(new File("notRead.txt"), "rw");
+            raf.seek(raf.length());
+            raf.writeBytes(identifier + System.lineSeparator());
+            raf.close();
+            log.error("Could not read image >> " + identifier, ex);
+        }
+        return dimg;
     }
 
     /**
