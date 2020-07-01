@@ -14,7 +14,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
@@ -23,17 +22,6 @@ import org.springframework.stereotype.Component;
 public class HeaderFilter implements Filter {
 
     private static final Logger log = LoggerFactory.getLogger(HeaderFilter.class);
-
-    @Value("${access-control.Allow-Origin}")
-    private String allowOrigin;
-    @Value("${access-control.Allow-Headers}")
-    private String allowHeaders;
-    @Value("${access-control.Allow-Credentials}")
-    private String allowCredentials;
-    @Value("${access-control.Allow-Methods}")
-    private String allowMethods;
-    @Value("${access-control.Expose-Headers}")
-    private String exposeHeaders;
 
     @Override
     public void destroy() {
@@ -46,7 +34,7 @@ public class HeaderFilter implements Filter {
             HttpServletRequest request = (HttpServletRequest) req;
             String orig = request.getHeader("Origin");
             if (orig == null) {
-                orig = allowOrigin;
+                orig = "*";
             }
             String referer = request.getHeader("Referer");
             String ref_orig = "";
@@ -76,10 +64,12 @@ public class HeaderFilter implements Filter {
             request.setAttribute("origin", ref_orig);
             HttpServletResponse response = (HttpServletResponse) res;
             response.setHeader("Access-Control-Allow-Origin", orig);
-            response.setHeader("Access-Control-Allow-Headers", allowHeaders);
-            response.setHeader("Access-Control-Allow-Credentials", allowCredentials);
-            response.setHeader("Access-Control-Allow-Methods", allowMethods);
-            response.setHeader("Access-Control-Expose-Headers", exposeHeaders);
+            response.setHeader("Access-Control-Allow-Headers",
+                    "Origin, Authorization, Keep-Alive, User-Agent, If-Modified-Since, If-None-Match, Cache-Control");
+            response.setHeader("Access-Control-Allow-Credentials", "true");
+            response.setHeader("Access-Control-Allow-Methods", "GET, POST, HEAD, OPTIONS");
+            response.setHeader("Access-Control-Expose-Headers",
+                    "Cache-Control,ETag, Last-Modified, Content-Type, Cache-Control, Vary, Access-Control-Max-Age");
             chain.doFilter(req, res);
         } catch (IOException | ServletException e) {
             log.error("Header filter failed ! Message: " + e.getMessage());

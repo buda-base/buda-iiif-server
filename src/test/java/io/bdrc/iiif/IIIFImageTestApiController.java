@@ -11,7 +11,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.jena.atlas.logging.Log;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -51,8 +50,7 @@ public class IIIFImageTestApiController {
     @Autowired
     private AuthServiceInfo serviceInfo;
 
-    @Value("${cache-control.maxage}")
-    private long maxAge;
+    private long maxAge = 31536000;
 
     /**
      * Get the base URL for all Image API URLs from the request.

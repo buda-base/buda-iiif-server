@@ -20,7 +20,6 @@ import org.apache.jena.atlas.logging.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -73,9 +72,6 @@ public class IIIFImageApiController {
 
     @Autowired
     private AuthServiceInfo serviceInfo;
-
-    @Value("${cache-control.maxage}")
-    private long maxAge;
 
     private static final Logger log = LoggerFactory.getLogger(IIIFImageApiController.class);
 
@@ -149,6 +145,7 @@ public class IIIFImageApiController {
             InvalidParametersException, UnsupportedOperationException, UnsupportedFormatException, ResourceNotFoundException, ImageReadException {
         log.info("main endpoint getImageRepresentation() for id {}", identifier);
         long deb = System.currentTimeMillis();
+        long maxAge = Long.parseLong(Application.getProperty("maxage"));
         boolean staticImg = false;
         String path = request.getServletPath();
         if (request.getPathInfo() != null) {
@@ -261,6 +258,7 @@ public class IIIFImageApiController {
         log.info("{identifier}/info.json endpoint getInfo() for id {}", identifier);
         if (!identifier.equals("favicon.ico")) {
             long deb = System.currentTimeMillis();
+            long maxAge = Long.parseLong(Application.getProperty("maxage"));
             ObjectMapper objectMapper = new ObjectMapper();
             String img = "";
             boolean staticImg = false;
