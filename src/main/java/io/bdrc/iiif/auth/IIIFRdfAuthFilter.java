@@ -43,7 +43,7 @@ public class IIIFRdfAuthFilter implements Filter {
                 if ("true".equals(AuthProps.getProperty("authEnabled")) && !method.equalsIgnoreCase("OPTIONS")) {
                     log.info("IIIF SERVER IS USING AUTH !");
                     String token = getToken(((HttpServletRequest) req).getHeader("Authorization"));
-                    log.info("TOKEN >> {}", token);
+                    log.debug("TOKEN >> {}", token);
                     if (token == null) {
                         Cookie[] cookies = ((HttpServletRequest) req).getCookies();
                         if (cookies != null) {
@@ -61,7 +61,7 @@ public class IIIFRdfAuthFilter implements Filter {
                         // User is logged in
                         // Getting his profile
                         validation = new TokenValidation(token);
-                        log.info("AUTH VALIDATION {}", validation);
+                        log.debug("AUTH VALIDATION {}", validation);
                         prof = validation.getUser();
                         req.setAttribute("access", new Access(prof, new Endpoint()));
                     } else {
@@ -70,7 +70,7 @@ public class IIIFRdfAuthFilter implements Filter {
                 } else {
                     req.setAttribute("access", new Access());
                 }
-                log.info("REQUEST SET WITH ACCESS {}", req.getAttribute("access"));
+                log.debug("REQUEST SET WITH ACCESS {}", req.getAttribute("access"));
             }
             chain.doFilter(req, res);
         } catch (IOException | ServletException e) {
