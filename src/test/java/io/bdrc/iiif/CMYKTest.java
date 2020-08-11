@@ -1,10 +1,11 @@
 package io.bdrc.iiif;
 
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Iterator;
 
 import javax.imageio.ImageIO;
@@ -36,7 +37,7 @@ public class CMYKTest {
         r.setInput(iis);
         BufferedImage img = r.read(0);
 
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        OutputStream outputStream = new FileOutputStream("src/test/resources/"+filename+"-output.jpg");
         ImageIO.write(img, "jpg", outputStream);
         System.out.println(" ********************** READER SUCCESSFUL ***************************/");
     }
