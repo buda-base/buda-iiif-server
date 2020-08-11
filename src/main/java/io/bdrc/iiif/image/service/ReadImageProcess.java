@@ -125,6 +125,18 @@ public class ReadImageProcess {
         }
         return imgReader;
     }
+    
+    public static ImageReader_ICC readImageInfoFailover(String identifier, ImageService info, ImageReader_ICC imgReader)
+            throws IOException, IIIFException, UnsupportedFormatException {
+        try {
+            imgReader = getFailoverReader(identifier);
+            enrichInfo(imgReader.getReader(), info);
+        } catch (IIIFException e) {
+            log.error("Could not get Image Info", e.getMessage());
+            throw new IIIFException(e);
+        }
+        return imgReader;
+    }
 
     /**
      * Try to obtain a {@link ImageReader} for a given identifier
@@ -168,6 +180,60 @@ public class ReadImageProcess {
             while (itr.hasNext()) {
                 reader = itr.next();
                 if (reader.getClass().equals(TurboJpegImageReader.class)) {
+                    break;
+                }
+            }
+        } else {
+            reader = Streams.stream(ImageIO.getImageReaders(iis)).findFirst().orElseThrow(UnsupportedFormatException::new);
+        }
+        reader.setInput(iis);
+        if (reader.getClass().equals(TurboJpegImageReader.class)) {
+            try {
+                icc = Imaging.getICCProfile(bytes);
+            } catch (ImageReadException e) {
+                e.printStackTrace();
+            }
+        }
+        Application.logPerf("S3 object IIIS READER >> {}", reader);
+        Application.logPerf("Image service return reader at {} ms {}", System.currentTimeMillis() - deb, identifier);
+        return new ImageReader_ICC(reader, icc);
+    }
+    
+    private static ImageReader_ICC getFailoverReader(String identifier) throws UnsupportedFormatException, IOException, IIIFException {
+        long deb = System.currentTimeMillis();
+        ICC_Profile icc = null;
+        final String s3key;
+        String ext = "";
+        final ImageProviderService service;
+        if (identifier.startsWith("static::")) {
+            s3key = identifier.substring(8);
+            service = ImageProviderService.InstanceStatic;
+        } else {
+            IdentifierInfo idf = new IdentifierInfo(identifier);
+            ext = idf.imageName.substring(idf.imageName.lastIndexOf(".") + 1);
+            s3key = ImageProviderService.getKey(idf);
+            service = ImageProviderService.InstanceArchive;
+            log.debug("IN READ IDENTIFIER IMAGE NAME >> {}", idf.imageName);
+            if (idf.imageName != null) {
+                Iterator<ImageReader> it = ImageIO.getImageReadersByFormatName(ext);
+                while (it.hasNext()) {
+                    log.debug("IN READ READER >> {}", it.next());
+                }
+            }
+        }
+        byte[] bytes = null;
+        try {
+            bytes = service.getAsync(s3key).get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new IIIFException(404, 5000, e);
+        }
+        ImageInputStream iis = ImageIO.createImageInputStream(new ByteArrayInputStream(bytes));
+        ImageReader reader = null;
+        if (ext.equals("jpg")) {
+            Iterator<ImageReader> itr = ImageIO.getImageReaders(iis);
+            while (itr.hasNext()) {
+                reader = itr.next();
+                if (reader.getClass().equals(com.twelvemonkeys.imageio.plugins.jpeg.JPEGImageReader.class)) {
                     break;
                 }
             }
@@ -237,18 +303,20 @@ public class ReadImageProcess {
             rotation = 0;
         }
         Application.logPerf("Done readingImage computing DecodedImage after {} ms", System.currentTimeMillis() - deb);
-        DecodedImage dimg = null;
+        DecodedImage dimg = null;        
         try {
-            dimg = new DecodedImage(imgReader.getReader().read(imageIndex, readParam), targetSize, rotation);
-        } catch (Exception ex) {
+            dimg = new DecodedImage(imgReader.getReader().read(imageIndex, readParam), targetSize, rotation);            
+        } catch (Exception ex) { 
             RandomAccessFile raf = new RandomAccessFile(new File("notRead.txt"), "rw");
             raf.seek(raf.length());
             raf.writeBytes(identifier + System.lineSeparator());
             raf.close();
             log.error("Could not read image >> " + identifier, ex);
-        }
+        } 
         return dimg;
     }
+    
+    
 
     /**
      * Determine parameters for image reading based on the IIIF selector and a given

@@ -45,17 +45,17 @@ public class CMYKTest {
     public static void main(String[] args) throws IOException, UnsupportedFormatException, ImageReadException {
         try {
             checkOpenCMYK("cmyk.jpg", "com.twelvemonkeys.imageio.plugins.jpeg.JPEGImageReader");
-        } catch (Exception e) {
+        } catch (Exception e) {            
             System.out.println(" ********************** READER FAILED ***************************/");
         }
         try {
             checkOpenCMYK("cmyk.jpg", "de.digitalcollections.turbojpeg.imageio.TurboJpegImageReader");
-        } catch (Exception e) {
+        } catch (Exception e) {            
             System.out.println(" ********************** READER FAILED ***************************/");
         }
-        try {
+        try {http://marketplace.eclipse.org/marketplace-client-intro?mpc_install=1160
             checkOpenCMYK("cmyk.jpg", "com.sun.imageio.plugins.jpeg.JPEGImageReader");
-        } catch (Exception e) {
+        } catch (Exception e) {            
             System.out.println(" ********************** READER FAILED ***************************/");
         }
     }
