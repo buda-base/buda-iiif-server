@@ -50,6 +50,7 @@ public class ArchivesController {
 
     @RequestMapping(value = "/download/{type}/{id}", method = { RequestMethod.GET, RequestMethod.HEAD })
     public ResponseEntity<String> getPdfLink(@PathVariable String id, @PathVariable String type, HttpServletRequest request) throws Exception {
+        log.info("getPdfLink(id {}, type{})",id, type);
         Access acc = (Access) request.getAttribute("access");
         if (acc == null) {
             acc = new Access();
@@ -155,6 +156,7 @@ public class ArchivesController {
 
     @RequestMapping(value = "/download/file/{type}/{name}", method = { RequestMethod.GET, RequestMethod.HEAD })
     public ResponseEntity<ByteArrayResource> downloadPdf(@PathVariable String name, @PathVariable String type) throws Exception {
+        log.info("downloadPdf(name {} , type {})",name,type);
         byte[] array = null;
         if (type.equals(ArchiveBuilder.PDF_TYPE)) {
             array = (byte[]) EHServerCache.IIIF.get(name.substring(4));
@@ -179,6 +181,7 @@ public class ArchivesController {
 
     @RequestMapping(value = "/download/job/{type}/{id}", method = { RequestMethod.GET, RequestMethod.HEAD })
     public ResponseEntity<String> jobState(@PathVariable String id, @PathVariable String type) throws Exception {
+        log.info("jobState(id {}, type {})",id, type);
         Identifier idf = new Identifier(id, Identifier.MANIFEST_ID);
         Integer bPage = idf.getBPageNum();
         if (bPage == null) {
