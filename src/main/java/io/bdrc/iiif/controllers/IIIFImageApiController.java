@@ -158,7 +158,8 @@ public class IIIFImageApiController {
         ImageApiSelector selector = getImageApiSelector(identifier, region, size, rotation, quality, format);
         final ImageApiProfile profile = ImageApiProfile.LEVEL_TWO;
         // TODO: the first part seems ignored?
-        ImageService info = new ImageService("https://iiif.bdrc.io/" + identifier, profile);
+        // ImageService info = new ImageService("https://iiif.bdrc.io/" + identifier,
+        // profile);
         headers.setContentType(MediaType.parseMediaType(selector.getFormat().getMimeType().getTypeName()));
         headers.set("Content-Disposition",
                 "inline; filename=" + path.replaceFirst("/image/", "").replace('/', '_').replace(',', '_'));
@@ -312,6 +313,8 @@ public class IIIFImageApiController {
             if (pngOutput(identifier)) {
                 info.setPreferredFormats(pngHint);
             }
+            ImageReader_ICC imgReader = null;
+            ReadImageProcess.readImageInfo(identifier, info, imgReader, false);
             Application.logPerf("getInfo read ImageInfo for {}", identifier);
             HttpHeaders headers = new HttpHeaders();
             try {
@@ -328,8 +331,8 @@ public class IIIFImageApiController {
                 headers.add("Link", "<http://iiif.io/api/image/2/context.json>; "
                         + "rel=\"http://www.w3.org/ns/json-ld#context\"; " + "type=\"application/ld+json\"");
             }
-            // headers.add("Link",
-            // String.format("<%s>;rel=\"profile\"",info.getProfiles().get(0).getIdentifier().toString()));
+            headers.add("Link",
+                    String.format("<%s>;rel=\"profile\"", info.getProfiles().get(0).getIdentifier().toString()));
             // We set the header ourselves, since using @CrossOrigin doesn't expose "*", but
             // always sets the requesting domain
             // headers.add("Access-Control-Allow-Origin", "*");
