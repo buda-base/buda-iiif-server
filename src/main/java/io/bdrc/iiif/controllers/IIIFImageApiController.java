@@ -139,10 +139,12 @@ public class IIIFImageApiController {
     }
 
     @RequestMapping(value = "{identifier}/{region}/{size}/{rotation}/{quality}.{format}")
-    public ResponseEntity<byte[]> getImageRepresentation(@PathVariable String identifier, @PathVariable String region, @PathVariable String size,
-            @PathVariable String rotation, @PathVariable String quality, @PathVariable String format, HttpServletRequest request,
-            HttpServletResponse response, WebRequest webRequest) throws ClientProtocolException, IOException, IIIFException,
-            InvalidParametersException, UnsupportedOperationException, UnsupportedFormatException, ResourceNotFoundException, ImageReadException {
+    public ResponseEntity<byte[]> getImageRepresentation(@PathVariable String identifier, @PathVariable String region,
+            @PathVariable String size, @PathVariable String rotation, @PathVariable String quality,
+            @PathVariable String format, HttpServletRequest request, HttpServletResponse response,
+            WebRequest webRequest)
+            throws ClientProtocolException, IOException, IIIFException, InvalidParametersException,
+            UnsupportedOperationException, UnsupportedFormatException, ResourceNotFoundException, ImageReadException {
         log.info("main endpoint getImageRepresentation() for id {}", identifier);
         long deb = System.currentTimeMillis();
         long maxAge = Long.parseLong(Application.getProperty("maxage"));
@@ -158,7 +160,8 @@ public class IIIFImageApiController {
         // TODO: the first part seems ignored?
         ImageService info = new ImageService("https://iiif.bdrc.io/" + identifier, profile);
         headers.setContentType(MediaType.parseMediaType(selector.getFormat().getMimeType().getTypeName()));
-        headers.set("Content-Disposition", "inline; filename=" + path.replaceFirst("/image/", "").replace('/', '_').replace(',', '_'));
+        headers.set("Content-Disposition",
+                "inline; filename=" + path.replaceFirst("/image/", "").replace('/', '_').replace(',', '_'));
         headers.add("Link", String.format("<%s>;rel=\"profile\"", profile.getIdentifier().toString()));
         if (identifier.split("::").length > 1) {
             img = identifier.split("::")[1];
@@ -169,14 +172,15 @@ public class IIIFImageApiController {
         if (!staticImg) {
             idi = new IdentifierInfo(identifier);
             accValidation = new ResourceAccessValidation((Access) request.getAttribute("access"), idi, img);
-            log.info("Access Validation is {} and is Accessible={}", accValidation, accValidation.isAccessible(request));
+            log.info("Access Validation is {} and is Accessible={}", accValidation,
+                    accValidation.isAccessible(request));
             identifier = URLDecoder.decode(identifier, "UTF-8");
             if (!accValidation.isAccessible(request)) {
                 HttpHeaders headers1 = new HttpHeaders();
                 headers1.setCacheControl(CacheControl.noCache());
                 if (serviceInfo.authEnabled() && serviceInfo.hasValidProperties()) {
-                    return new ResponseEntity<>("You must be authenticated before accessing this resource".getBytes(), headers1,
-                            HttpStatus.UNAUTHORIZED);
+                    return new ResponseEntity<>("You must be authenticated before accessing this resource".getBytes(),
+                            headers1, HttpStatus.UNAUTHORIZED);
                 } else {
                     return new ResponseEntity<>("Insufficient rights".getBytes(), headers1, HttpStatus.FORBIDDEN);
                 }
@@ -220,48 +224,52 @@ public class IIIFImageApiController {
             return new ResponseEntity<>(bytes, headers, HttpStatus.OK);
 
         }
-        deb1 = System.currentTimeMillis();        
+        deb1 = System.currentTimeMillis();
         ByteArrayOutputStream os = null;
-        ImageReader_ICC imgReader=null;
-        try {            
-            //imgReader = ReadImageProcess.readImageInfo(identifier, info, null,false);        
-            Application.logPerf("end reading from image service after {} ms for {} with reader {}", (System.currentTimeMillis() - deb1), identifier,
-                    imgReader);
+        ImageReader_ICC imgReader = null;
+        try {
+            // imgReader = ReadImageProcess.readImageInfo(identifier, info, null,false);
+            Application.logPerf("end reading from image service after {} ms for {} with reader {}",
+                    (System.currentTimeMillis() - deb1), identifier, imgReader);
             final String canonicalForm = idi.getCanonical();
-            headers.add("Link",
-                    String.format("<%s>;rel=\"canonical\"", getUrlBase(request) + path.substring(0, path.indexOf(identifier)) + canonicalForm));
+            headers.add("Link", String.format("<%s>;rel=\"canonical\"",
+                    getUrlBase(request) + path.substring(0, path.indexOf(identifier)) + canonicalForm));
             deb1 = System.currentTimeMillis();
             Application.logPerf("processing image output stream for {}", identifier);
             os = new ByteArrayOutputStream();
-            Object[] obj=ReadImageProcess.readImage(identifier, selector, profile, false);
-            DecodedImage decImg = (DecodedImage)obj[0];
-            imgReader=(ImageReader_ICC)obj[1];
+            Object[] obj = ReadImageProcess.readImage(identifier, selector, profile, false);
+            DecodedImage decImg = (DecodedImage) obj[0];
+            imgReader = (ImageReader_ICC) obj[1];
             WriteImageProcess.processImage(decImg, identifier, selector, profile, os, imgReader);
-            Application.logPerf("ended processing image after {} ms for {}", (System.currentTimeMillis() - deb1), identifier);
+            Application.logPerf("ended processing image after {} ms for {}", (System.currentTimeMillis() - deb1),
+                    identifier);
             Application.logPerf("Total request time {} ms ", (System.currentTimeMillis() - deb), identifier);
             imgReader.getReader().dispose();
             ImageMetrics.imageCount(ImageMetrics.IMG_CALLS_COMMON, (String) request.getAttribute("origin"));
         } catch (Exception e) {
-            log.error("Resource was not found for identifier " + identifier + " Message: " + e.getMessage()+ " Trying failover method");
+            log.error("Resource was not found for identifier " + identifier + " Message: " + e.getMessage()
+                    + " Trying failover method");
             try {
                 os = new ByteArrayOutputStream();
-                Object[] obj=ReadImageProcess.readImage(identifier, selector, profile, true);
-                DecodedImage decImg = (DecodedImage)obj[0];
-                imgReader=(ImageReader_ICC)obj[1];
+                Object[] obj = ReadImageProcess.readImage(identifier, selector, profile, true);
+                DecodedImage decImg = (DecodedImage) obj[0];
+                imgReader = (ImageReader_ICC) obj[1];
                 WriteImageProcess.processImage(decImg, identifier, selector, profile, os, imgReader);
-                Application.logPerf("ended processing image after {} ms for {}", (System.currentTimeMillis() - deb1), identifier);
+                Application.logPerf("ended processing image after {} ms for {}", (System.currentTimeMillis() - deb1),
+                        identifier);
                 Application.logPerf("Total request time {} ms ", (System.currentTimeMillis() - deb), identifier);
                 imgReader.getReader().dispose();
                 ImageMetrics.imageCount(ImageMetrics.IMG_CALLS_COMMON, (String) request.getAttribute("origin"));
-            }catch(Exception ex) {
+            } catch (Exception ex) {
                 log.error("Somethng WENT WRONG ");
                 ex.printStackTrace();
-                return new ResponseEntity<>(("Resource was not found for identifier " + identifier).getBytes(), HttpStatus.NOT_FOUND);
+                return new ResponseEntity<>(("Resource was not found for identifier " + identifier).getBytes(),
+                        HttpStatus.NOT_FOUND);
             }
         }
         return new ResponseEntity<>(os.toByteArray(), headers, HttpStatus.OK);
-    }    
-    
+    }
+
     public static boolean pngOutput(final String filename) {
         final String ext = filename.substring(filename.length() - 4).toLowerCase();
         return (ext.equals(".tif") || ext.equals("tiff"));
@@ -270,8 +278,9 @@ public class IIIFImageApiController {
     public static final PropertyValue pngHint = new PropertyValue("png", "jpg");
 
     @RequestMapping(value = "{identifier}/info.json", method = { RequestMethod.GET, RequestMethod.HEAD })
-    public ResponseEntity<String> getInfo(@PathVariable String identifier, HttpServletRequest req, HttpServletResponse res, WebRequest webRequest)
-            throws ClientProtocolException, IOException, IIIFException, UnsupportedOperationException, UnsupportedFormatException {
+    public ResponseEntity<String> getInfo(@PathVariable String identifier, HttpServletRequest req,
+            HttpServletResponse res, WebRequest webRequest) throws ClientProtocolException, IOException, IIIFException,
+            UnsupportedOperationException, UnsupportedFormatException {
         log.info("{identifier}/info.json endpoint getInfo() for id {}", identifier);
         if (!identifier.equals("favicon.ico")) {
             long deb = System.currentTimeMillis();
@@ -303,29 +312,33 @@ public class IIIFImageApiController {
             if (pngOutput(identifier)) {
                 info.setPreferredFormats(pngHint);
             }
-            Application.logPerf("getInfo read ImageInfo for {}", identifier);            
+            Application.logPerf("getInfo read ImageInfo for {}", identifier);
             HttpHeaders headers = new HttpHeaders();
             try {
                 headers.setDate("Last-Modified", getImageModificationDate(identifier).toEpochMilli());
             } catch (IIIFException e) {
                 log.error("Resource was not found for identifier " + identifier + " Message: " + e.getMessage());
-                return new ResponseEntity<>("Resource was not found for identifier " + identifier, HttpStatus.NOT_FOUND);
+                return new ResponseEntity<>("Resource was not found for identifier " + identifier,
+                        HttpStatus.NOT_FOUND);
             }
             if ("application/ld+json".equals(req.getHeader("Accept"))) {
                 headers.set("Content-Type", req.getHeader("Accept"));
             } else {
                 headers.set("Content-Type", "application/json");
-                headers.add("Link", "<http://iiif.io/api/image/2/context.json>; " + "rel=\"http://www.w3.org/ns/json-ld#context\"; "
-                        + "type=\"application/ld+json\"");
+                headers.add("Link", "<http://iiif.io/api/image/2/context.json>; "
+                        + "rel=\"http://www.w3.org/ns/json-ld#context\"; " + "type=\"application/ld+json\"");
             }
-            headers.add("Link", String.format("<%s>;rel=\"profile\"", info.getProfiles().get(0).getIdentifier().toString()));
+            // headers.add("Link",
+            // String.format("<%s>;rel=\"profile\"",info.getProfiles().get(0).getIdentifier().toString()));
             // We set the header ourselves, since using @CrossOrigin doesn't expose "*", but
             // always sets the requesting domain
             // headers.add("Access-Control-Allow-Origin", "*");
-            Application.logPerf("getInfo ready to return after {} ms for {}", (System.currentTimeMillis() - deb), identifier);
+            Application.logPerf("getInfo ready to return after {} ms for {}", (System.currentTimeMillis() - deb),
+                    identifier);
             if (unAuthorized) {
                 if (serviceInfo.hasValidProperties() && serviceInfo.authEnabled()) {
-                    return new ResponseEntity<>(objectMapper.writeValueAsString(info), headers, HttpStatus.UNAUTHORIZED);
+                    return new ResponseEntity<>(objectMapper.writeValueAsString(info), headers,
+                            HttpStatus.UNAUTHORIZED);
                 } else {
                     headers.setCacheControl(CacheControl.noCache());
                     return new ResponseEntity<>(objectMapper.writeValueAsString(info), headers, HttpStatus.FORBIDDEN);
@@ -343,7 +356,8 @@ public class IIIFImageApiController {
     }
 
     @RequestMapping(value = "{identifier}", method = { RequestMethod.GET, RequestMethod.HEAD })
-    public void getInfoRedirect(@PathVariable String identifier, HttpServletRequest request, HttpServletResponse response) throws IOException {
+    public void getInfoRedirect(@PathVariable String identifier, HttpServletRequest request,
+            HttpServletResponse response) throws IOException {
         log.info("Identifier endpoint getInfoRedirect {} , {}", identifier, request.getServletPath());
         response.sendRedirect(request.getServletPath() + "/info.json");
     }
@@ -388,8 +402,8 @@ public class IIIFImageApiController {
         return null;
     }
 
-    public ImageApiSelector getImageApiSelector(String identifier, String region, String size, String rotation, String quality, String format)
-            throws InvalidParametersException {
+    public ImageApiSelector getImageApiSelector(String identifier, String region, String size, String rotation,
+            String quality, String format) throws InvalidParametersException {
         ImageApiSelector selector = new ImageApiSelector();
         try {
             selector.setIdentifier(identifier);
