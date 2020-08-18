@@ -62,8 +62,10 @@ import io.bdrc.iiif.model.ImageApiSelector;
 import io.bdrc.iiif.model.ImageReader_ICC;
 import io.bdrc.iiif.model.RegionRequest;
 import io.bdrc.iiif.model.SizeRequest;
+import io.bdrc.iiif.model.TileInfo;
 import io.bdrc.iiif.resolver.AccessType;
 import io.bdrc.iiif.resolver.IdentifierInfo;
+import io.bdrc.iiif.resolver.ImageInfo;
 
 @RestController
 @Component
@@ -281,7 +283,7 @@ public class IIIFImageApiController {
     @RequestMapping(value = "{identifier}/info.json", method = { RequestMethod.GET, RequestMethod.HEAD })
     public ResponseEntity<String> getInfo(@PathVariable String identifier, HttpServletRequest req,
             HttpServletResponse res, WebRequest webRequest) throws ClientProtocolException, IOException, IIIFException,
-            UnsupportedOperationException, UnsupportedFormatException {
+            UnsupportedOperationException, UnsupportedFormatException, InterruptedException, ExecutionException {
         log.info("{identifier}/info.json endpoint getInfo() for id {}", identifier);
         if (!identifier.equals("favicon.ico")) {
             long deb = System.currentTimeMillis();
@@ -293,9 +295,10 @@ public class IIIFImageApiController {
                 img = identifier.split("::")[1];
                 staticImg = identifier.split("::")[0].trim().equals("static");
             }
-            Application.logPerf("Entering endpoint getInfo for {}", identifier);
+            log.info("Entering endpoint getInfo for {}", identifier);
             boolean unAuthorized = false;
             IdentifierInfo idi = new IdentifierInfo(identifier);
+
             if (!staticImg) {
                 ResourceAccessValidation accValidation = null;
                 accValidation = new ResourceAccessValidation((Access) req.getAttribute("access"), idi, img);
@@ -313,8 +316,12 @@ public class IIIFImageApiController {
             if (pngOutput(identifier)) {
                 info.setPreferredFormats(pngHint);
             }
-            ImageReader_ICC imgReader = null;
-            ReadImageProcess.readImageInfo(identifier, info, imgReader, false);
+            System.out.println(idi.ili);
+            ImageInfo imgInf = idi.getImageInfo(idi.imageName);
+            log.info("ImageInfo {}", idi.getImageInfo(idi.imageName));
+            info.setWidth(imgInf.getWidth());
+            info.setHeight(imgInf.getHeight());
+            updateInfo(info);
             Application.logPerf("getInfo read ImageInfo for {}", identifier);
             HttpHeaders headers = new HttpHeaders();
             try {
@@ -462,5 +469,23 @@ public class IIIFImageApiController {
             Log.error("Could not get Image modification date from resource for identifier {}", identifier);
             throw new IIIFException("Could not get Image modification date from resource for identifier " + identifier);
         }
+    }
+
+    private ImageService updateInfo(ImageService info) {
+        ImageApiProfile profile = new ImageApiProfile();
+        profile.addFeature(ImageApiProfile.Feature.BASE_URI_REDIRECT, ImageApiProfile.Feature.CORS,
+                ImageApiProfile.Feature.JSONLD_MEDIA_TYPE, ImageApiProfile.Feature.PROFILE_LINK_HEADER,
+                ImageApiProfile.Feature.CANONICAL_LINK_HEADER, ImageApiProfile.Feature.REGION_BY_PCT,
+                ImageApiProfile.Feature.REGION_BY_PX, ImageApiProfile.Feature.REGION_SQUARE,
+                ImageApiProfile.Feature.ROTATION_BY_90S, ImageApiProfile.Feature.MIRRORING,
+                ImageApiProfile.Feature.SIZE_BY_CONFINED_WH, ImageApiProfile.Feature.SIZE_BY_DISTORTED_WH,
+                ImageApiProfile.Feature.SIZE_BY_H, ImageApiProfile.Feature.SIZE_BY_PCT,
+                ImageApiProfile.Feature.SIZE_BY_W, ImageApiProfile.Feature.SIZE_BY_WH);
+        info.addProfile(ImageApiProfile.LEVEL_ONE, profile);
+        TileInfo tile = new TileInfo(info.getWidth());
+        tile.setHeight(info.getHeight());
+        tile.addScaleFactor(1, 2, 4, 8);
+        info.addTile(tile);
+        return info;
     }
 }
