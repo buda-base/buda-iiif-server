@@ -296,33 +296,25 @@ public class IIIFImageApiController {
                 staticImg = identifier.split("::")[0].trim().equals("static");
             }
             log.info("Entering endpoint getInfo for {}", identifier);
+            String path = req.getServletPath();
+            if (req.getPathInfo() != null) {
+                path = req.getPathInfo();
+            }
             boolean unAuthorized = false;
             IdentifierInfo idi = new IdentifierInfo(identifier);
-
+            ImageService info = new ImageService(getUrlBase(req) + path.replace("/info.json", ""));
+            updateInfo(idi, info);
             if (!staticImg) {
                 ResourceAccessValidation accValidation = null;
                 accValidation = new ResourceAccessValidation((Access) req.getAttribute("access"), idi, img);
                 unAuthorized = !accValidation.isAccessible(req);
             }
-
-            String path = req.getServletPath();
-            if (req.getPathInfo() != null) {
-                path = req.getPathInfo();
-            }
-            final ImageService info = new ImageService(getUrlBase(req) + path.replace("/info.json", ""));
             if (unAuthorized && serviceInfo.authEnabled() && serviceInfo.hasValidProperties()) {
                 info.addService(serviceInfo);
             }
             if (pngOutput(identifier)) {
                 info.setPreferredFormats(pngHint);
             }
-            System.out.println(idi.ili);
-            ImageInfo imgInf = idi.getImageInfo(idi.imageName);
-            log.info("ImageInfo {}", idi.getImageInfo(idi.imageName));
-            info.setWidth(imgInf.getWidth());
-            info.setHeight(imgInf.getHeight());
-            updateInfo(info);
-            Application.logPerf("getInfo read ImageInfo for {}", identifier);
             HttpHeaders headers = new HttpHeaders();
             try {
                 headers.setDate("Last-Modified", getImageModificationDate(identifier).toEpochMilli());
@@ -471,7 +463,11 @@ public class IIIFImageApiController {
         }
     }
 
-    private ImageService updateInfo(ImageService info) {
+    private ImageService updateInfo(IdentifierInfo idi, ImageService info) {
+        ImageInfo imgInf = idi.getImageInfo(idi.imageName);
+        log.info("ImageInfo {}", imgInf);
+        info.setWidth(imgInf.getWidth());
+        info.setHeight(imgInf.getHeight());
         ImageApiProfile profile = new ImageApiProfile();
         profile.addFeature(ImageApiProfile.Feature.BASE_URI_REDIRECT, ImageApiProfile.Feature.CORS,
                 ImageApiProfile.Feature.JSONLD_MEDIA_TYPE, ImageApiProfile.Feature.PROFILE_LINK_HEADER,
@@ -484,7 +480,11 @@ public class IIIFImageApiController {
         info.addProfile(ImageApiProfile.LEVEL_ONE, profile);
         TileInfo tile = new TileInfo(info.getWidth());
         tile.setHeight(info.getHeight());
-        tile.addScaleFactor(1, 2, 4, 8);
+        if (imgInf.size == null || imgInf.size < 1000000) {
+            tile.addScaleFactor(1);
+        } else {
+            tile.addScaleFactor(1, 2, 4);
+        }
         info.addTile(tile);
         return info;
     }
