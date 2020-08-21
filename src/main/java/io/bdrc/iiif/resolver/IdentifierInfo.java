@@ -2,6 +2,7 @@ package io.bdrc.iiif.resolver;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -30,6 +31,7 @@ public class IdentifierInfo {
     public boolean accessibleInFairUse = false;
     public ImageGroupInfo igi = null;
     public List<ImageInfo> ili = null;
+    public HashMap<String, ImageInfo> imgMap = null;
     public Integer imageIndex = null;
     public String computedImageName = null;
 
@@ -43,15 +45,14 @@ public class IdentifierInfo {
         }
         try {
             this.igi = ImageGroupInfoService.Instance.getAsync(this.volumeId).get();
+            this.ili = ImageInfoListService.Instance
+                    .getAsync(igi.imageInstanceId.substring(AppConstants.BDR_len), igi.imageGroup).get();
+            imgMap = buildImageMap(ili);
+
         } catch (InterruptedException | ExecutionException e) {
             throw new IIIFException(404, 5000, e);
         }
         if (isFairUse() || AppConstants.IGSI.equals(prefix)) {
-            try {
-                this.ili = ImageInfoListService.Instance.getAsync(igi.imageInstanceId.substring(AppConstants.BDR_len), igi.imageGroup).get();
-            } catch (InterruptedException | ExecutionException e) {
-                throw new IIIFException(404, 5000, e);
-            }
             if (isFairUse()) {
                 this.igi.initAccessibleInFairUse(this.ili);
                 this.accessibleInFairUse = this.igi.isAccessibleInFairUse(this.imageId);
@@ -62,6 +63,18 @@ public class IdentifierInfo {
         }
     }
 
+    private HashMap<String, ImageInfo> buildImageMap(List<ImageInfo> inf) {
+        HashMap<String, ImageInfo> map = new HashMap<>();
+        for (ImageInfo imf : inf) {
+            map.put(imf.filename, imf);
+        }
+        return map;
+    }
+
+    public ImageInfo getImageInfo(String filename) {
+        return imgMap.get(filename);
+    }
+
     public boolean isFairUse() {
         return igi.access.equals(AccessType.FAIR_USE);
     }
@@ -70,7 +83,8 @@ public class IdentifierInfo {
         // get the full list;
         List<ImageInfo> info = null;
         try {
-            info = ImageInfoListService.Instance.getAsync(igi.imageInstanceId.substring(AppConstants.BDR_len), igi.imageGroup).get();
+            info = ImageInfoListService.Instance
+                    .getAsync(igi.imageInstanceId.substring(AppConstants.BDR_len), igi.imageGroup).get();
         } catch (InterruptedException | ExecutionException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -84,7 +98,8 @@ public class IdentifierInfo {
         }
         // work is fair use but user is authorized to see it in full
         // return full list
-        log.info("USER HAS FAIR USE RESOURCE ACCESS {} and IS ADMIN {}", acc.hasResourceAccess(RdfConstants.FAIR_USE), acc.getUser().isAdmin());
+        log.info("USER HAS FAIR USE RESOURCE ACCESS {} and IS ADMIN {}", acc.hasResourceAccess(RdfConstants.FAIR_USE),
+                acc.getUser().isAdmin());
         if (isFairUse() && acc.hasResourceAccess(RdfConstants.FAIR_USE)) {
             return info;
         }

@@ -133,8 +133,7 @@ public class IIIFImageTestApiController {
         ImageService info = new ImageService(baseUrl + path.replace("/info.json", ""));
         if (unAuthorized && serviceInfo.authEnabled() && serviceInfo.hasValidProperties()) {
             info.addService(serviceInfo);
-        }
-        ReadImageProcess.readImageInfo(identifier, info, null);
+        }        
         HttpHeaders headers = new HttpHeaders();
         headers.setDate("Last-Modified", modified);
         String contentType = req.getHeader("Accept");

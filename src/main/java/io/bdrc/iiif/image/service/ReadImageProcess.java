@@ -114,10 +114,10 @@ public class ReadImageProcess {
         info.addTile(tile);
     }
 
-    public static ImageReader_ICC readImageInfo(String identifier, ImageService info, ImageReader_ICC imgReader)
+    public static ImageReader_ICC readImageInfo(String identifier, ImageService info, ImageReader_ICC imgReader, boolean failover)
             throws IOException, IIIFException, UnsupportedFormatException {
         try {
-            imgReader = getReader(identifier);
+            imgReader = getReader(identifier, failover);
             enrichInfo(imgReader.getReader(), info);
         } catch (IIIFException e) {
             log.error("Could not get Image Info", e.getMessage());
@@ -126,18 +126,6 @@ public class ReadImageProcess {
         return imgReader;
     }
     
-    public static ImageReader_ICC readImageInfoFailover(String identifier, ImageService info, ImageReader_ICC imgReader)
-            throws IOException, IIIFException, UnsupportedFormatException {
-        try {
-            imgReader = getFailoverReader(identifier);
-            enrichInfo(imgReader.getReader(), info);
-        } catch (IIIFException e) {
-            log.error("Could not get Image Info", e.getMessage());
-            throw new IIIFException(e);
-        }
-        return imgReader;
-    }
-
     /**
      * Try to obtain a {@link ImageReader} for a given identifier
      * 
@@ -145,7 +133,7 @@ public class ReadImageProcess {
      * @throws ResourceNotFoundException
      * @throws ImageReadException
      **/
-    private static ImageReader_ICC getReader(String identifier) throws UnsupportedFormatException, IOException, IIIFException {
+    private static ImageReader_ICC getReader(String identifier,boolean failover) throws UnsupportedFormatException, IOException, IIIFException {
         long deb = System.currentTimeMillis();
         ICC_Profile icc = null;
         final String s3key;
@@ -176,65 +164,18 @@ public class ReadImageProcess {
         ImageInputStream iis = ImageIO.createImageInputStream(new ByteArrayInputStream(bytes));
         ImageReader reader = null;
         if (ext.equals("jpg")) {
+            
             Iterator<ImageReader> itr = ImageIO.getImageReaders(iis);
             while (itr.hasNext()) {
                 reader = itr.next();
-                if (reader.getClass().equals(TurboJpegImageReader.class)) {
-                    break;
-                }
-            }
-        } else {
-            reader = Streams.stream(ImageIO.getImageReaders(iis)).findFirst().orElseThrow(UnsupportedFormatException::new);
-        }
-        reader.setInput(iis);
-        if (reader.getClass().equals(TurboJpegImageReader.class)) {
-            try {
-                icc = Imaging.getICCProfile(bytes);
-            } catch (ImageReadException e) {
-                e.printStackTrace();
-            }
-        }
-        Application.logPerf("S3 object IIIS READER >> {}", reader);
-        Application.logPerf("Image service return reader at {} ms {}", System.currentTimeMillis() - deb, identifier);
-        return new ImageReader_ICC(reader, icc);
-    }
-    
-    private static ImageReader_ICC getFailoverReader(String identifier) throws UnsupportedFormatException, IOException, IIIFException {
-        long deb = System.currentTimeMillis();
-        ICC_Profile icc = null;
-        final String s3key;
-        String ext = "";
-        final ImageProviderService service;
-        if (identifier.startsWith("static::")) {
-            s3key = identifier.substring(8);
-            service = ImageProviderService.InstanceStatic;
-        } else {
-            IdentifierInfo idf = new IdentifierInfo(identifier);
-            ext = idf.imageName.substring(idf.imageName.lastIndexOf(".") + 1);
-            s3key = ImageProviderService.getKey(idf);
-            service = ImageProviderService.InstanceArchive;
-            log.debug("IN READ IDENTIFIER IMAGE NAME >> {}", idf.imageName);
-            if (idf.imageName != null) {
-                Iterator<ImageReader> it = ImageIO.getImageReadersByFormatName(ext);
-                while (it.hasNext()) {
-                    log.debug("IN READ READER >> {}", it.next());
-                }
-            }
-        }
-        byte[] bytes = null;
-        try {
-            bytes = service.getAsync(s3key).get();
-        } catch (InterruptedException | ExecutionException e) {
-            throw new IIIFException(404, 5000, e);
-        }
-        ImageInputStream iis = ImageIO.createImageInputStream(new ByteArrayInputStream(bytes));
-        ImageReader reader = null;
-        if (ext.equals("jpg")) {
-            Iterator<ImageReader> itr = ImageIO.getImageReaders(iis);
-            while (itr.hasNext()) {
-                reader = itr.next();
-                if (reader.getClass().equals(com.twelvemonkeys.imageio.plugins.jpeg.JPEGImageReader.class)) {
-                    break;
+                if(failover) {
+                    if (reader.getClass().equals(com.twelvemonkeys.imageio.plugins.jpeg.JPEGImageReader.class)) {
+                        break;
+                    }                    
+                }else {
+                    if (reader.getClass().equals(TurboJpegImageReader.class)) {
+                        break;
+                    }
                 }
             }
         } else {
@@ -253,9 +194,11 @@ public class ReadImageProcess {
         return new ImageReader_ICC(reader, icc);
     }
 
-    public static DecodedImage readImage(String identifier, ImageApiSelector selector, ImageApiProfile profile, ImageReader_ICC imgReader)
-            throws IOException, UnsupportedFormatException, InvalidParametersException, ImageReadException {
+    public static Object[] readImage(String identifier, ImageApiSelector selector, ImageApiProfile profile, boolean failover)
+            throws IOException, UnsupportedFormatException, InvalidParametersException, ImageReadException, IIIFException {
         long deb = System.currentTimeMillis();
+        Object[] obj=new Object[2];
+        ImageReader_ICC imgReader=getReader(identifier,failover);
         Application.logPerf("Entering readImage for creating DecodedImage");
         if ((selector.getRotation().getRotation() % 90) != 0) {
             log.error("Rotation is not a multiple of 90 degrees for selector {}", selector.toString(), "");
@@ -312,8 +255,10 @@ public class ReadImageProcess {
             raf.writeBytes(identifier + System.lineSeparator());
             raf.close();
             log.error("Could not read image >> " + identifier, ex);
-        } 
-        return dimg;
+        }
+        obj[0]=dimg;
+        obj[1]=imgReader;
+        return obj;
     }
     
     

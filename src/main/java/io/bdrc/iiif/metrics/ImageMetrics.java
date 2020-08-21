@@ -34,7 +34,7 @@ public class ImageMetrics {
         if ("true".equals(Application.getProperty("metricsEnabled"))) {
             Counter cnt = Metrics.counter("image.calls", "context", origin);
             cnt.increment();
-            log.info("Incremented image counter {}; it's value is now {}", cnt.getId(), cnt.count());
+            log.debug("Incremented image counter {}; it's value is now {}", cnt.getId(), cnt.count());
         }
     }
 
@@ -57,7 +57,7 @@ public class ImageMetrics {
                     try {
                         Counter cnt = Metrics.counter(c, "context", m.getContext());
                         cnt.increment(Double.parseDouble(m.getCount()));
-                        log.info("{} METRICS INCREMENTED to >> {} for context: {}", c, m.getCount(), m.getContext());
+                        log.debug("{} METRICS INCREMENTED to >> {} for context: {}", c, m.getCount(), m.getContext());
                     } catch (Exception e) {
                         log.error("{} METRICS IS NULL WITH Prometheus resp  >> {} ", c, json);
                     }
