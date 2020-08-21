@@ -55,7 +55,7 @@ public class ImageGroupInfoService extends ConcurrentResourceService<ImageGroupI
                 throw new IIIFException(404, 5000, "cannot find image group " + volumeId + " in the database");
             }
             final QuerySolution sol = res.next();
-            resVolumeInfo = new ImageGroupInfo(sol);
+            resVolumeInfo = new ImageGroupInfo(sol, volumeId);
             if (res.hasNext()) {
                 throw new IIIFException(500, 5000, "more than one volume found in the database for " + volumeId + ", this shouldn't happen");
             }
