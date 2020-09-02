@@ -31,8 +31,6 @@ public class ImageGroupInfo {
     public String instanceId;
     @JsonProperty("imageInstanceId")
     public String imageInstanceId;
-    @JsonProperty("totalPages")
-    public Integer totalPages = 0;
     @JsonProperty("pagesIntroTbrc")
     public Integer pagesIntroTbrc = 0;
     @JsonProperty("volumeNumber")
@@ -67,9 +65,6 @@ public class ImageGroupInfo {
         }
         if (sol.contains("?pagesIntroTbrc")) {
             this.pagesIntroTbrc = sol.get("?pagesIntroTbrc").asLiteral().getInt();
-        }
-        if (sol.contains("?totalPages")) {
-            this.totalPages = sol.get("?totalPages").asLiteral().getInt();
         }
         if (sol.contains("iiifManifest")) {
             final String manifestURIString = sol.getResource("iiifManifest").getURI();

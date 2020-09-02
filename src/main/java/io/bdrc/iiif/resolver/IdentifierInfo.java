@@ -157,8 +157,8 @@ public class IdentifierInfo {
     }
 
     public Integer getTotalPages() {
-        if (igi != null) {
-            return igi.totalPages;
+        if (ili != null) {
+            return ili.size();
         } else {
             return null;
         }

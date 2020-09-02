@@ -90,11 +90,14 @@ public class ArchivesController {
             IdentifierInfo inf = new IdentifierInfo(idf.getImageGroupId());
             Integer bPage = idf.getBPageNum();
             if (bPage == null) {
-                bPage = new Integer(1);
+                bPage = 1;
             }
             Integer ePage = idf.getEPageNum();
             if (ePage == null) {
                 ePage = inf.getTotalPages();
+            }
+            if (ePage < bPage) {
+                return new ResponseEntity<>("PDF would be empty", HttpStatus.NOT_FOUND);
             }
             log.info("Pdf requested numPage in identifierInfo {}", inf);
             log.info("Pdf requested start page {} and end page {}", bPage.intValue(), ePage.intValue());
