@@ -33,8 +33,13 @@ public class ImageProviderService extends ConcurrentResourceService<byte[]> {
     public static final ImageProviderService InstanceStatic = new ImageProviderService(bucketNameStatic, "static:");
     public static final ImageProviderService InstanceArchive = new ImageProviderService(bucketNameArchive, "archive:");
     public String bucketName;
-    private static AmazonS3ClientBuilder clientBuilder = AmazonS3ClientBuilder.standard().withRegion(AuthProps.getProperty("awsRegion"))
-            .withClientConfiguration(config);
+    private static AmazonS3ClientBuilder clientBuilder = null;
+    
+    static {
+        if ("s3".equals(AuthProps.getProperty("imageSourceType")))
+            clientBuilder = AmazonS3ClientBuilder.standard().withRegion(AuthProps.getProperty("awsRegion")).withClientConfiguration(config);
+    }
+            
 
     ImageProviderService(final String bucketName, final String cachePrefix) {
         super("iiif_img", cachePrefix);
