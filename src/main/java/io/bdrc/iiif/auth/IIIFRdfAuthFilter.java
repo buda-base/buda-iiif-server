@@ -27,7 +27,8 @@ import io.bdrc.iiif.core.Application;
 @Order(1)
 public class IIIFRdfAuthFilter implements Filter {
 
-    public final static Logger log = LoggerFactory.getLogger(IIIFRdfAuthFilter.class.getName());
+    public final static Logger log = LoggerFactory
+            .getLogger(IIIFRdfAuthFilter.class.getName());
 
     @Override
     public void destroy() {
@@ -35,20 +36,25 @@ public class IIIFRdfAuthFilter implements Filter {
     }
 
     @Override
-    public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
+    public void doFilter(ServletRequest req, ServletResponse res,
+            FilterChain chain) throws IOException, ServletException {
         String method = ((HttpServletRequest) req).getMethod();
 
         try {
             if (!Application.isInChina()) {
-                if ("true".equals(AuthProps.getProperty("authEnabled")) && !method.equalsIgnoreCase("OPTIONS")) {
+                if ("true".equals(AuthProps.getProperty("authEnabled"))
+                        && !method.equalsIgnoreCase("OPTIONS")) {
                     log.info("IIIF SERVER IS USING AUTH !");
-                    String token = getToken(((HttpServletRequest) req).getHeader("Authorization"));
+                    String token = getToken(((HttpServletRequest) req)
+                            .getHeader("Authorization"));
                     log.debug("TOKEN >> {}", token);
                     if (token == null) {
-                        Cookie[] cookies = ((HttpServletRequest) req).getCookies();
+                        Cookie[] cookies = ((HttpServletRequest) req)
+                                .getCookies();
                         if (cookies != null) {
                             for (Cookie cook : cookies) {
-                                if (cook.getName().equals(AuthProps.getProperty("cookieKey"))) {
+                                if (cook.getName().equals(
+                                        AuthProps.getProperty("cookieKey"))) {
                                     token = cook.getValue();
                                     break;
                                 }
@@ -63,18 +69,23 @@ public class IIIFRdfAuthFilter implements Filter {
                         validation = new TokenValidation(token);
                         log.debug("AUTH VALIDATION {}", validation);
                         prof = validation.getUser();
-                        req.setAttribute("access", new Access(prof, new Endpoint()));
+                        req.setAttribute("access",
+                                new Access(prof, new Endpoint()));
                     } else {
                         req.setAttribute("access", new Access());
                     }
                 } else {
                     req.setAttribute("access", new Access());
                 }
-                log.debug("REQUEST SET WITH ACCESS {}", req.getAttribute("access"));
+                System.out.println(
+                        "ACCESS WAS SET AS >>" + req.getAttribute("access"));
+                log.debug("REQUEST SET WITH ACCESS {}",
+                        req.getAttribute("access"));
             }
             chain.doFilter(req, res);
         } catch (IOException | ServletException e) {
-            log.error("IIIF RdfAuth filter failed ! Message: " + e.getMessage());
+            log.error(
+                    "IIIF RdfAuth filter failed ! Message: " + e.getMessage());
             throw e;
         }
     }
@@ -90,7 +101,8 @@ public class IIIFRdfAuthFilter implements Filter {
                 return header.split(" ")[1];
             }
         } catch (Exception ex) {
-            log.error("Could not get Token from header " + header + " Message: " + ex.getMessage());
+            log.error("Could not get Token from header " + header + " Message: "
+                    + ex.getMessage());
             return null;
         }
         return null;
