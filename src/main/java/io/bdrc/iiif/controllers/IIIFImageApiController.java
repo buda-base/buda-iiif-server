@@ -41,6 +41,7 @@ import de.digitalcollections.model.api.identifiable.resource.exceptions.Resource
 import io.bdrc.auth.Access;
 import io.bdrc.auth.AuthProps;
 import io.bdrc.auth.TokenValidation;
+import io.bdrc.auth.rdf.RdfAuthModel;
 import io.bdrc.iiif.auth.AuthServiceInfo;
 import io.bdrc.iiif.auth.ResourceAccessValidation;
 import io.bdrc.iiif.core.Application;
@@ -80,8 +81,8 @@ public class IIIFImageApiController {
     /**
      * Get the base URL for all Image API URLs from the request.
      *
-     * This will handle cases such as reverse-proxying and SSL-termination on the
-     * frontend server
+     * This will handle cases such as reverse-proxying and SSL-termination on
+     * the frontend server
      */
     private String getUrlBase(HttpServletRequest request) {
         String scheme = request.getHeader("X-Forwarded-Proto");
@@ -160,7 +161,8 @@ public class IIIFImageApiController {
         ImageApiSelector selector = getImageApiSelector(identifier, region, size, rotation, quality, format);
         final ImageApiProfile profile = ImageApiProfile.LEVEL_TWO;
         // TODO: the first part seems ignored?
-        // ImageService info = new ImageService("https://iiif.bdrc.io/" + identifier,
+        // ImageService info = new ImageService("https://iiif.bdrc.io/" +
+        // identifier,
         // profile);
         headers.setContentType(MediaType.parseMediaType(selector.getFormat().getMimeType().getTypeName()));
         headers.set("Content-Disposition",
@@ -231,7 +233,8 @@ public class IIIFImageApiController {
         ByteArrayOutputStream os = null;
         ImageReader_ICC imgReader = null;
         try {
-            // imgReader = ReadImageProcess.readImageInfo(identifier, info, null,false);
+            // imgReader = ReadImageProcess.readImageInfo(identifier, info,
+            // null,false);
             Application.logPerf("end reading from image service after {} ms for {} with reader {}",
                     (System.currentTimeMillis() - deb1), identifier, imgReader);
             final String canonicalForm = idi.getCanonical();
@@ -280,7 +283,7 @@ public class IIIFImageApiController {
 
     public static final PropertyValue pngHint = new PropertyValue("png", "jpg");
 
-    @RequestMapping(value = "{identifier}/info.json", method = { RequestMethod.GET, RequestMethod.HEAD })
+    @RequestMapping(value = "{identifier}/info.json", method = {RequestMethod.GET, RequestMethod.HEAD})
     public ResponseEntity<String> getInfo(@PathVariable String identifier, HttpServletRequest req,
             HttpServletResponse res, WebRequest webRequest) throws ClientProtocolException, IOException, IIIFException,
             UnsupportedOperationException, UnsupportedFormatException, InterruptedException, ExecutionException {
@@ -332,7 +335,8 @@ public class IIIFImageApiController {
             }
             headers.add("Link",
                     String.format("<%s>;rel=\"profile\"", info.getProfiles().get(0).getIdentifier().toString()));
-            // We set the header ourselves, since using @CrossOrigin doesn't expose "*", but
+            // We set the header ourselves, since using @CrossOrigin doesn't
+            // expose "*", but
             // always sets the requesting domain
             // headers.add("Access-Control-Allow-Origin", "*");
             Application.logPerf("getInfo ready to return after {} ms for {}", (System.currentTimeMillis() - deb),
@@ -357,7 +361,7 @@ public class IIIFImageApiController {
         return new ResponseEntity<>("favicon.ico", new HttpHeaders(), HttpStatus.OK);
     }
 
-    @RequestMapping(value = "{identifier}", method = { RequestMethod.GET, RequestMethod.HEAD })
+    @RequestMapping(value = "{identifier}", method = {RequestMethod.GET, RequestMethod.HEAD})
     public void getInfoRedirect(@PathVariable String identifier, HttpServletRequest request,
             HttpServletResponse response) throws IOException {
         log.info("Identifier endpoint getInfoRedirect {} , {}", identifier, request.getServletPath());
@@ -384,6 +388,13 @@ public class IIIFImageApiController {
         model.addObject("model", cam);
         model.setViewName("cache");
         return model;
+    }
+
+    @RequestMapping(value = "/callbacks/model/bdrc-auth", method = RequestMethod.POST, produces = MediaType.TEXT_PLAIN_VALUE)
+    public ResponseEntity<String> readAuthModel() {
+        log.info("updating Auth data model() >>");
+        RdfAuthModel.readAuthModel();
+        return ResponseEntity.ok("Updated auth Model was read into IIIF serv");
     }
 
     public int computeExpires(TokenValidation tkVal) {
@@ -424,18 +435,25 @@ public class IIIFImageApiController {
         return selector;
     }
 
-    // here we return a boolean telling us if the requested image is different from
+    // here we return a boolean telling us if the requested image is different
+    // from
     // the original image
     // on S3
     public static boolean requestDiffersFromOriginal(final String identifier, final ImageApiSelector selector) {
         if (formatDiffer(identifier, selector))
             return true;
-        if (selector.getQuality() != Quality.DEFAULT) // TODO: this could be improved but we can keep that for later
+        if (selector.getQuality() != Quality.DEFAULT) // TODO: this could be
+                                                      // improved but we can
+                                                      // keep that for later
             return true;
         if (selector.getRotation().getRotation() != 0.)
             return true;
-        if (!selector.getRegion().equals(new RegionRequest())) // TODO: same here, could be improved by reading the
-                                                               // dimensions of the image
+        if (!selector.getRegion().equals(new RegionRequest())) // TODO: same
+                                                               // here, could be
+                                                               // improved by
+                                                               // reading the
+                                                               // dimensions of
+                                                               // the image
             return true;
         if (!selector.getSize().equals(new SizeRequest()) && !selector.getSize().equals(new SizeRequest(true)))
             return true;
