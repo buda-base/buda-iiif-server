@@ -276,6 +276,9 @@ public class SizeRequest {
             } else {
                 ratio = Math.min(width / nativeSize.getWidth(), height / nativeSize.getHeight());
             }
+            if (ratio > 1.0 && (profile.features == null || !profile.features.contains(ImageApiProfile.Feature.SIZE_ABOVE_FULL))) {
+                ratio = 1.0;
+            }
             out = new Dimension((int) (ratio * nativeSize.width), (int) (ratio * nativeSize.height));
         } else if (width == null && height == null) { // "full"
             out = nativeSize;
