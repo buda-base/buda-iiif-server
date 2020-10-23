@@ -80,11 +80,12 @@ public class ImageGroupInfo {
         if (this.accessibleInFairUseList != null)
             return;
         this.accessibleInFairUseList = new HashMap<>();
-        for (int x = this.pagesIntroTbrc; x < this.pagesIntroTbrc + AppConstants.FAIRUSE_PAGES_S; x++) {
+        final int listSize = ili.size();
+        final int lasti = Math.min(listSize, this.pagesIntroTbrc + AppConstants.FAIRUSE_PAGES_S);
+        for (int x = this.pagesIntroTbrc; x < lasti; x++) {
             this.accessibleInFairUseList.put(ili.get(x).filename, true);
         }
-        final int listSize = ili.size();
-        for (int x = listSize - AppConstants.FAIRUSE_PAGES_E; x < listSize; x++) {
+        for (int x = Math.max(0, listSize - AppConstants.FAIRUSE_PAGES_E); x < listSize; x++) {
             this.accessibleInFairUseList.put(ili.get(x).filename, true);
         }
     }
