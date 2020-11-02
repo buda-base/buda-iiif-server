@@ -73,6 +73,7 @@ public class Application extends SpringBootServletInitializer {
         if (props.getProperty("logPerf") != null) {
             logPerf = Boolean.parseBoolean(props.getProperty("logPerf"));
         }
+        System.out.println(props);
         // every minute ?
         EHServerCache.init();
         new Timer(true).schedule(new MetricsTask(), 0, 60000);

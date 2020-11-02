@@ -367,6 +367,8 @@ public class IIIFImageApiController {
         String base = Application.getProperty("iiifserv_baseurl");
         if (base == null) {
             base = request.getServletPath()+"/";
+        } else {
+            base += identifier+"/";
         }
         log.info("Identifier endpoint getInfoRedirect {} , {}", identifier, base);
         response.sendRedirect(base + "info.json");
