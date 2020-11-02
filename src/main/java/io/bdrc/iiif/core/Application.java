@@ -50,21 +50,24 @@ public class Application extends SpringBootServletInitializer {
 
     static final String configPath = System.getProperty("iiifserv.configpath");
     public static Logger perfLog = LoggerFactory.getLogger("performance");
+    public static Logger log = LoggerFactory.getLogger(Application.class);
     private static Properties props;
     private static boolean logPerf = true;
     public static final String DISK_SOURCE = "disk";
     public static final String S3_SOURCE = "s3";
 
     public static void main(String[] args) throws Exception {
+        log.info("load {}", configPath + "iiifserv.properties");
         InputStream input = new FileInputStream(new File(configPath + "iiifserv.properties"));
         props = new Properties();
         props.load(input);
+        log.info(props.getProperty("iiifserv_baseurl"));
         try {
             InputStream is = new FileInputStream("/etc/buda/share/shared-private.properties");
             props.load(is);
-
         } catch (Exception ex) {
             // do nothing, continue props initialization
+            log.error("can't load load /etc/buda/share/shared-private.properties");
         }
         AuthProps.init(props);
         if ("true".equals(props.getProperty("authEnabled")) && !isInChina()) {
@@ -73,7 +76,8 @@ public class Application extends SpringBootServletInitializer {
         if (props.getProperty("logPerf") != null) {
             logPerf = Boolean.parseBoolean(props.getProperty("logPerf"));
         }
-        System.out.println(props);
+        log.info("{}", props);
+        log.info(props.getProperty("iiifserv_baseurl"));
         // every minute ?
         EHServerCache.init();
         new Timer(true).schedule(new MetricsTask(), 0, 60000);
