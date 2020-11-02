@@ -78,32 +78,6 @@ public class IIIFImageApiController {
 
     private static final Logger log = LoggerFactory.getLogger(IIIFImageApiController.class);
 
-    /**
-     * Get the base URL for all Image API URLs from the request.
-     *
-     * This will handle cases such as reverse-proxying and SSL-termination on
-     * the frontend server
-     */
-    private String getUrlBase(HttpServletRequest request) {
-        String scheme = request.getHeader("X-Forwarded-Proto");
-        if (scheme == null) {
-            scheme = request.getScheme();
-        }
-
-        String host = request.getHeader("X-Forwarded-Host");
-        if (host == null) {
-            host = request.getHeader("Host");
-        }
-        if (host == null) {
-            host = request.getRemoteHost();
-        }
-        String base = String.format("%s://%s", scheme, host);
-        if (!request.getContextPath().isEmpty()) {
-            base += request.getContextPath();
-        }
-        return base;
-    }
-
     @RequestMapping(value = "/setcookie")
     ResponseEntity<String> getCookie(HttpServletRequest req, HttpServletResponse response)
             throws JsonProcessingException, UnsupportedEncodingException {
@@ -193,7 +167,6 @@ public class IIIFImageApiController {
             headers.setCacheControl(CacheControl.maxAge(maxAge, TimeUnit.MILLISECONDS).cachePrivate());
         } else {
             headers.setCacheControl(CacheControl.maxAge(maxAge, TimeUnit.MILLISECONDS).cachePublic());
-            ImageProviderService service = ImageProviderService.InstanceStatic;
         }
         if (idi != null) {
             if (idi.igi.access.equals(AccessType.OPEN)) {
@@ -237,9 +210,10 @@ public class IIIFImageApiController {
             // null,false);
             Application.logPerf("end reading from image service after {} ms for {} with reader {}",
                     (System.currentTimeMillis() - deb1), identifier, imgReader);
-            final String canonicalForm = idi.getCanonical();
-            headers.add("Link", String.format("<%s>;rel=\"canonical\"",
-                    getUrlBase(request) + path.substring(0, path.indexOf(identifier)) + canonicalForm));
+            //final String canonicalForm = idi.getCanonical();
+            // TODO: make it actually canonical...
+            //headers.add("Link", String.format("<%s>;rel=\"canonical\"",
+            //        Application.getProperty("iiifserv_baseurl") + canonicalForm));
             deb1 = System.currentTimeMillis();
             Application.logPerf("processing image output stream for {}", identifier);
             os = new ByteArrayOutputStream();
@@ -299,19 +273,9 @@ public class IIIFImageApiController {
                 staticImg = identifier.split("::")[0].trim().equals("static");
             }
             log.info("Entering endpoint getInfo for {}", identifier);
-            String path = req.getServletPath();
-            if (req.getPathInfo() != null) {
-                path = req.getPathInfo();
-            }
             boolean unAuthorized = false;
             IdentifierInfo idi = new IdentifierInfo(identifier);
-            String base = Application.getProperty("iiifserv_baseurl");
-            if (base == null) {
-                base = path+"/";
-            } else {
-                base += identifier+"/";
-            }
-            ImageService info = new ImageService(base+"info.json");
+            ImageService info = new ImageService(Application.getProperty("iiifserv_baseurl")+identifier);
             updateInfo(idi, info);
             if (!staticImg) {
                 ResourceAccessValidation accValidation = null;
