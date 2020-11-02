@@ -305,7 +305,13 @@ public class IIIFImageApiController {
             }
             boolean unAuthorized = false;
             IdentifierInfo idi = new IdentifierInfo(identifier);
-            ImageService info = new ImageService(getUrlBase(req) + path.replace("/info.json", ""));
+            String base = Application.getProperty("iiifserv_baseurl");
+            if (base == null) {
+                base = path+"/";
+            } else {
+                base += identifier+"/";
+            }
+            ImageService info = new ImageService(base+"info.json");
             updateInfo(idi, info);
             if (!staticImg) {
                 ResourceAccessValidation accValidation = null;
@@ -364,12 +370,7 @@ public class IIIFImageApiController {
     @RequestMapping(value = "{identifier}", method = {RequestMethod.GET, RequestMethod.HEAD})
     public void getInfoRedirect(@PathVariable String identifier, HttpServletRequest request,
             HttpServletResponse response) throws IOException {
-        String base = Application.getProperty("iiifserv_baseurl");
-        if (base == null) {
-            base = request.getServletPath()+"/";
-        } else {
-            base += identifier+"/";
-        }
+        String base = Application.getProperty("iiifserv_baseurl")+"/";
         log.info("Identifier endpoint getInfoRedirect {} , {}", identifier, base);
         response.sendRedirect(base + "info.json");
     }
