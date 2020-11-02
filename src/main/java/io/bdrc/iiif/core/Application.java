@@ -61,7 +61,6 @@ public class Application extends SpringBootServletInitializer {
         InputStream input = new FileInputStream(new File(configPath + "iiifserv.properties"));
         props = new Properties();
         props.load(input);
-        log.info(props.getProperty("iiifserv_baseurl"));
         try {
             InputStream is = new FileInputStream("/etc/buda/share/shared-private.properties");
             props.load(is);
@@ -77,7 +76,6 @@ public class Application extends SpringBootServletInitializer {
             logPerf = Boolean.parseBoolean(props.getProperty("logPerf"));
         }
         log.info("{}", props);
-        log.info(props.getProperty("iiifserv_baseurl"));
         // every minute ?
         EHServerCache.init();
         new Timer(true).schedule(new MetricsTask(), 0, 60000);

@@ -370,9 +370,9 @@ public class IIIFImageApiController {
     @RequestMapping(value = "{identifier}", method = {RequestMethod.GET, RequestMethod.HEAD})
     public void getInfoRedirect(@PathVariable String identifier, HttpServletRequest request,
             HttpServletResponse response) throws IOException {
-        String base = Application.getProperty("iiifserv_baseurl")+"/";
+        String base = Application.getProperty("iiifserv_baseurl");
         log.info("Identifier endpoint getInfoRedirect {} , {}", identifier, base);
-        response.sendRedirect(base + "info.json");
+        response.sendRedirect(base + identifier + "/info.json");
     }
 
     @RequestMapping(value = "cache/clear", method = RequestMethod.POST)
