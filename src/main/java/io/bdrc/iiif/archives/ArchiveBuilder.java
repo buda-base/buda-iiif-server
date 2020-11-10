@@ -25,13 +25,10 @@ import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.amazonaws.services.s3.AmazonS3;
-
 import io.bdrc.auth.Access;
 import io.bdrc.iiif.core.Application;
 import io.bdrc.iiif.core.EHServerCache;
 import io.bdrc.iiif.exceptions.IIIFException;
-import io.bdrc.iiif.image.service.ImageProviderService;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 import io.bdrc.iiif.resolver.ImageInfo;
 import io.bdrc.libraries.Identifier;
@@ -127,7 +124,6 @@ public class ArchiveBuilder {
         try {
             long deb = System.currentTimeMillis();
             Application.logPerf("Starting building zip {}", inf.volumeId);
-            AmazonS3 s3 = ImageProviderService.getClient();
             Application.logPerf("S3 client obtained in building pdf {} after {} ", inf.volumeId,
                     System.currentTimeMillis() - deb);
             TreeMap<Integer, Future<?>> t_map = new TreeMap<>();
