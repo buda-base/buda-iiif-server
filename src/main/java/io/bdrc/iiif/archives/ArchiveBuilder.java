@@ -47,23 +47,25 @@ public class ArchiveBuilder {
 
     private static ExecutorService service = Executors.newFixedThreadPool(50);
 
-    @SuppressWarnings({ "rawtypes", "unchecked" })
-    public static void buildPdf(Access acc, IdentifierInfo inf, Identifier idf, String output, String origin) throws Exception {
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    public static void buildPdf(Access acc, IdentifierInfo inf, Identifier idf, String output, String origin)
+            throws Exception {
         long deb = System.currentTimeMillis();
         try {
             Application.logPerf("Starting building pdf {}", inf.volumeId);
             ExecutorService service = Executors.newFixedThreadPool(25);
-            AmazonS3 s3 = ImageProviderService.getClient();
-            Application.logPerf("S3 client obtained in building pdf {} after {} ", inf.volumeId, System.currentTimeMillis() - deb);
+            Application.logPerf("S3 client obtained in building pdf {} after {} ", inf.volumeId,
+                    System.currentTimeMillis() - deb);
             TreeMap<Integer, Future<?>> t_map = new TreeMap<>();
             HashMap<String, ImageInfo> imgDim = new HashMap<>();
             List<ImageInfo> imgInfo = getImageInfos(idf, inf, acc);
             int i = 1;
             for (ImageInfo imgInf : imgInfo) {
-                if (imgInf.size == null || (imgInf.size != null && imgInf.size <= Integer.parseInt(Application.getProperty("imgSizeLimit")))) {
+                if (imgInf.size == null || (imgInf.size != null
+                        && imgInf.size <= Integer.parseInt(Application.getProperty("imgSizeLimit")))) {
                     imgDim.put(imgInf.filename, imgInf);
                     ArchiveImageProducer tmp = null;
-                    tmp = new ArchiveImageProducer(s3, inf, imgInf.filename, origin);
+                    tmp = new ArchiveImageProducer(inf, imgInf.filename, origin);
                     log.info("added Future for image {} of size {}", imgInf.filename, imgInf.size);
                     Future<?> fut = service.submit((Callable) tmp);
                     t_map.put(i, fut);
@@ -74,22 +76,27 @@ public class ArchiveBuilder {
             EHServerCache.PDF_JOBS.put(output, false);
             PDDocument doc = new PDDocument();
             doc.setDocumentInformation(ArchiveInfo.getInstance(inf).getDocInformation());
-            Application.logPerf("building pdf writer and document opened {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
+            Application.logPerf("building pdf writer and document opened {} after {}", inf.volumeId,
+                    System.currentTimeMillis() - deb);
             for (int k = 1; k <= t_map.keySet().size(); k++) {
                 Future<?> tmp = t_map.get(k);
                 Object[] obj = (Object[]) tmp.get();
                 byte[] bmg = (byte[]) obj[0];
                 String imgKey = (String) obj[1];
                 if (bmg == null) {
-                    // Trying to insert image indicating that original image is missing
+                    // Trying to insert image indicating that original image is
+                    // missing
                     try {
-                        bmg = toByteArray(ArchiveImageProducer.getBufferedMissingImage("Page " + k + " couldn't be found"));
+                        bmg = toByteArray(
+                                ArchiveImageProducer.getBufferedMissingImage("Page " + k + " couldn't be found"));
                     } catch (Exception e) {
                         // We don't interrupt the pdf generation process
-                        log.error("Could not get Buffered Missing image from producer for page {} of volume {}", k, inf.volumeId);
+                        log.error("Could not get Buffered Missing image from producer for page {} of volume {}", k,
+                                inf.volumeId);
                     }
                 }
-                PDPage page = new PDPage(new PDRectangle(imgDim.get(imgKey).getWidth(), imgDim.get(imgKey).getHeight()));
+                PDPage page = new PDPage(
+                        new PDRectangle(imgDim.get(imgKey).getWidth(), imgDim.get(imgKey).getHeight()));
                 doc.addPage(page);
                 PDImageXObject pdImage = PDImageXObject.createFromByteArray(doc, bmg, "");
                 PDPageContentStream contents = new PDPageContentStream(doc, page);
@@ -103,7 +110,8 @@ public class ArchiveBuilder {
             cw.close();
             log.debug("Closing doc after writing {} ", doc);
             doc.close();
-            Application.logPerf("pdf document finished and closed for {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
+            Application.logPerf("pdf document finished and closed for {} after {}", inf.volumeId,
+                    System.currentTimeMillis() - deb);
             EHServerCache.IIIF.put(output.substring(4), baos.toByteArray());
             EHServerCache.PDF_JOBS.put(output, true);
         } catch (ExecutionException | InterruptedException e) {
@@ -113,19 +121,21 @@ public class ArchiveBuilder {
 
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    public static void buildZip(Access acc, IdentifierInfo inf, Identifier idf, String output, String origin) throws IIIFException {
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public static void buildZip(Access acc, IdentifierInfo inf, Identifier idf, String output, String origin)
+            throws IIIFException {
         try {
             long deb = System.currentTimeMillis();
             Application.logPerf("Starting building zip {}", inf.volumeId);
             AmazonS3 s3 = ImageProviderService.getClient();
-            Application.logPerf("S3 client obtained in building pdf {} after {} ", inf.volumeId, System.currentTimeMillis() - deb);
+            Application.logPerf("S3 client obtained in building pdf {} after {} ", inf.volumeId,
+                    System.currentTimeMillis() - deb);
             TreeMap<Integer, Future<?>> t_map = new TreeMap<>();
             TreeMap<Integer, String> images = new TreeMap<>();
             List<ImageInfo> imgInfo = getImageInfos(idf, inf, acc);
             int i = 1;
             for (ImageInfo imf : imgInfo) {
-                ArchiveImageProducer tmp = new ArchiveImageProducer(s3, inf, imf.filename, origin);
+                ArchiveImageProducer tmp = new ArchiveImageProducer(inf, imf.filename, origin);
                 Future<?> fut = service.submit((Callable) tmp);
                 t_map.put(i, fut);
                 images.put(i, imf.filename);
@@ -134,7 +144,8 @@ public class ArchiveBuilder {
             EHServerCache.ZIP_JOBS.put(output, false);
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             ZipOutputStream zipOut = new ZipOutputStream(baos);
-            Application.logPerf("building zip stream opened {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
+            Application.logPerf("building zip stream opened {} after {}", inf.volumeId,
+                    System.currentTimeMillis() - deb);
 
             for (int k = 1; k <= t_map.keySet().size(); k++) {
                 Future<?> tmp = t_map.get(k);
@@ -142,15 +153,18 @@ public class ArchiveBuilder {
                 Object[] obj = (Object[]) tmp.get();
                 img = (byte[]) obj[0];
                 if (img == null) {
-                    // Trying to insert image indicating that original image is missing
+                    // Trying to insert image indicating that original image is
+                    // missing
                     try {
-                        BufferedImage bImg = ArchiveImageProducer.getBufferedMissingImage("Page " + k + " couldn't be found");
+                        BufferedImage bImg = ArchiveImageProducer
+                                .getBufferedMissingImage("Page " + k + " couldn't be found");
                         ByteArrayOutputStream out = new ByteArrayOutputStream();
                         ImageIO.write(bImg, "png", out);
                         img = out.toByteArray();
                     } catch (IOException e) {
                         // We don't interrupt the pdf generation process
-                        log.error("Could not get Buffered Missing image from producer for page {} of volume {}", k, inf.volumeId);
+                        log.error("Could not get Buffered Missing image from producer for page {} of volume {}", k,
+                                inf.volumeId);
                     }
                 }
                 ZipEntry zipEntry = new ZipEntry(images.get(k));
@@ -159,7 +173,8 @@ public class ArchiveBuilder {
                 zipOut.closeEntry();
             }
             zipOut.close();
-            Application.logPerf("zip document finished and closed for {} after {}", inf.volumeId, System.currentTimeMillis() - deb);
+            Application.logPerf("zip document finished and closed for {} after {}", inf.volumeId,
+                    System.currentTimeMillis() - deb);
             EHServerCache.IIIF_ZIP.put(output.substring(3), baos.toByteArray());
             log.info("Put zip file in cache with key {}", output.substring(3));
             EHServerCache.ZIP_JOBS.put(output, true);

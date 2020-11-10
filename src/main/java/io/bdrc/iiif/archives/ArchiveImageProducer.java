@@ -34,8 +34,7 @@ public class ArchiveImageProducer implements Callable {
     Dimension d;
     boolean isTiff = false;
 
-    public ArchiveImageProducer(AmazonS3 s3, IdentifierInfo inf, String imgId, String origin) throws IIIFException {
-        this.s3 = s3;
+    public ArchiveImageProducer(IdentifierInfo inf, String imgId, String origin) throws IIIFException {
         this.id = ImageProviderService.getKeyPrefix(inf) + imgId;
         this.imageName = id.substring(id.lastIndexOf("/") + 1);
         this.origin = origin;
