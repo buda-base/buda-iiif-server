@@ -20,7 +20,7 @@ public class ConcurrentResourceService<T> {
 
     String cachePrefix = "";
     String cacheName;
-    boolean skipImgCache = false;
+    boolean skipCache = false;
 
     Map<String, CompletableFuture<T>> futures = new ConcurrentHashMap<>();
 
@@ -30,7 +30,7 @@ public class ConcurrentResourceService<T> {
     public ConcurrentResourceService(String cacheName, String cachePrefix) {
         this.cachePrefix = cachePrefix;
         this.cacheName = cacheName;
-        this.skipImgCache = skipImgCache();
+        this.skipCache = skipCache();
     }
 
     @SuppressWarnings("unchecked")
@@ -65,7 +65,7 @@ public class ConcurrentResourceService<T> {
     @SuppressWarnings("unchecked")
     public T getSync(String resId) throws IIIFException {
         resId = normalizeId(resId);
-        if (skipImgCache) {
+        if (skipCache) {
             return getFromApi(resId);
         }
 
@@ -113,7 +113,7 @@ public class ConcurrentResourceService<T> {
     public CompletableFuture<T> getAsync(String resId) {
         resId = normalizeId(resId);
         T resT = null;
-        if (!skipImgCache) {
+        if (!skipCache) {
             resT = getFromCache(resId);
         }
         if (resT != null) {
@@ -142,7 +142,7 @@ public class ConcurrentResourceService<T> {
             futures.remove(resId);
             return res;
         }
-        if (!skipImgCache) {
+        if (!skipCache) {
             putInCache(resId, resT);
         }
         res.complete(resT);
@@ -150,7 +150,7 @@ public class ConcurrentResourceService<T> {
         return res;
     }
 
-    private boolean skipImgCache() {
+    private boolean skipCache() {
         return (Application.getProperty("imageSourceType").equalsIgnoreCase(Application.DISK_SOURCE)
                 && cacheName.equals("iiif_img"));
     }
