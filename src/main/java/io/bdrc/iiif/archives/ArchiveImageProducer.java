@@ -38,6 +38,9 @@ public class ArchiveImageProducer implements Callable {
         this.id = ImageProviderService.getKeyPrefix(inf) + imgId;
         this.imageName = id.substring(id.lastIndexOf("/") + 1);
         this.origin = origin;
+        if (origin == null) {
+            origin = "";
+        }
         if (id.endsWith(".tif") || id.endsWith(".tiff")) {
             isTiff = true;
         }

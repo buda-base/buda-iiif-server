@@ -118,6 +118,70 @@ public class ArchiveBuilder {
 
     }
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    public static void buildSyncPdf(Access acc, IdentifierInfo inf, Identifier idf, String output, String origin)
+            throws Exception {
+        long deb = System.currentTimeMillis();
+        try {
+            Application.logPerf("Starting building pdf {}", inf.volumeId);
+            List<ImageInfo> imgInfo = getImageInfos(idf, inf, acc);
+            HashMap<String, ImageInfo> imgDim = new HashMap<>();
+            log.info("Setting output {} ", output);
+            EHServerCache.PDF_JOBS.put(output, false);
+            PDDocument doc = new PDDocument();
+            doc.setDocumentInformation(ArchiveInfo.getInstance(inf).getDocInformation());
+            Application.logPerf("building pdf writer and document opened {} after {}", inf.volumeId,
+                    System.currentTimeMillis() - deb);
+            int k = 1;
+            for (ImageInfo imgInf : imgInfo) {
+                if (imgInf.size == null || (imgInf.size != null
+                        && imgInf.size <= Integer.parseInt(Application.getProperty("imgSizeLimit")))) {
+                    imgDim.put(imgInf.filename, imgInf);
+                    // ArchiveImageProducer tmp = null;
+                    Object[] obj = new ArchiveImageProducer(inf, imgInf.filename, origin).getImageAsBytes();
+                    byte[] bmg = (byte[]) obj[0];
+                    String imgKey = (String) obj[1];
+                    if (bmg == null) {
+                        // Trying to insert image indicating that original image
+                        // is
+                        // missing
+                        try {
+                            bmg = toByteArray(
+                                    ArchiveImageProducer.getBufferedMissingImage("Page " + k + " couldn't be found"));
+                        } catch (Exception e) {
+                            // We don't interrupt the pdf generation process
+                            log.error("Could not get Buffered Missing image from producer for page {} of volume {}", k,
+                                    inf.volumeId);
+                        }
+                    }
+                    PDPage page = new PDPage(
+                            new PDRectangle(imgDim.get(imgKey).getWidth(), imgDim.get(imgKey).getHeight()));
+                    doc.addPage(page);
+                    PDImageXObject pdImage = PDImageXObject.createFromByteArray(doc, bmg, "");
+                    PDPageContentStream contents = new PDPageContentStream(doc, page);
+                    contents.drawImage(pdImage, 0, 0);
+                    log.debug("page was drawn for img {} ", bmg);
+                    contents.close();
+                }
+                k++;
+            }
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            COSWriter cw = new COSWriter(baos);
+            cw.write(doc);
+            cw.close();
+            log.debug("Closing doc after writing {} ", doc);
+            doc.close();
+            Application.logPerf("pdf document finished and closed for {} after {}", inf.volumeId,
+                    System.currentTimeMillis() - deb);
+            EHServerCache.IIIF.put(output.substring(4), baos.toByteArray());
+            EHServerCache.PDF_JOBS.put(output, true);
+        } catch (Exception e) {
+            log.error("Error while building pdf for identifier info " + inf.toString(), "");
+            throw new IIIFException(500, IIIFException.GENERIC_APP_ERROR_CODE, e);
+        }
+
+    }
+
     @SuppressWarnings({"unchecked", "rawtypes"})
     public static void buildZip(Access acc, IdentifierInfo inf, Identifier idf, String output, String origin)
             throws IIIFException {

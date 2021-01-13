@@ -32,9 +32,9 @@ import io.bdrc.iiif.metrics.MetricsTask;
 @EnableAutoConfiguration
 @EnableWebMvc
 @Primary
-@ComponentScan(basePackages = { "io.bdrc.iiif" })
+@ComponentScan(basePackages = {"io.bdrc.iiif"})
 
-//REMINDER : DO NOT REMOVE THE FOLLOWING COMMENTS
+// REMINDER : DO NOT REMOVE THE FOLLOWING COMMENTS
 /*
  * , excludeFilters = { @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE,
  * value = ReferencedResourcePersistenceTypeHandler.class),
@@ -139,6 +139,19 @@ public class Application extends SpringBootServletInitializer {
             }
         }
         return false;
+    }
+
+    public static boolean isPdfSync() {
+        String val = props.getProperty("pdfsync");
+        if (val == null) {
+            return false;
+        }
+        try {
+            return Boolean.parseBoolean(val);
+        } catch (Exception ex) {
+            return false;
+        }
+
     }
 
     @Override

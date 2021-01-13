@@ -43,6 +43,7 @@ public class IdentifierInfo {
         if (identifier.split("::").length > 1) {
             this.imageId = identifier.split("::")[1];
         }
+        log.info("IdentifierInfo parsed volumeId= {}", this.volumeId);
         try {
             this.igi = ImageGroupInfoService.Instance.getAsync(this.volumeId).get();
             this.ili = ImageInfoListService.Instance
@@ -183,6 +184,7 @@ public class IdentifierInfo {
     }
 
     private void parseIdentifier(String id) throws IIIFException {
+        log.info("IdentifierInfo parsing {}", id);
         this.identifier = id;
         try {
             if (!id.contains("::")) {

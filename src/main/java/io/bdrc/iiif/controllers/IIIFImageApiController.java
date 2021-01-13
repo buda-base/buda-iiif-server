@@ -210,10 +210,10 @@ public class IIIFImageApiController {
             // null,false);
             Application.logPerf("end reading from image service after {} ms for {} with reader {}",
                     (System.currentTimeMillis() - deb1), identifier, imgReader);
-            //final String canonicalForm = idi.getCanonical();
+            // final String canonicalForm = idi.getCanonical();
             // TODO: make it actually canonical...
-            //headers.add("Link", String.format("<%s>;rel=\"canonical\"",
-            //        Application.getProperty("iiifserv_baseurl") + canonicalForm));
+            // headers.add("Link", String.format("<%s>;rel=\"canonical\"",
+            // Application.getProperty("iiifserv_baseurl") + canonicalForm));
             deb1 = System.currentTimeMillis();
             Application.logPerf("processing image output stream for {}", identifier);
             os = new ByteArrayOutputStream();
@@ -262,7 +262,7 @@ public class IIIFImageApiController {
             HttpServletResponse res, WebRequest webRequest) throws ClientProtocolException, IOException, IIIFException,
             UnsupportedOperationException, UnsupportedFormatException, InterruptedException, ExecutionException {
         log.info("{identifier}/info.json endpoint getInfo() for id {}", identifier);
-        if (!identifier.equals("favicon.ico")) {
+        if (!identifier.contains("favicon")) {
             long deb = System.currentTimeMillis();
             long maxAge = Long.parseLong(Application.getProperty("maxage"));
             ObjectMapper objectMapper = new ObjectMapper();
@@ -275,7 +275,7 @@ public class IIIFImageApiController {
             log.info("Entering endpoint getInfo for {}", identifier);
             boolean unAuthorized = false;
             IdentifierInfo idi = new IdentifierInfo(identifier);
-            ImageService info = new ImageService(Application.getProperty("iiifserv_baseurl")+identifier);
+            ImageService info = new ImageService(Application.getProperty("iiifserv_baseurl") + identifier);
             updateInfo(idi, info);
             if (!staticImg) {
                 ResourceAccessValidation accValidation = null;
