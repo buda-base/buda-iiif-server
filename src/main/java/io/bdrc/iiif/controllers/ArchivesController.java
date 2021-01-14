@@ -180,8 +180,14 @@ public class ArchivesController {
         ResourceAccessValidation accValidation = new ResourceAccessValidation((Access) request.getAttribute("access"),
                 inf);
         if (Application.isPdfSync()) {
-            ArchiveBuilder.buildSyncPdf(accValidation.getAccess(), inf, idf, name,
-                    (String) request.getAttribute("origin"));
+            if (type.equals(ArchiveBuilder.PDF_TYPE)) {
+                ArchiveBuilder.buildSyncPdf(accValidation.getAccess(), inf, idf, name,
+                        (String) request.getAttribute("origin"));
+            }
+            if (type.equals(ArchiveBuilder.ZIP_TYPE)) {
+                ArchiveBuilder.buildSyncZip(accValidation.getAccess(), inf, idf, name,
+                        (String) request.getAttribute("origin"));
+            }
         }
         byte[] array = null;
         if (type.equals(ArchiveBuilder.PDF_TYPE)) {

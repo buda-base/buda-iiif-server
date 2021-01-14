@@ -245,6 +245,66 @@ public class ArchiveBuilder {
         }
     }
 
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public static void buildSyncZip(Access acc, IdentifierInfo inf, Identifier idf, String output, String origin)
+            throws IIIFException {
+        try {
+            long deb = System.currentTimeMillis();
+            Application.logPerf("Starting building zip {}", inf.volumeId);
+            Application.logPerf("S3 client obtained in building pdf {} after {} ", inf.volumeId,
+                    System.currentTimeMillis() - deb);
+            // TreeMap<Integer, Future<?>> t_map = new TreeMap<>();
+            TreeMap<Integer, String> images = new TreeMap<>();
+            List<ImageInfo> imgInfo = getImageInfos(idf, inf, acc);
+            int i = 1;
+            for (ImageInfo imf : imgInfo) {
+                ArchiveImageProducer tmp = new ArchiveImageProducer(inf, imf.filename, origin);
+
+            }
+            EHServerCache.ZIP_JOBS.put(output, false);
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ZipOutputStream zipOut = new ZipOutputStream(baos);
+            Application.logPerf("building zip stream opened {} after {}", inf.volumeId,
+                    System.currentTimeMillis() - deb);
+            int k = 1;
+            for (ImageInfo imf : imgInfo) {
+                if (imf.size == null || (imf.size != null
+                        && imf.size <= Integer.parseInt(Application.getProperty("imgSizeLimit")))) {
+                    Object[] obj = new ArchiveImageProducer(inf, imf.filename, origin).getImageAsBytes();
+                    byte[] bmg = (byte[]) obj[0];
+                    if (bmg == null) {
+                        // Trying to insert image indicating that original image
+                        // is
+                        // missing
+                        try {
+                            bmg = toByteArray(
+                                    ArchiveImageProducer.getBufferedMissingImage("Page " + k + " couldn't be found"));
+                        } catch (Exception e) {
+                            // We don't interrupt the pdf generation process
+                            log.error("Could not get Buffered Missing image from producer for page {} of volume {}", k,
+                                    inf.volumeId);
+                        }
+                    }
+                    ZipEntry zipEntry = new ZipEntry(imf.filename);
+                    zipOut.putNextEntry(zipEntry);
+                    zipOut.write(bmg);
+                    zipOut.closeEntry();
+                }
+                k++;
+            }
+            zipOut.close();
+            Application.logPerf("zip document finished and closed for {} after {}", inf.volumeId,
+                    System.currentTimeMillis() - deb);
+            EHServerCache.IIIF_ZIP.put(output.substring(3), baos.toByteArray());
+            log.info("Put zip file in cache with key {}", output.substring(3));
+            EHServerCache.ZIP_JOBS.put(output, true);
+            log.info("Put true in zip jobs cache for {}", output);
+        } catch (IOException e) {
+            log.error("Error while building zip archives ", e.getMessage());
+            throw new IIIFException(500, IIIFException.GENERIC_APP_ERROR_CODE, e);
+        }
+    }
+
     private static List<ImageInfo> getImageInfos(Identifier idf, IdentifierInfo inf, Access acc) throws IIIFException {
         Integer startPage = null;
         if (idf.getBPageNum() != null) {
