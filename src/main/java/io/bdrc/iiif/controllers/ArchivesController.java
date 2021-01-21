@@ -170,7 +170,7 @@ public class ArchivesController {
     @RequestMapping(value = "/download/file/{type}/{name}", method = {RequestMethod.GET, RequestMethod.HEAD})
     public ResponseEntity<ByteArrayResource> downloadPdf(@PathVariable String name, @PathVariable String type,
             HttpServletRequest request) throws Exception {
-        String[] nameParts = name.split(":");
+        String[] nameParts = name.replace("FAIR_USE", "").split(":");
         log.info("downloadPdf(name {} , type {})", name, type);
         Identifier idf = new Identifier("v:" + nameParts[0] + ":" + nameParts[1] + "::" + nameParts[2],
                 Identifier.MANIFEST_ID);
