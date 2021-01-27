@@ -30,16 +30,17 @@ public class HeaderFilter implements Filter {
     }
 
     @Override
-    public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
+    public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
+            throws IOException, ServletException {
         try {
             HttpServletRequest request = (HttpServletRequest) req;
             String orig = request.getHeader("Origin");
-            log.info("Origin in HeaderFilter: {}"+orig);
+            log.info("Origin in HeaderFilter: {}" + orig);
             if (orig == null) {
                 orig = "*";
             }
             String referer = request.getHeader("Referer");
-            log.info("referer in HeaderFilter: {}"+referer);
+            log.info("referer in HeaderFilter: {}" + referer);
             String ref_orig = "";
             if (referer == null) {
                 ref_orig = request.getHeader("Origin");
@@ -50,7 +51,7 @@ public class HeaderFilter implements Filter {
             } else {
                 String queryString = referer.substring(referer.indexOf("?") + 1);
                 String[] parts = queryString.split("&");
-                log.info("queryString parts {}",Arrays.asList(parts));
+                log.info("queryString parts {}", Arrays.asList(parts));
                 if (parts.length == 2) {
                     for (String p : parts) {
                         String[] pair = p.split("=");
@@ -58,7 +59,7 @@ public class HeaderFilter implements Filter {
                             ref_orig = pair[1];
                         }
                     }
-                    log.info("origin in parts {}",ref_orig);
+                    log.info("origin in parts {}", ref_orig);
                 } else {
                     URL ref = new URL(referer);
                     ref_orig = ref.getHost();
@@ -67,7 +68,7 @@ public class HeaderFilter implements Filter {
             if (ref_orig == null || ref_orig.equals("")) {
                 ref_orig = "unknown";
             }
-            log.info("final ref_orig {}",ref_orig);
+            log.info("final ref_orig {}", ref_orig);
             request.setAttribute("origin", ref_orig);
             HttpServletResponse response = (HttpServletResponse) res;
             response.setHeader("Access-Control-Allow-Origin", orig);
