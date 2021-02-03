@@ -262,78 +262,86 @@ public class IIIFImageApiController {
             HttpServletResponse res, WebRequest webRequest) throws ClientProtocolException, IOException, IIIFException,
             UnsupportedOperationException, UnsupportedFormatException, InterruptedException, ExecutionException {
         log.info("{identifier}/info.json endpoint getInfo() for id {}", identifier);
-        if (!identifier.contains("favicon")) {
-            long deb = System.currentTimeMillis();
-            long maxAge = Long.parseLong(Application.getProperty("maxage"));
-            ObjectMapper objectMapper = new ObjectMapper();
-            String img = "";
-            boolean staticImg = false;
-            if (identifier.split("::").length > 1) {
-                img = identifier.split("::")[1];
-                staticImg = identifier.split("::")[0].trim().equals("static");
-            }
-            log.info("Entering endpoint getInfo for {}", identifier);
-            boolean unAuthorized = false;
-            IdentifierInfo idi = new IdentifierInfo(identifier);
-            ImageService info = new ImageService(Application.getProperty("iiifserv_baseurl") + identifier);
-            updateInfo(idi, info);
-            if (!staticImg) {
-                ResourceAccessValidation accValidation = null;
-                accValidation = new ResourceAccessValidation((Access) req.getAttribute("access"), idi, img);
-                unAuthorized = !accValidation.isAccessible(req);
-            }
-            if (unAuthorized && serviceInfo.authEnabled() && serviceInfo.hasValidProperties()) {
-                info.addService(serviceInfo);
-            }
-            if (pngOutput(identifier)) {
-                info.setPreferredFormats(pngHint);
-            }
-            HttpHeaders headers = new HttpHeaders();
-            try {
-                headers.setDate("Last-Modified", getImageModificationDate(identifier).toEpochMilli());
-            } catch (IIIFException e) {
-                log.error("Resource was not found for identifier " + identifier + " Message: " + e.getMessage());
-                return new ResponseEntity<>("Resource was not found for identifier " + identifier,
-                        HttpStatus.NOT_FOUND);
-            }
-            if ("application/ld+json".equals(req.getHeader("Accept"))) {
-                headers.set("Content-Type", req.getHeader("Accept"));
-            } else {
-                headers.set("Content-Type", "application/json");
-                headers.add("Link", "<http://iiif.io/api/image/2/context.json>; "
-                        + "rel=\"http://www.w3.org/ns/json-ld#context\"; " + "type=\"application/ld+json\"");
-            }
-            headers.add("Link",
-                    String.format("<%s>;rel=\"profile\"", info.getProfiles().get(0).getIdentifier().toString()));
-            // We set the header ourselves, since using @CrossOrigin doesn't
-            // expose "*", but
-            // always sets the requesting domain
-            // headers.add("Access-Control-Allow-Origin", "*");
-            Application.logPerf("getInfo ready to return after {} ms for {}", (System.currentTimeMillis() - deb),
-                    identifier);
-            if (unAuthorized) {
-                if (serviceInfo.hasValidProperties() && serviceInfo.authEnabled()) {
-                    return new ResponseEntity<>(objectMapper.writeValueAsString(info), headers,
-                            HttpStatus.UNAUTHORIZED);
-                } else {
-                    headers.setCacheControl(CacheControl.noCache());
-                    return new ResponseEntity<>(objectMapper.writeValueAsString(info), headers, HttpStatus.FORBIDDEN);
-                }
-            } else {
-                if (idi.igi.access.equals(AccessType.OPEN)) {
-                    headers.setCacheControl(CacheControl.maxAge(maxAge, TimeUnit.MILLISECONDS).cachePublic());
-                } else {
-                    headers.setCacheControl(CacheControl.maxAge(maxAge, TimeUnit.MILLISECONDS).cachePrivate());
-                }
-                return new ResponseEntity<>(objectMapper.writeValueAsString(info), headers, HttpStatus.OK);
-            }
+        long deb = System.currentTimeMillis();
+        long maxAge = Long.parseLong(Application.getProperty("maxage"));
+        ObjectMapper objectMapper = new ObjectMapper();
+        String img = "";
+        boolean staticImg = false;
+        if (identifier.split("::").length > 1) {
+            img = identifier.split("::")[1];
+            staticImg = identifier.split("::")[0].trim().equals("static");
         }
-        return new ResponseEntity<>("favicon.ico", new HttpHeaders(), HttpStatus.OK);
+        log.info("Entering endpoint getInfo for {}", identifier);
+        boolean unAuthorized = false;
+        IdentifierInfo idi = new IdentifierInfo(identifier);
+        ImageService info = new ImageService(Application.getProperty("iiifserv_baseurl") + identifier);
+        ImageInfo imgInf = idi.getImageInfo(idi.imageName);
+        if (imgInf == null) {
+            log.error("couldn't find {} in image list");
+            return new ResponseEntity<>("Resource was not found (image not listed) for identifier " + identifier,
+                    HttpStatus.NOT_FOUND);
+        }
+        updateInfo(imgInf, info);
+        if (!staticImg) {
+            ResourceAccessValidation accValidation = null;
+            accValidation = new ResourceAccessValidation((Access) req.getAttribute("access"), idi, img);
+            unAuthorized = !accValidation.isAccessible(req);
+        }
+        if (unAuthorized && serviceInfo.authEnabled() && serviceInfo.hasValidProperties()) {
+            info.addService(serviceInfo);
+        }
+        if (pngOutput(identifier)) {
+            info.setPreferredFormats(pngHint);
+        }
+        HttpHeaders headers = new HttpHeaders();
+        try {
+            headers.setDate("Last-Modified", getImageModificationDate(identifier).toEpochMilli());
+        } catch (IIIFException e) {
+            log.error("Resource was not found for identifier " + identifier + " Message: " + e.getMessage());
+            return new ResponseEntity<>("Resource was not found for identifier " + identifier,
+                    HttpStatus.NOT_FOUND);
+        }
+        if ("application/ld+json".equals(req.getHeader("Accept"))) {
+            headers.set("Content-Type", req.getHeader("Accept"));
+        } else {
+            headers.set("Content-Type", "application/json");
+            headers.add("Link", "<http://iiif.io/api/image/2/context.json>; "
+                    + "rel=\"http://www.w3.org/ns/json-ld#context\"; " + "type=\"application/ld+json\"");
+        }
+        headers.add("Link",
+                String.format("<%s>;rel=\"profile\"", info.getProfiles().get(0).getIdentifier().toString()));
+        // We set the header ourselves, since using @CrossOrigin doesn't
+        // expose "*", but
+        // always sets the requesting domain
+        // headers.add("Access-Control-Allow-Origin", "*");
+        Application.logPerf("getInfo ready to return after {} ms for {}", (System.currentTimeMillis() - deb),
+                identifier);
+        if (unAuthorized) {
+            if (serviceInfo.hasValidProperties() && serviceInfo.authEnabled()) {
+                return new ResponseEntity<>(objectMapper.writeValueAsString(info), headers,
+                        HttpStatus.UNAUTHORIZED);
+            } else {
+                headers.setCacheControl(CacheControl.noCache());
+                return new ResponseEntity<>(objectMapper.writeValueAsString(info), headers, HttpStatus.FORBIDDEN);
+            }
+        } else {
+            if (idi.igi.access.equals(AccessType.OPEN)) {
+                headers.setCacheControl(CacheControl.maxAge(maxAge, TimeUnit.MILLISECONDS).cachePublic());
+            } else {
+                headers.setCacheControl(CacheControl.maxAge(maxAge, TimeUnit.MILLISECONDS).cachePrivate());
+            }
+            return new ResponseEntity<>(objectMapper.writeValueAsString(info), headers, HttpStatus.OK);
+        }
     }
 
     @RequestMapping(value = "{identifier}", method = {RequestMethod.GET, RequestMethod.HEAD})
     public void getInfoRedirect(@PathVariable String identifier, HttpServletRequest request,
             HttpServletResponse response) throws IOException {
+        if (!identifier.startsWith("bdr:")) {
+            log.info("Ignoring request to {}", identifier);
+            response.sendError(HttpStatus.NOT_FOUND.value(), "couldn't find the asked resource");
+            return;
+        }
         String base = Application.getProperty("iiifserv_baseurl");
         log.info("Identifier endpoint getInfoRedirect {} , {}", identifier, base);
         response.sendRedirect(base + identifier + "/info.json");
@@ -452,9 +460,7 @@ public class IIIFImageApiController {
         }
     }
 
-    private ImageService updateInfo(IdentifierInfo idi, ImageService info) {
-        ImageInfo imgInf = idi.getImageInfo(idi.imageName);
-        log.info("ImageInfo {}", imgInf);
+    private ImageService updateInfo(ImageInfo imgInf, ImageService info) {
         info.setWidth(imgInf.getWidth());
         info.setHeight(imgInf.getHeight());
         ImageApiProfile profile = new ImageApiProfile();
