@@ -22,6 +22,7 @@ import io.bdrc.auth.TokenValidation;
 import io.bdrc.auth.UserProfile;
 import io.bdrc.auth.model.Endpoint;
 import io.bdrc.iiif.core.Application;
+import io.bdrc.iiif.exceptions.IIIFException;
 
 @Component
 @Order(1)
@@ -66,18 +67,21 @@ public class IIIFRdfAuthFilter implements Filter {
                         // User is logged in
                         // Getting his profile
                         validation = new TokenValidation(token);
-                        log.info("AUTH VALIDATION {}", validation);
-                        prof = validation.getUser();
-                        log.info("validation is {}", validation);
-                        log.info("profile is {}", prof);
-                        req.setAttribute("access", new Access(prof, new Endpoint()));
+                        if (!validation.isValid()) {
+                            log.error("invalid token: {}", token);
+                            req.setAttribute("access", new Access());
+                        } else {
+                            prof = validation.getUser();
+                            log.info("validation is {}", validation);
+                            log.info("profile is {}", prof);
+                            req.setAttribute("access", new Access(prof, new Endpoint()));
+                        }
                     } else {
                         req.setAttribute("access", new Access());
                     }
                 } else {
                     req.setAttribute("access", new Access());
                 }
-                System.out.println("ACCESS WAS SET AS >>" + req.getAttribute("access"));
                 log.debug("REQUEST SET WITH ACCESS {}", req.getAttribute("access"));
             }
             chain.doFilter(req, res);
