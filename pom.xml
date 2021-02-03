@@ -88,7 +88,7 @@
     <dependency>
         <groupId>de.digitalcollections.imageio</groupId>
         <artifactId>imageio-turbojpeg</artifactId>
-        <version>0.4.1</version>               
+        <version>0.4.4</version>               
     </dependency>
     <!-- https://mvnrepository.com/artifact/de.digitalcollections.imageio/imageio-openjpeg -->
     <dependency>
