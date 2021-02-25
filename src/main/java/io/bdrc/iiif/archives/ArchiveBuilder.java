@@ -50,7 +50,6 @@ public class ArchiveBuilder {
         long deb = System.currentTimeMillis();
         try {
             Application.logPerf("Starting building pdf {}", inf.volumeId);
-            ExecutorService service = Executors.newFixedThreadPool(25);
             Application.logPerf("S3 client obtained in building pdf {} after {} ", inf.volumeId,
                     System.currentTimeMillis() - deb);
             TreeMap<Integer, Future<?>> t_map = new TreeMap<>();

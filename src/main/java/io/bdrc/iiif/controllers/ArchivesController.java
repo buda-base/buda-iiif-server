@@ -123,9 +123,9 @@ public class ArchivesController {
                 }
                 log.info("Built outpui is {}", output);
                 if (type.equals(ArchiveBuilder.PDF_TYPE)) {
-                    Object pdf_cached = EHServerCache.IIIF.get(output);
+                    Boolean pdf_cached = EHServerCache.IIIF.containsKey(output);
                     log.debug("PDF " + id + " from IIIF cache >>" + pdf_cached);
-                    if (pdf_cached == null) {
+                    if (pdf_cached) {
                         // Build pdf since the pdf file doesn't exist yet
                         if (!Application.isPdfSync()) {
                             ArchiveBuilder.buildPdf(accValidation.getAccess(), inf, idf, output,
@@ -134,9 +134,9 @@ public class ArchivesController {
                     }
                 }
                 if (type.equals(ArchiveBuilder.ZIP_TYPE)) {
-                    Object zip_cached = EHServerCache.IIIF_ZIP.get(output);
+                    Boolean zip_cached = EHServerCache.IIIF_ZIP.containsKey(output);
                     log.debug("ZIP " + id + " from IIIF_ZIP cache >>" + zip_cached);
-                    if (zip_cached == null) {
+                    if (zip_cached) {
                         // Build pdf since the pdf file doesn't exist yet
                         if (!Application.isPdfSync()) {
                             ArchiveBuilder.buildZip(accValidation.getAccess(), inf, idf, output,
