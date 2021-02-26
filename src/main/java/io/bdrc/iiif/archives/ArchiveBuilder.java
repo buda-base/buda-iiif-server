@@ -121,6 +121,7 @@ public class ArchiveBuilder {
             throws IIIFException {
         long deb = System.currentTimeMillis();
         try {
+            log.error("generate PDF for {}", output);
             Application.logPerf("Starting building pdf {}", inf.volumeId);
             List<ImageInfo> imgInfo = getImageInfos(idf, inf, acc);
             HashMap<String, ImageInfo> imgDim = new HashMap<>();
