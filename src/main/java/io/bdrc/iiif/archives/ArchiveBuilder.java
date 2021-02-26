@@ -68,7 +68,7 @@ public class ArchiveBuilder {
                 }
             }
             log.info("Setting output {} to false", output);
-            EHServerCache.PDF_JOBS.put(output, false);
+            EHServerCache.PDF_JOBS.put(output, true);
             PDDocument doc = new PDDocument();
             doc.setDocumentInformation(ArchiveInfo.getInstance(inf).getDocInformation());
             Application.logPerf("building pdf writer and document opened {} after {}", inf.volumeId,
@@ -108,7 +108,7 @@ public class ArchiveBuilder {
             Application.logPerf("pdf document finished and closed for {} after {}", inf.volumeId,
                     System.currentTimeMillis() - deb);
             EHServerCache.IIIF.put(output, baos.toByteArray());
-            EHServerCache.PDF_JOBS.put(output, true);
+            EHServerCache.PDF_JOBS.put(output, false);
         } catch (ExecutionException | InterruptedException e) {
             log.error("Error while building pdf for identifier info " + inf.toString(), "");
             throw new IIIFException(500, IIIFException.GENERIC_APP_ERROR_CODE, e);
@@ -125,7 +125,7 @@ public class ArchiveBuilder {
             List<ImageInfo> imgInfo = getImageInfos(idf, inf, acc);
             HashMap<String, ImageInfo> imgDim = new HashMap<>();
             log.info("Setting output {} ", output);
-            EHServerCache.PDF_JOBS.put(output, false);
+            EHServerCache.PDF_JOBS.put(output, true);
             PDDocument doc = new PDDocument();
             doc.setDocumentInformation(ArchiveInfo.getInstance(inf).getDocInformation());
             Application.logPerf("building pdf writer and document opened {} after {}", inf.volumeId,
@@ -171,7 +171,7 @@ public class ArchiveBuilder {
             Application.logPerf("pdf document finished and closed for {} after {}", inf.volumeId,
                     System.currentTimeMillis() - deb);
             EHServerCache.IIIF.put(output, baos.toByteArray());
-            EHServerCache.PDF_JOBS.put(output, true);
+            EHServerCache.PDF_JOBS.put(output, false);
         } catch (Exception e) {
             log.error("Error while building pdf for identifier info " + inf.toString(), "");
             throw new IIIFException(500, IIIFException.GENERIC_APP_ERROR_CODE, e);
@@ -200,7 +200,7 @@ public class ArchiveBuilder {
                 images.put(i, imf.filename);
                 i += 1;
             }
-            EHServerCache.ZIP_JOBS.put(output, false);
+            EHServerCache.ZIP_JOBS.put(output, true);
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             ZipOutputStream zipOut = new ZipOutputStream(baos);
             Application.logPerf("building zip stream opened {} after {}", inf.volumeId,
@@ -236,7 +236,7 @@ public class ArchiveBuilder {
                     System.currentTimeMillis() - deb);
             EHServerCache.IIIF_ZIP.put(output, baos.toByteArray());
             log.info("Put zip file in cache with key {}", output.substring(3));
-            EHServerCache.ZIP_JOBS.put(output, true);
+            EHServerCache.ZIP_JOBS.put(output, false);
             log.info("Put true in zip jobs cache for {}", output);
         } catch (IOException | ExecutionException | InterruptedException e) {
             log.error("Error while building zip archives ", e.getMessage());
@@ -260,7 +260,7 @@ public class ArchiveBuilder {
                 ArchiveImageProducer tmp = new ArchiveImageProducer(inf, imf.filename, origin);
 
             }
-            EHServerCache.ZIP_JOBS.put(output, false);
+            EHServerCache.ZIP_JOBS.put(output, true);
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             ZipOutputStream zipOut = new ZipOutputStream(baos);
             Application.logPerf("building zip stream opened {} after {}", inf.volumeId,
@@ -296,7 +296,7 @@ public class ArchiveBuilder {
                     System.currentTimeMillis() - deb);
             EHServerCache.IIIF_ZIP.put(output, baos.toByteArray());
             log.info("Put zip file in cache with key {}", output.substring(3));
-            EHServerCache.ZIP_JOBS.put(output, true);
+            EHServerCache.ZIP_JOBS.put(output, false);
             log.info("Put true in zip jobs cache for {}", output);
         } catch (IOException e) {
             log.error("Error while building zip archives ", e.getMessage());
@@ -309,7 +309,7 @@ public class ArchiveBuilder {
         if (idf.getBPageNum() != null) {
             startPage = idf.getBPageNum();
         } else {
-            startPage = new Integer(1);
+            startPage = 1;
         }
         Integer endPage = null;
         if (idf.getEPageNum() != null) {
@@ -330,22 +330,12 @@ public class ArchiveBuilder {
     }
 
     public static boolean isPdfDone(String id) {
-        log.debug("IS PDF DONE job " + id);
-        if (EHServerCache.PDF_JOBS.get(id) == null) {
-            log.debug("IS PDF DONE null in cache for " + id);
-            return false;
-        }
-        log.debug("IS PDF DONE returns from cache value for " + id + ">>" + (boolean) EHServerCache.PDF_JOBS.get(id));
-        return (boolean) EHServerCache.PDF_JOBS.get(id);
+        log.debug("IS PDF DONE job {}", id);
+        return EHServerCache.IIIF.containsKey(id);
     }
 
     public static boolean isZipDone(String id) {
-        log.debug("IS ZIP DONE job " + id);
-        if (EHServerCache.ZIP_JOBS.get(id) == null) {
-            log.debug("IS ZIP DONE null in cache for " + id);
-            return false;
-        }
-        log.debug("IS ZIP DONE returns from cache value for " + id + ">>" + (boolean) EHServerCache.ZIP_JOBS.get(id));
-        return (boolean) EHServerCache.ZIP_JOBS.get(id);
+        log.debug("IS ZIP DONE job {}", id);
+        return EHServerCache.IIIF_ZIP.containsKey(id);
     }
 }

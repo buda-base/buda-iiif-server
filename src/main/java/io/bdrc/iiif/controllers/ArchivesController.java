@@ -124,10 +124,13 @@ public class ArchivesController {
                 }
                 log.info("Built output is {}", output);
                 Boolean cached = false;
+                Boolean jobstarted = false;
                 if (type.equals(ArchiveBuilder.PDF_TYPE)) {
+                    if (EHServerCache.ZIP_JOBS.containsKey(output))
+                        jobstarted = EHServerCache.ZIP_JOBS.get(output);
                     cached = EHServerCache.IIIF.containsKey(output);
-                    log.error("PDF {} from IIIF cache >> {}", id, cached);
-                    if (!cached) {
+                    log.debug("PDF {} from IIIF cached {}, jobstarted: {}", id, cached, jobstarted);
+                    if (!cached && !jobstarted) {
                         // Start building pdf since the pdf file doesn't exist yet
                         if (!Application.isPdfSync()) {
                             ArchiveBuilder.service.submit(new ArchiveProducer(accValidation.getAccess(), inf, idf, output,
@@ -139,8 +142,10 @@ public class ArchivesController {
                 }
                 if (type.equals(ArchiveBuilder.ZIP_TYPE)) {
                     cached = EHServerCache.IIIF_ZIP.containsKey(output);
-                    log.error("ZIP {} from IIIF_ZIP cache >> {}", id, cached);
-                    if (!cached) {
+                    if (EHServerCache.ZIP_JOBS.containsKey(output))
+                        jobstarted = EHServerCache.ZIP_JOBS.get(output);
+                    log.debug("ZIP {} from IIIF_ZIP cached: {}, jobstarted: {}", id, cached, jobstarted);
+                    if (!cached && !jobstarted) {
                         // Build pdf since the pdf file doesn't exist yet
                         if (!Application.isPdfSync()) {
                             ArchiveBuilder.buildZip(accValidation.getAccess(), inf, idf, output,
@@ -150,7 +155,7 @@ public class ArchivesController {
                         }
                     }
                 }
-                log.error("sync mode: {}", Application.isPdfSync());
+                //log.error("sync mode: {}", Application.isPdfSync());
                 if (cached || Application.isPdfSync()) {
                     // Create template and serve html link
                     map.put("links", Application.getProperty("iiifserv_baseurl") + "download/file/" + type + "/" + output);
