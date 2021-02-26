@@ -46,7 +46,17 @@ public class ArchiveImageProducer implements Callable {
         }
     }
 
-    public Object[] getImageAsBytes() throws MalformedURLException, IOException, IIIFException {
+    public Object[] getImageAsBytes() throws IIIFException {
+        return getImageAsBytes(this.id, this.imageName, this.origin, this.isTiff);
+    }
+    
+    static public Object[] getImageAsBytes(IdentifierInfo inf, String imgId, String origin) throws IIIFException {
+        String id = ImageProviderService.getKeyPrefix(inf) + imgId;
+        String imageName = id.substring(id.lastIndexOf("/") + 1);
+        return getImageAsBytes(id, imageName, origin, false);
+    }
+    
+    static public Object[] getImageAsBytes(String id, String imageName, String origin, boolean isTiff) throws IIIFException {
         Object[] obj = new Object[2];
         obj[1] = imageName;
         byte[] imgbytes = null;
@@ -87,11 +97,7 @@ public class ArchiveImageProducer implements Callable {
 
     @Override
     public Object call() throws IIIFException {
-        try {
-            return getImageAsBytes();
-        } catch (IOException e) {
-            throw new IIIFException(500, IIIFException.GENERIC_APP_ERROR_CODE, e);
-        }
+        return getImageAsBytes();
     }
 
 }

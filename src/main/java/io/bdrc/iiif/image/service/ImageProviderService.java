@@ -24,8 +24,8 @@ import io.bdrc.libraries.GlobalHelpers;
 
 public class ImageProviderService extends ConcurrentResourceService<byte[]> {
 
-    private static final ClientConfiguration config = new ClientConfiguration().withConnectionTimeout(300000).withMaxConnections(50)
-            .withMaxErrorRetry(100).withSocketTimeout(300000);
+    private static final ClientConfiguration config = new ClientConfiguration().withConnectionTimeout(3000).withMaxConnections(50)
+            .withMaxErrorRetry(5).withSocketTimeout(3000);
     // TODO: get from config
     final static String bucketNameArchive = "archive.tbrc.org";
     final static String bucketNameStatic = "static-images.bdrc.io";
@@ -87,8 +87,7 @@ public class ImageProviderService extends ConcurrentResourceService<byte[]> {
                     throw new IIIFException(500, 5000, e);
                 }
             } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+                throw new IIIFException(500, 5000, e);
             }
 
         case Application.DISK_SOURCE:

@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -124,13 +125,12 @@ public class ArchivesController {
                 }
                 log.info("Built output is {}", output);
                 Boolean cached = false;
-                Boolean jobstarted = false;
+                Double percentdone = null;
                 if (type.equals(ArchiveBuilder.PDF_TYPE)) {
-                    if (EHServerCache.PDF_JOBS.containsKey(output))
-                        jobstarted = EHServerCache.PDF_JOBS.get(output);
+                    percentdone = ArchiveBuilder.pdfjobs.get(output);
                     cached = EHServerCache.IIIF.containsKey(output);
-                    log.error("PDF {} from IIIF cached {}, jobstarted: {}", id, cached, jobstarted);
-                    if (!cached && !jobstarted) {
+                    log.error("PDF {} from IIIF cached {}, jobstarted: {}", id, cached, percentdone);
+                    if (!cached && percentdone == null) {
                         // Start building pdf since the pdf file doesn't exist yet
                         if (!Application.isPdfSync()) {
                             ArchiveBuilder.service.submit(new ArchiveProducer(accValidation.getAccess(), inf, idf, output,
@@ -142,10 +142,9 @@ public class ArchivesController {
                 }
                 if (type.equals(ArchiveBuilder.ZIP_TYPE)) {
                     cached = EHServerCache.IIIF_ZIP.containsKey(output);
-                    if (EHServerCache.ZIP_JOBS.containsKey(output))
-                        jobstarted = EHServerCache.ZIP_JOBS.get(output);
-                    log.debug("ZIP {} from IIIF_ZIP cached: {}, jobstarted: {}", id, cached, jobstarted);
-                    if (!cached && !jobstarted) {
+                    percentdone = ArchiveBuilder.zipjobs.get(output);
+                    log.debug("ZIP {} from IIIF_ZIP cached: {}, jobstarted: {}", id, cached, percentdone);
+                    if (!cached &&  percentdone == null) {
                         // Build pdf since the pdf file doesn't exist yet
                         if (!Application.isPdfSync()) {
                             ArchiveBuilder.buildZip(accValidation.getAccess(), inf, idf, output,
@@ -170,12 +169,18 @@ public class ArchivesController {
                         html = s.replace(html);
                     }
                 } else {
+                    if (percentdone == null)
+                        percentdone = 0.;
+                    final long percentint = Math.round(percentdone * 100);
+                    map.put("percentdone", String.valueOf(percentint));
                     if (json) {
                         map.put("status", "generating");
                         ObjectMapper mapper = new ObjectMapper();
                         html = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(map);
                     } else {
                         html = getTemplate("pdfGenerating.tpl");
+                        s = new StringSubstitutor(map);
+                        html = s.replace(html);
                     }
                 }
                 break;
@@ -214,12 +219,12 @@ public class ArchivesController {
         }
         byte[] array = null;
         if (type.equals(ArchiveBuilder.PDF_TYPE)) {
-            array = (byte[]) EHServerCache.IIIF.get(name.substring(4));
-            log.info("READ for key {} from cache " + IIIF + " name=" + name + " " + array, name.substring(4));
+            array = (byte[]) EHServerCache.IIIF.get(name);
+            log.info("READ from cache {} name={}", IIIF, name);
         }
         if (type.equals(ArchiveBuilder.ZIP_TYPE)) {
-            array = (byte[]) EHServerCache.IIIF_ZIP.get(name.substring(3));
-            log.info("READ for key {} from cache " + IIIF_ZIP + " name=" + name + " " + array, name.substring(3));
+            array = (byte[]) EHServerCache.IIIF_ZIP.get(name);
+            log.info("READ from cache {} name={}", IIIF_ZIP, name);
         }
         HttpHeaders headers = new HttpHeaders();
         if (array == null) {
@@ -237,30 +242,51 @@ public class ArchivesController {
     }
 
     @RequestMapping(value = "/download/job/{type}/{id}", method = {RequestMethod.GET, RequestMethod.HEAD})
-    public ResponseEntity<String> jobState(@PathVariable String id, @PathVariable String type) throws Exception {
+    public ResponseEntity<String> jobState(@PathVariable String id, @PathVariable String type,
+            HttpServletRequest request) throws Exception {
         log.info("jobState(id {}, type {})", id, type);
         Identifier idf = new Identifier(id, Identifier.MANIFEST_ID);
         Integer bPage = idf.getBPageNum();
+        IdentifierInfo inf = new IdentifierInfo(idf.getImageGroupId());
         if (bPage == null) {
             bPage = 1;
         }
         Integer ePage = idf.getEPageNum();
         if (ePage == null) {
-            IdentifierInfo inf = new IdentifierInfo(idf.getImageGroupId());
             ePage = inf.getTotalPages();
         }
         String url = Application.getProperty("iiifserv_baseurl") + "download/file/" + type + "/" + idf.getImageGroupId()
                 + ":" + bPage + "-" + ePage + "." + type;
-        boolean done = false;
+        Boolean cached = false;
+        Double percentdone = null;
+        ResourceAccessValidation accValidation = new ResourceAccessValidation(
+                (Access) request.getAttribute("access"), inf);
+        AccessLevel al = accValidation.getAccessLevel(request);
+        final String output;
+        if (al.equals(AccessLevel.FAIR_USE)) {
+            output = idf.getImageGroupId() + "FAIR_USE:" + bPage.intValue() + "-" + ePage.intValue();// +"."+type;
+        } else {
+            output = idf.getImageGroupId() + ":" + bPage.intValue() + "-" + ePage.intValue();// +"."+type;
+        }
         if (type.equals(ArchiveBuilder.PDF_TYPE)) {
-            done = ArchiveBuilder.isPdfDone(idf.getImageGroupId() + ":" + bPage + "-" + ePage + ".pdf");
+            cached = EHServerCache.IIIF.containsKey(output);
+            percentdone = ArchiveBuilder.pdfjobs.get(output);
         }
         if (type.equals(ArchiveBuilder.ZIP_TYPE)) {
-            done = ArchiveBuilder.isZipDone(idf.getImageGroupId() + ":" + bPage + "-" + ePage + ".zip");
+            cached = EHServerCache.IIIF_ZIP.containsKey(output);
+            percentdone = ArchiveBuilder.zipjobs.get(output);
         }
         HashMap<String, Object> json = new HashMap<>();
-        json.put("done", done);
-        json.put("link", url);
+        if (cached) {
+            json.put("status", "done");
+            json.put("link", url);
+        } else if (percentdone != null) {
+            json.put("status", "generating");
+            final long percentint = Math.round(percentdone * 100);
+            json.put("percentdone", String.valueOf(percentint));
+        } else {
+            json.put("status", "notrunning");
+        }
         ObjectMapper mapper = new ObjectMapper();
         String html = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(json);
         HttpHeaders headers = new HttpHeaders();
@@ -269,7 +295,10 @@ public class ArchivesController {
         return response;
     }
 
+    public static Map<String,String> templatesCache = new HashMap<>();
     public static String getTemplate(String template) {
+        if (templatesCache.containsKey(template))
+            return templatesCache.get(template);
         InputStream stream = ArchivesController.class.getClassLoader().getResourceAsStream("templates/" + template);
         BufferedReader buffer = new BufferedReader(new InputStreamReader(stream));
         StringBuffer sb = new StringBuffer();
@@ -282,7 +311,9 @@ public class ArchivesController {
         } catch (IOException e) {
             log.error("Could not get template as resource {}", template);
         }
-        return sb.toString();
+        String res = sb.toString();
+        templatesCache.put(template, res);
+        return res;
     }
 
     public String getVolumeDownLoadLinks(PdfItemInfo item, Identifier idf, String type)

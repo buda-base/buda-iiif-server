@@ -5,8 +5,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -43,18 +45,23 @@ public class ArchiveBuilder {
     public final static Logger log = LoggerFactory.getLogger(ArchiveBuilder.class.getName());
 
     public static ExecutorService service = Executors.newFixedThreadPool(50);
+    
+    public static Map<String, Double> pdfjobs = new ConcurrentHashMap<>();
+    public static Map<String, Double> zipjobs = new ConcurrentHashMap<>();
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     public static void buildPdf(Access acc, IdentifierInfo inf, Identifier idf, String output, String origin)
             throws Exception {
         long deb = System.currentTimeMillis();
         try {
+            pdfjobs.put(output, 0.);
             Application.logPerf("Starting building pdf {}", inf.volumeId);
             Application.logPerf("S3 client obtained in building pdf {} after {} ", inf.volumeId,
                     System.currentTimeMillis() - deb);
             TreeMap<Integer, Future<?>> t_map = new TreeMap<>();
             HashMap<String, ImageInfo> imgDim = new HashMap<>();
             List<ImageInfo> imgInfo = getImageInfos(idf, inf, acc);
+            final int totalImages = imgInfo.size();
             int i = 1;
             for (ImageInfo imgInf : imgInfo) {
                 if (imgInf.size == null || imgInf.size <= Integer.parseInt(Application.getProperty("imgSizeLimit"))) {
@@ -68,7 +75,6 @@ public class ArchiveBuilder {
                 }
             }
             log.info("Setting output {} to false", output);
-            EHServerCache.PDF_JOBS.put(output, true);
             PDDocument doc = new PDDocument();
             doc.setDocumentInformation(ArchiveInfo.getInstance(inf).getDocInformation());
             Application.logPerf("building pdf writer and document opened {} after {}", inf.volumeId,
@@ -98,6 +104,11 @@ public class ArchiveBuilder {
                 contents.drawImage(pdImage, 0, 0);
                 log.debug("page was drawn for img {} ", bmg);
                 contents.close();
+                if (k % 5 == 0) {
+                    // every 5 images, update the percentage
+                    final double rate = k/totalImages;
+                    pdfjobs.put(output, rate);
+                }
             }
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             COSWriter cw = new COSWriter(baos);
@@ -108,10 +119,11 @@ public class ArchiveBuilder {
             Application.logPerf("pdf document finished and closed for {} after {}", inf.volumeId,
                     System.currentTimeMillis() - deb);
             EHServerCache.IIIF.put(output, baos.toByteArray());
-            EHServerCache.PDF_JOBS.put(output, false);
         } catch (ExecutionException | InterruptedException e) {
             log.error("Error while building pdf for identifier info " + inf.toString(), "");
             throw new IIIFException(500, IIIFException.GENERIC_APP_ERROR_CODE, e);
+        } finally {
+            pdfjobs.remove(output);
         }
 
     }
@@ -121,24 +133,24 @@ public class ArchiveBuilder {
             throws IIIFException {
         long deb = System.currentTimeMillis();
         try {
+            pdfjobs.put(output, 0.);
             log.error("generate PDF for {}", output);
             Application.logPerf("Starting building pdf {}", inf.volumeId);
             List<ImageInfo> imgInfo = getImageInfos(idf, inf, acc);
+            final int totalImages = imgInfo.size();
             HashMap<String, ImageInfo> imgDim = new HashMap<>();
             log.info("Setting output {} ", output);
-            EHServerCache.PDF_JOBS.put(output, true);
             PDDocument doc = new PDDocument();
             doc.setDocumentInformation(ArchiveInfo.getInstance(inf).getDocInformation());
             Application.logPerf("building pdf writer and document opened {} after {}", inf.volumeId,
                     System.currentTimeMillis() - deb);
             int k = 1;
-            log.error("breakpoint 2");
             for (ImageInfo imgInf : imgInfo) {
                 if (imgInf.size == null || imgInf.size <= Integer.parseInt(Application.getProperty("imgSizeLimit"))) {
                     log.error("adding {}", imgInf.filename);
                     imgDim.put(imgInf.filename, imgInf);
                     // ArchiveImageProducer tmp = null;
-                    Object[] obj = new ArchiveImageProducer(inf, imgInf.filename, origin).getImageAsBytes();
+                    Object[] obj = ArchiveImageProducer.getImageAsBytes(inf, imgInf.filename, origin);
                     byte[] bmg = (byte[]) obj[0];
                     String imgKey = (String) obj[1];
                     if (bmg == null) {
@@ -163,6 +175,11 @@ public class ArchiveBuilder {
                     log.error("page was drawn for img {}", imgInf.filename);
                     contents.close();
                 }
+                if (k % 5 == 0) {
+                    // every 5 images, update the percentage
+                    final double rate = k/totalImages;
+                    pdfjobs.put(output, rate);
+                }
                 k++;
             }
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -174,20 +191,19 @@ public class ArchiveBuilder {
             Application.logPerf("pdf document finished and closed for {} after {}", inf.volumeId,
                     System.currentTimeMillis() - deb);
             EHServerCache.IIIF.put(output, baos.toByteArray());
-            EHServerCache.PDF_JOBS.put(output, false);
         } catch (Exception e) {
             log.error("Error while building pdf for identifier info {}", inf.toString());
             throw new IIIFException(500, IIIFException.GENERIC_APP_ERROR_CODE, e);
+        } finally {
+            pdfjobs.remove(output);
         }
-
     }
-    
-    
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     public static void buildZip(Access acc, IdentifierInfo inf, Identifier idf, String output, String origin)
             throws IIIFException {
         try {
+            zipjobs.put(output, 0.);
             long deb = System.currentTimeMillis();
             Application.logPerf("Starting building zip {}", inf.volumeId);
             Application.logPerf("S3 client obtained in building pdf {} after {} ", inf.volumeId,
@@ -195,6 +211,7 @@ public class ArchiveBuilder {
             TreeMap<Integer, Future<?>> t_map = new TreeMap<>();
             TreeMap<Integer, String> images = new TreeMap<>();
             List<ImageInfo> imgInfo = getImageInfos(idf, inf, acc);
+            final int totalImages = imgInfo.size();
             int i = 1;
             for (ImageInfo imf : imgInfo) {
                 ArchiveImageProducer tmp = new ArchiveImageProducer(inf, imf.filename, origin);
@@ -203,7 +220,6 @@ public class ArchiveBuilder {
                 images.put(i, imf.filename);
                 i += 1;
             }
-            EHServerCache.ZIP_JOBS.put(output, true);
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             ZipOutputStream zipOut = new ZipOutputStream(baos);
             Application.logPerf("building zip stream opened {} after {}", inf.volumeId,
@@ -233,17 +249,23 @@ public class ArchiveBuilder {
                 zipOut.putNextEntry(zipEntry);
                 zipOut.write(img);
                 zipOut.closeEntry();
+                if (k % 5 == 0) {
+                    // every 5 images, update the percentage
+                    final double rate = k/totalImages;
+                    pdfjobs.put(output, rate);
+                }
             }
             zipOut.close();
             Application.logPerf("zip document finished and closed for {} after {}", inf.volumeId,
                     System.currentTimeMillis() - deb);
             EHServerCache.IIIF_ZIP.put(output, baos.toByteArray());
             log.info("Put zip file in cache with key {}", output.substring(3));
-            EHServerCache.ZIP_JOBS.put(output, false);
             log.info("Put true in zip jobs cache for {}", output);
         } catch (IOException | ExecutionException | InterruptedException e) {
             log.error("Error while building zip archives ", e.getMessage());
             throw new IIIFException(500, IIIFException.GENERIC_APP_ERROR_CODE, e);
+        } finally {
+            zipjobs.remove(output);
         }
     }
 
@@ -251,6 +273,7 @@ public class ArchiveBuilder {
     public static void buildSyncZip(Access acc, IdentifierInfo inf, Identifier idf, String output, String origin)
             throws IIIFException {
         try {
+            zipjobs.put(output, 0.);
             long deb = System.currentTimeMillis();
             Application.logPerf("Starting building zip {}", inf.volumeId);
             Application.logPerf("S3 client obtained in building pdf {} after {} ", inf.volumeId,
@@ -263,7 +286,6 @@ public class ArchiveBuilder {
                 ArchiveImageProducer tmp = new ArchiveImageProducer(inf, imf.filename, origin);
 
             }
-            EHServerCache.ZIP_JOBS.put(output, true);
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             ZipOutputStream zipOut = new ZipOutputStream(baos);
             Application.logPerf("building zip stream opened {} after {}", inf.volumeId,
@@ -299,11 +321,12 @@ public class ArchiveBuilder {
                     System.currentTimeMillis() - deb);
             EHServerCache.IIIF_ZIP.put(output, baos.toByteArray());
             log.info("Put zip file in cache with key {}", output.substring(3));
-            EHServerCache.ZIP_JOBS.put(output, false);
             log.info("Put true in zip jobs cache for {}", output);
         } catch (IOException e) {
             log.error("Error while building zip archives ", e.getMessage());
             throw new IIIFException(500, IIIFException.GENERIC_APP_ERROR_CODE, e);
+        } finally {
+            zipjobs.remove(output);
         }
     }
 
@@ -330,15 +353,5 @@ public class ArchiveBuilder {
         byte[] imageInByte = baos.toByteArray();
         baos.close();
         return imageInByte;
-    }
-
-    public static boolean isPdfDone(String id) {
-        log.debug("IS PDF DONE job {}", id);
-        return EHServerCache.IIIF.containsKey(id);
-    }
-
-    public static boolean isZipDone(String id) {
-        log.debug("IS ZIP DONE job {}", id);
-        return EHServerCache.IIIF_ZIP.containsKey(id);
     }
 }

@@ -6,7 +6,7 @@
 <title>Archive Generating...</title>
 </head>
 <body>
-    <h3>Generating...</h3>
+    <h3>Generating... ${percentdone}%</h3>
     <p>This page should auto-reload until the generation is finished</p>
 </body>
 </html>

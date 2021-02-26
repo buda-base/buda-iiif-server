@@ -37,8 +37,6 @@ public class EHServerCache {
     public static Cache<String, byte[]> IIIF_ZIP;
     public static Cache<String, byte[]> IIIF;
     public static Cache<String, PdfItemInfo> PDF_ITEM_INFO;
-    public static Cache<String, Boolean> PDF_JOBS;
-    public static Cache<String, Boolean> ZIP_JOBS;
     public static Cache<String, ArchiveInfo> ARCHIVE_INFO;
     public static Cache<String, ImageGroupInfo> IMAGE_GROUP_INFO;
     public static Cache<String, List> IMAGE_LIST_INFO;
@@ -90,18 +88,6 @@ public class EHServerCache {
         MAP.put("pdfItemInfo", new CacheWrapper(PDF_ITEM_INFO, "pdfItemInfo"));
         MAP_MEM.put("pdfItemInfo", new CacheWrapper(PDF_ITEM_INFO, "pdfItemInfo"));
         CACHE_STATS.put("pdfItemInfo", statsService.getCacheStatistics("pdfItemInfo"));
-
-        PDF_JOBS = cacheManager.createCache("pdfjobs", CacheConfigurationBuilder.newCacheConfigurationBuilder(String.class, Boolean.class,
-                ResourcePoolsBuilder.newResourcePoolsBuilder().heap(500, EntryUnit.ENTRIES)));
-        MAP.put("pdfjobs", new CacheWrapper(PDF_JOBS, "pdfjobs"));
-        MAP_MEM.put("pdfjobs", new CacheWrapper(PDF_JOBS, "pdfjobs"));
-        CACHE_STATS.put("pdfjobs", statsService.getCacheStatistics("pdfjobs"));
-
-        ZIP_JOBS = cacheManager.createCache("zipjobs", CacheConfigurationBuilder.newCacheConfigurationBuilder(String.class, Boolean.class,
-                ResourcePoolsBuilder.newResourcePoolsBuilder().heap(500, EntryUnit.ENTRIES)));
-        MAP.put("zipjobs", new CacheWrapper(ZIP_JOBS, "zipjobs"));
-        MAP_MEM.put("zipjobs", new CacheWrapper(ZIP_JOBS, "zipjobs"));
-        CACHE_STATS.put("zipjobs", statsService.getCacheStatistics("zipjobs"));
 
         ARCHIVE_INFO = cacheManager.createCache("archiveInfo", CacheConfigurationBuilder.newCacheConfigurationBuilder(String.class, ArchiveInfo.class,
                 ResourcePoolsBuilder.newResourcePoolsBuilder().heap(500, EntryUnit.ENTRIES)));
@@ -208,8 +194,6 @@ public class EHServerCache {
             IIIF_ZIP.clear();
             IIIF.clear();
             PDF_ITEM_INFO.clear();
-            PDF_JOBS.clear();
-            ZIP_JOBS.clear();
             ARCHIVE_INFO.clear();
             return true;
         } catch (Exception ex) {
