@@ -122,7 +122,7 @@ public class ArchivesController {
                 } else {
                     output = idf.getImageGroupId() + ":" + bPage.intValue() + "-" + ePage.intValue();// +"."+type;
                 }
-                log.info("Built outpui is {}", output);
+                log.info("Built output is {}", output);
                 Boolean cached = false;
                 if (type.equals(ArchiveBuilder.PDF_TYPE)) {
                     cached = EHServerCache.IIIF.containsKey(output);

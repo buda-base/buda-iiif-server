@@ -254,7 +254,7 @@ public class ReadImageProcess {
             raf.seek(raf.length());
             raf.writeBytes(identifier + System.lineSeparator());
             raf.close();
-            log.error("Could not read image >> " + identifier, ex);
+            log.error("Could not read image >> {} {}", identifier, ex.getMessage());
         }
         obj[0]=dimg;
         obj[1]=imgReader;
