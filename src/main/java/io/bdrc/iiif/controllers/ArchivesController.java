@@ -126,10 +126,10 @@ public class ArchivesController {
                 Boolean cached = false;
                 Boolean jobstarted = false;
                 if (type.equals(ArchiveBuilder.PDF_TYPE)) {
-                    if (EHServerCache.ZIP_JOBS.containsKey(output))
-                        jobstarted = EHServerCache.ZIP_JOBS.get(output);
+                    if (EHServerCache.PDF_JOBS.containsKey(output))
+                        jobstarted = EHServerCache.PDF_JOBS.get(output);
                     cached = EHServerCache.IIIF.containsKey(output);
-                    log.debug("PDF {} from IIIF cached {}, jobstarted: {}", id, cached, jobstarted);
+                    log.error("PDF {} from IIIF cached {}, jobstarted: {}", id, cached, jobstarted);
                     if (!cached && !jobstarted) {
                         // Start building pdf since the pdf file doesn't exist yet
                         if (!Application.isPdfSync()) {
