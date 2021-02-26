@@ -132,8 +132,10 @@ public class ArchiveBuilder {
             Application.logPerf("building pdf writer and document opened {} after {}", inf.volumeId,
                     System.currentTimeMillis() - deb);
             int k = 1;
+            log.error("breakpoint 2");
             for (ImageInfo imgInf : imgInfo) {
                 if (imgInf.size == null || imgInf.size <= Integer.parseInt(Application.getProperty("imgSizeLimit"))) {
+                    log.error("adding {}", imgInf.filename);
                     imgDim.put(imgInf.filename, imgInf);
                     // ArchiveImageProducer tmp = null;
                     Object[] obj = new ArchiveImageProducer(inf, imgInf.filename, origin).getImageAsBytes();
@@ -145,7 +147,7 @@ public class ArchiveBuilder {
                         // missing
                         try {
                             bmg = toByteArray(
-                                    ArchiveImageProducer.getBufferedMissingImage("Page " + k + " couldn't be found"));
+                                    ArchiveImageProducer.getBufferedMissingImage("Page {}" + k + " couldn't be found"));
                         } catch (Exception e) {
                             // We don't interrupt the pdf generation process
                             log.error("Could not get Buffered Missing image from producer for page {} of volume {}", k,
@@ -158,7 +160,7 @@ public class ArchiveBuilder {
                     PDImageXObject pdImage = PDImageXObject.createFromByteArray(doc, bmg, "");
                     PDPageContentStream contents = new PDPageContentStream(doc, page);
                     contents.drawImage(pdImage, 0, 0);
-                    log.debug("page was drawn for img {} ", bmg);
+                    log.error("page was drawn for img {}", imgInf.filename);
                     contents.close();
                 }
                 k++;
@@ -167,14 +169,14 @@ public class ArchiveBuilder {
             COSWriter cw = new COSWriter(baos);
             cw.write(doc);
             cw.close();
-            log.debug("Closing doc after writing {} ", doc);
+            log.error("Closing doc after writing {} ", doc);
             doc.close();
             Application.logPerf("pdf document finished and closed for {} after {}", inf.volumeId,
                     System.currentTimeMillis() - deb);
             EHServerCache.IIIF.put(output, baos.toByteArray());
             EHServerCache.PDF_JOBS.put(output, false);
         } catch (Exception e) {
-            log.error("Error while building pdf for identifier info " + inf.toString(), "");
+            log.error("Error while building pdf for identifier info {}", inf.toString());
             throw new IIIFException(500, IIIFException.GENERIC_APP_ERROR_CODE, e);
         }
 
