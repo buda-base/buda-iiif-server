@@ -151,11 +151,11 @@ public class ArchivesController {
                     }
                 }
                 log.error("sync mode: {}", Application.isPdfSync());
-                if (!cached && !Application.isPdfSync()) {
-                    map.put("status", "generating");
+                if (cached || Application.isPdfSync()) {
                     // Create template and serve html link
                     map.put("links", Application.getProperty("iiifserv_baseurl") + "download/file/" + type + "/" + output);
                     if (json) {
+                        map.put("status", "done");
                         ObjectMapper mapper = new ObjectMapper();
                         html = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(map);
                     } else {
@@ -165,8 +165,8 @@ public class ArchivesController {
                         html = s.replace(html);
                     }
                 } else {
-                    map.put("status", "generating");
                     if (json) {
+                        map.put("status", "generating");
                         ObjectMapper mapper = new ObjectMapper();
                         html = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(map);
                     } else {
