@@ -191,6 +191,11 @@ public class EHServerCache {
         return getCache(cacheName).get(key);
     }
 
+    public static boolean constainsKey(String cacheName, String key) throws IIIFException {
+        log.debug("EHServerCACHE isInCache from {} with key {}", cacheName, key);
+        return getCache(cacheName).containsKey(key);
+    }
+    
     public static void put(String cacheName, String key, Object obj) throws IIIFException {
         log.debug("EHServerCACHE put in {} for key {}", cacheName, key);
         CacheMetrics.cachePut(cacheName);

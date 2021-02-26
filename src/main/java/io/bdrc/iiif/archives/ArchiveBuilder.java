@@ -57,8 +57,7 @@ public class ArchiveBuilder {
             List<ImageInfo> imgInfo = getImageInfos(idf, inf, acc);
             int i = 1;
             for (ImageInfo imgInf : imgInfo) {
-                if (imgInf.size == null || (imgInf.size != null
-                        && imgInf.size <= Integer.parseInt(Application.getProperty("imgSizeLimit")))) {
+                if (imgInf.size == null || imgInf.size <= Integer.parseInt(Application.getProperty("imgSizeLimit"))) {
                     imgDim.put(imgInf.filename, imgInf);
                     ArchiveImageProducer tmp = null;
                     tmp = new ArchiveImageProducer(inf, imgInf.filename, origin);
@@ -119,7 +118,7 @@ public class ArchiveBuilder {
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     public static void buildSyncPdf(Access acc, IdentifierInfo inf, Identifier idf, String output, String origin)
-            throws Exception {
+            throws IIIFException {
         long deb = System.currentTimeMillis();
         try {
             Application.logPerf("Starting building pdf {}", inf.volumeId);
@@ -133,8 +132,7 @@ public class ArchiveBuilder {
                     System.currentTimeMillis() - deb);
             int k = 1;
             for (ImageInfo imgInf : imgInfo) {
-                if (imgInf.size == null || (imgInf.size != null
-                        && imgInf.size <= Integer.parseInt(Application.getProperty("imgSizeLimit")))) {
+                if (imgInf.size == null || imgInf.size <= Integer.parseInt(Application.getProperty("imgSizeLimit"))) {
                     imgDim.put(imgInf.filename, imgInf);
                     // ArchiveImageProducer tmp = null;
                     Object[] obj = new ArchiveImageProducer(inf, imgInf.filename, origin).getImageAsBytes();
@@ -180,6 +178,8 @@ public class ArchiveBuilder {
         }
 
     }
+    
+    
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     public static void buildZip(Access acc, IdentifierInfo inf, Identifier idf, String output, String origin)

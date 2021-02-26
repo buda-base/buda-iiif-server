@@ -19,6 +19,10 @@ public class CacheWrapper<K, V> {
         return cache.get(key);
     }
 
+    public boolean containsKey(K key) throws IIIFException {
+        return cache.containsKey(key);
+    }
+    
     public void put(K key, V value) throws IIIFException {
         cache.put(key, value);
     }

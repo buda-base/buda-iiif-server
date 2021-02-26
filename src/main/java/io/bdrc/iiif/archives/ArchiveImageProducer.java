@@ -53,14 +53,14 @@ public class ArchiveImageProducer implements Callable {
         try {
             imgbytes = (byte[]) EHServerCache.get(IIIF_IMG, id);
             if (imgbytes != null) {
-                log.debug("Got " + id + " from cache ...");
+                log.debug("Got {} from cache ...", id);
                 ImageMetrics.imageCount(ImageMetrics.IMG_CALLS_COMMON, origin);
                 obj[0] = imgbytes;
                 return obj;
             }
             imgbytes = ImageProviderService.InstanceArchive.getFromApi(id);
             obj[0] = imgbytes;
-            log.debug("Got " + id + " from S3 ...added to cache");
+            log.debug("Got {} from S3 ...added to cache", id);
             EHServerCache.put(IIIF_IMG, id, imgbytes);
             ImageMetrics.imageCount(ImageMetrics.IMG_CALLS_ARCHIVES, origin);
         } catch (IIIFException e) {

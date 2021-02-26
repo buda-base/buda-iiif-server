@@ -43,6 +43,16 @@ public class ConcurrentResourceService<T> {
         }
         return t;
     }
+    
+    @SuppressWarnings("unchecked")
+    boolean isInCache(final String resId) {
+        try {
+            return EHServerCache.constainsKey(cacheName, cachePrefix + resId);
+        } catch (IIIFException e) {
+            logger.error("getFromCache, error getting object from cache", e);
+        }
+        return false;
+    }
 
     void putInCache(final String resId, final T res) {
         try {
