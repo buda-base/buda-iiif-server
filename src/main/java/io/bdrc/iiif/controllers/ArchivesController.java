@@ -157,7 +157,7 @@ public class ArchivesController {
                 //log.error("sync mode: {}", Application.isPdfSync());
                 if (cached || Application.isPdfSync()) {
                     // Create template and serve html link
-                    map.put("links", Application.getProperty("iiifserv_baseurl") + "download/file/" + type + "/" + output);
+                    map.put("link", Application.getProperty("iiifserv_baseurl") + "download/file/" + type + "/" + output);
                     if (json) {
                         map.put("status", "done");
                         ObjectMapper mapper = new ObjectMapper();
@@ -342,7 +342,7 @@ public class ArchivesController {
             HashMap<String, String> vol = new HashMap<>();
             vol.put("link", Application.getProperty("iiifserv_baseurl") + "download/" + type + "/v:" + "bdr:"
                     + shortName + "::1-");
-            vol.put("volume", Integer.toString(i));
+            vol.put("volnum", Integer.toString(i));
             map.put("bdr:" + shortName, vol);
         }
         return map;

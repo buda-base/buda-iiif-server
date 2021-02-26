@@ -147,7 +147,7 @@ public class ArchiveBuilder {
             int k = 1;
             for (ImageInfo imgInf : imgInfo) {
                 if (imgInf.size == null || imgInf.size <= Integer.parseInt(Application.getProperty("imgSizeLimit"))) {
-                    log.error("adding {}", imgInf.filename);
+                    log.debug("adding {}", imgInf.filename);
                     imgDim.put(imgInf.filename, imgInf);
                     // ArchiveImageProducer tmp = null;
                     Object[] obj = ArchiveImageProducer.getImageAsBytes(inf, imgInf.filename, origin);
@@ -172,7 +172,7 @@ public class ArchiveBuilder {
                     PDImageXObject pdImage = PDImageXObject.createFromByteArray(doc, bmg, "");
                     PDPageContentStream contents = new PDPageContentStream(doc, page);
                     contents.drawImage(pdImage, 0, 0);
-                    log.error("page was drawn for img {}", imgInf.filename);
+                    //log.debug("page was drawn for img {}", imgInf.filename);
                     contents.close();
                 }
                 if (k % 5 == 0) {

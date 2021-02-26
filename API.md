@@ -39,4 +39,37 @@ It handles [compliance level 2](), with an extra property `preferredFormats`, ta
 
 ## PDF / ZIP Download
 
-A PDF can only be created from an image group
+A PDF can only be created from an image group, using the APIs described below. In the URLs:
+- `{type}` is either `pdf` or `zip`
+- `{id}` is in the form `v:{igqname}::{bpage}-{epage}` where:
+   * `{igqname}` is the image group qname (ex: `bdr:I4CZ294541`)
+   * `{bpage}` is the image number of the first image you want
+   * `{epage}` is optional and is the image number of the last image you want
+
+For instance `v:bdr:I4CZ294541::1-` means you want all the images from the image group `bdr:I4CZ294541`.
+
+##### /download/{type}/{id}
+
+Use this API to trigger the generation of a PDF file. It returns either an html page or a json document according to the `Accept` HTTP header. The json document has the following structure:
+- `status`: can be `done` or `generating`
+- `percentdone`: a float number between 0 and 1, indicating how much of the PDF has been generated (only if status is `generating`)
+- `link`: the URI of the PDF file ready to be downloaded (only if status is `done`)
+
+Note that if you call this API with `{id}` being an image instance (ex: `wi:bdr:W22084`), this will return the list of volumes either in html or in json containing all the image groups, with the following structure:
+
+```json
+{ 
+   "{igqname}": {"link": "{link}", "volnum": "{volnum}"},
+   ...
+}
+```
+
+where:
+
+- `{igqname}` is the qname of the image group, for reference
+- `{link}` is the download link for the volume
+- `{volnum}` is the volume number
+
+##### /download/job/{type}/{id}
+
+Returns information about the status of a PDF generation process. In case no generation is underway, this doesn't trigger one. This also returns an html or json document according to the HTTP header. The json document has the same structure as the one previously described except that `status` can be `notrunning`.
