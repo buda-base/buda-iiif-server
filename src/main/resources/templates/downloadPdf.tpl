@@ -5,7 +5,7 @@
 <title>Download archive</title>
 </head>
 <body>
-    <h3>Download link :</h3>    
+    <h3>Download link:</h3>    
     <a href="${links}">${file}</a>
 </body>
 </html>

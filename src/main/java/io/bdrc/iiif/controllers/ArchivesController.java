@@ -123,10 +123,11 @@ public class ArchivesController {
                     output = idf.getImageGroupId() + ":" + bPage.intValue() + "-" + ePage.intValue();// +"."+type;
                 }
                 log.info("Built outpui is {}", output);
+                Boolean cached = false;
                 if (type.equals(ArchiveBuilder.PDF_TYPE)) {
-                    Boolean pdf_cached = EHServerCache.IIIF.containsKey(output);
-                    log.debug("PDF " + id + " from IIIF cache >>" + pdf_cached);
-                    if (pdf_cached) {
+                    cached = EHServerCache.IIIF.containsKey(output);
+                    log.debug("PDF {} from IIIF cache >> {}", id, cached);
+                    if (!cached) {
                         // Start building pdf since the pdf file doesn't exist yet
                         if (!Application.isPdfSync()) {
                             ArchiveBuilder.service.submit(new ArchiveProducer(accValidation.getAccess(), inf, idf, output,
@@ -137,9 +138,9 @@ public class ArchivesController {
                     }
                 }
                 if (type.equals(ArchiveBuilder.ZIP_TYPE)) {
-                    Boolean zip_cached = EHServerCache.IIIF_ZIP.containsKey(output);
-                    log.debug("ZIP " + id + " from IIIF_ZIP cache >>" + zip_cached);
-                    if (zip_cached) {
+                    cached = EHServerCache.IIIF_ZIP.containsKey(output);
+                    log.debug("ZIP {} from IIIF_ZIP cache >> {}", id, cached);
+                    if (!cached) {
                         // Build pdf since the pdf file doesn't exist yet
                         if (!Application.isPdfSync()) {
                             ArchiveBuilder.buildZip(accValidation.getAccess(), inf, idf, output,
@@ -149,16 +150,27 @@ public class ArchivesController {
                         }
                     }
                 }
-                // Create template and serve html link
-                map.put("links", Application.getProperty("iiifserv_baseurl") + "download/file/" + type + "/" + output);
-                if (json) {
-                    ObjectMapper mapper = new ObjectMapper();
-                    html = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(map);
+                if (!cached && !Application.isPdfSync()) {
+                    map.put("status", "generating");
+                    // Create template and serve html link
+                    map.put("links", Application.getProperty("iiifserv_baseurl") + "download/file/" + type + "/" + output);
+                    if (json) {
+                        ObjectMapper mapper = new ObjectMapper();
+                        html = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(map);
+                    } else {
+                        html = getTemplate("downloadPdf.tpl");
+                        map.put("file", output + "." + type);
+                        s = new StringSubstitutor(map);
+                        html = s.replace(html);
+                    }
                 } else {
-                    html = getTemplate("downloadPdf.tpl");
-                    map.put("file", output + "." + type);
-                    s = new StringSubstitutor(map);
-                    html = s.replace(html);
+                    map.put("status", "generating");
+                    if (json) {
+                        ObjectMapper mapper = new ObjectMapper();
+                        html = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(map);
+                    } else {
+                        html = getTemplate("pdfGenerating.tpl");
+                    }
                 }
                 break;
         }
@@ -224,7 +236,7 @@ public class ArchivesController {
         Identifier idf = new Identifier(id, Identifier.MANIFEST_ID);
         Integer bPage = idf.getBPageNum();
         if (bPage == null) {
-            bPage = new Integer(1);
+            bPage = 1;
         }
         Integer ePage = idf.getEPageNum();
         if (ePage == null) {
