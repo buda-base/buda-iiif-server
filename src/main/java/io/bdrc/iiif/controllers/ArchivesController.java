@@ -29,6 +29,7 @@ import de.digitalcollections.model.api.identifiable.resource.exceptions.Resource
 import io.bdrc.auth.Access;
 import io.bdrc.auth.Access.AccessLevel;
 import io.bdrc.iiif.archives.ArchiveBuilder;
+import io.bdrc.iiif.archives.ArchiveProducer;
 import io.bdrc.iiif.archives.PdfItemInfo;
 import io.bdrc.iiif.auth.ResourceAccessValidation;
 import io.bdrc.iiif.core.Application;
@@ -126,10 +127,12 @@ public class ArchivesController {
                     Boolean pdf_cached = EHServerCache.IIIF.containsKey(output);
                     log.debug("PDF " + id + " from IIIF cache >>" + pdf_cached);
                     if (pdf_cached) {
-                        // Build pdf since the pdf file doesn't exist yet
+                        // Start building pdf since the pdf file doesn't exist yet
                         if (!Application.isPdfSync()) {
-                            ArchiveBuilder.buildPdf(accValidation.getAccess(), inf, idf, output,
-                                    (String) request.getAttribute("origin"));
+                            ArchiveBuilder.service.submit(new ArchiveProducer(accValidation.getAccess(), inf, idf, output,
+                                    (String) request.getAttribute("origin"), ArchiveProducer.PDF));
+                            //ArchiveBuilder.buildPdf(accValidation.getAccess(), inf, idf, output,
+                            //        (String) request.getAttribute("origin"));
                         }
                     }
                 }
@@ -141,6 +144,8 @@ public class ArchivesController {
                         if (!Application.isPdfSync()) {
                             ArchiveBuilder.buildZip(accValidation.getAccess(), inf, idf, output,
                                     (String) request.getAttribute("origin"));
+                            //ArchiveBuilder.service.submit(new ArchiveProducer(accValidation.getAccess(), inf, idf, output,
+                            //        (String) request.getAttribute("origin"), ArchiveProducer.ZIP));
                         }
                     }
                 }

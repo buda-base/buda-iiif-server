@@ -42,7 +42,7 @@ public class ArchiveBuilder {
 
     public final static Logger log = LoggerFactory.getLogger(ArchiveBuilder.class.getName());
 
-    private static ExecutorService service = Executors.newFixedThreadPool(50);
+    public static ExecutorService service = Executors.newFixedThreadPool(50);
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     public static void buildPdf(Access acc, IdentifierInfo inf, Identifier idf, String output, String origin)
