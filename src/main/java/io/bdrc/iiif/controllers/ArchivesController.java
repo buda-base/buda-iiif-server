@@ -126,7 +126,7 @@ public class ArchivesController {
                 Boolean cached = false;
                 if (type.equals(ArchiveBuilder.PDF_TYPE)) {
                     cached = EHServerCache.IIIF.containsKey(output);
-                    log.debug("PDF {} from IIIF cache >> {}", id, cached);
+                    log.error("PDF {} from IIIF cache >> {}", id, cached);
                     if (!cached) {
                         // Start building pdf since the pdf file doesn't exist yet
                         if (!Application.isPdfSync()) {
@@ -139,7 +139,7 @@ public class ArchivesController {
                 }
                 if (type.equals(ArchiveBuilder.ZIP_TYPE)) {
                     cached = EHServerCache.IIIF_ZIP.containsKey(output);
-                    log.debug("ZIP {} from IIIF_ZIP cache >> {}", id, cached);
+                    log.error("ZIP {} from IIIF_ZIP cache >> {}", id, cached);
                     if (!cached) {
                         // Build pdf since the pdf file doesn't exist yet
                         if (!Application.isPdfSync()) {
@@ -150,6 +150,7 @@ public class ArchivesController {
                         }
                     }
                 }
+                log.error("sync mode: {}", Application.isPdfSync());
                 if (!cached && !Application.isPdfSync()) {
                     map.put("status", "generating");
                     // Create template and serve html link

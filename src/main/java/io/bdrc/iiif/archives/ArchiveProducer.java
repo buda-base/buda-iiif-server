@@ -38,13 +38,13 @@ public class ArchiveProducer implements Callable<Void> {
     @Override
     public Void call() throws IIIFException {
         if (this.type == PDF) {
-            if (EHServerCache.IIIF.containsKey(this.cacheKey.substring(4))) {
+            if (EHServerCache.IIIF.containsKey(this.cacheKey)) {
                 return null;
             }
             ArchiveBuilder.buildSyncPdf(this.acc, this.inf, this.idf, this.cacheKey, this.origin);
             return null;
         } else {
-            if (EHServerCache.IIIF_ZIP.containsKey(this.cacheKey.substring(3))) {
+            if (EHServerCache.IIIF_ZIP.containsKey(this.cacheKey)) {
                 return null;
             }
             ArchiveBuilder.buildSyncZip(this.acc, this.inf, this.idf, this.cacheKey, this.origin);
