@@ -106,7 +106,7 @@ public class ArchiveBuilder {
                 contents.close();
                 if (k % 5 == 0) {
                     // every 5 images, update the percentage
-                    final double rate = k/totalImages;
+                    final double rate = k / ((double) totalImages);
                     pdfjobs.put(output, rate);
                 }
             }
@@ -118,7 +118,7 @@ public class ArchiveBuilder {
             doc.close();
             Application.logPerf("pdf document finished and closed for {} after {}", inf.volumeId,
                     System.currentTimeMillis() - deb);
-            EHServerCache.IIIF.put(output, baos.toByteArray());
+            EHServerCache.IIIF_PDF.put(output, baos.toByteArray());
         } catch (ExecutionException | InterruptedException e) {
             log.error("Error while building pdf for identifier info " + inf.toString(), "");
             throw new IIIFException(500, IIIFException.GENERIC_APP_ERROR_CODE, e);
@@ -175,9 +175,9 @@ public class ArchiveBuilder {
                     //log.debug("page was drawn for img {}", imgInf.filename);
                     contents.close();
                 }
-                if (k % 5 == 0) {
+                if ((k % 5) == 0) {
                     // every 5 images, update the percentage
-                    final double rate = k/totalImages;
+                    final double rate = k / ((double) totalImages);
                     pdfjobs.put(output, rate);
                 }
                 k++;
@@ -190,7 +190,7 @@ public class ArchiveBuilder {
             doc.close();
             Application.logPerf("pdf document finished and closed for {} after {}", inf.volumeId,
                     System.currentTimeMillis() - deb);
-            EHServerCache.IIIF.put(output, baos.toByteArray());
+            EHServerCache.IIIF_PDF.put(output, baos.toByteArray());
         } catch (Exception e) {
             log.error("Error while building pdf for identifier info {}", inf.toString());
             throw new IIIFException(500, IIIFException.GENERIC_APP_ERROR_CODE, e);
@@ -251,7 +251,7 @@ public class ArchiveBuilder {
                 zipOut.closeEntry();
                 if (k % 5 == 0) {
                     // every 5 images, update the percentage
-                    final double rate = k/totalImages;
+                    final double rate = k / ((double) totalImages);
                     pdfjobs.put(output, rate);
                 }
             }

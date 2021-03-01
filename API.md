@@ -36,7 +36,6 @@ In this version `image_group` has its usual meaning and `simple_index` is an int
 
 It handles [compliance level 2](), with an extra property `preferredFormats`, taken from [IIIF Image API 3.0.0](https://iiif.io/api/image/3.0/#55-preferred-formats), which is important in our case because we have a lot of bitonal images that should be served as `png` and not `jpg` (to save processing time and bandwidth). Note that OpenSeaDragon handles this property since [v2.4.1](https://github.com/openseadragon/openseadragon/releases/tag/v2.4.1). 
 
-
 ## PDF / ZIP Download
 
 A PDF can only be created from an image group, using the APIs described below. In the URLs:

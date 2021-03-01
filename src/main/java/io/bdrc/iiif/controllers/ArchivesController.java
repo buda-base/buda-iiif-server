@@ -128,7 +128,7 @@ public class ArchivesController {
                 Double percentdone = null;
                 if (type.equals(ArchiveBuilder.PDF_TYPE)) {
                     percentdone = ArchiveBuilder.pdfjobs.get(output);
-                    cached = EHServerCache.IIIF.containsKey(output);
+                    cached = EHServerCache.IIIF_PDF.containsKey(output);
                     log.error("PDF {} from IIIF cached {}, jobstarted: {}", id, cached, percentdone);
                     if (!cached && percentdone == null) {
                         // Start building pdf since the pdf file doesn't exist yet
@@ -219,7 +219,7 @@ public class ArchivesController {
         }
         byte[] array = null;
         if (type.equals(ArchiveBuilder.PDF_TYPE)) {
-            array = (byte[]) EHServerCache.IIIF.get(name);
+            array = (byte[]) EHServerCache.IIIF_PDF.get(name);
             log.info("READ from cache {} name={}", IIIF, name);
         }
         if (type.equals(ArchiveBuilder.ZIP_TYPE)) {
@@ -269,7 +269,7 @@ public class ArchivesController {
             output = idf.getImageGroupId() + ":" + bPage.intValue() + "-" + ePage.intValue();// +"."+type;
         }
         if (type.equals(ArchiveBuilder.PDF_TYPE)) {
-            cached = EHServerCache.IIIF.containsKey(output);
+            cached = EHServerCache.IIIF_PDF.containsKey(output);
             percentdone = ArchiveBuilder.pdfjobs.get(output);
         }
         if (type.equals(ArchiveBuilder.ZIP_TYPE)) {

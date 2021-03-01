@@ -35,7 +35,7 @@ public class EHServerCache {
 
     public static Cache<String, byte[]> IIIF_IMG;
     public static Cache<String, byte[]> IIIF_ZIP;
-    public static Cache<String, byte[]> IIIF;
+    public static Cache<String, byte[]> IIIF_PDF;
     public static Cache<String, PdfItemInfo> PDF_ITEM_INFO;
     public static Cache<String, ArchiveInfo> ARCHIVE_INFO;
     public static Cache<String, ImageGroupInfo> IMAGE_GROUP_INFO;
@@ -76,10 +76,10 @@ public class EHServerCache {
 
         PersistentCacheManager iiif = CacheManagerBuilder.newCacheManagerBuilder().using(statsService)
                 .with(CacheManagerBuilder.persistence(System.getProperty("user.dir") + File.separator + "EH_IIIF")).build(true);
-        IIIF = iiif.createCache("iiif", CacheConfigurationBuilder.newCacheConfigurationBuilder(String.class, byte[].class,
+        IIIF_PDF = iiif.createCache("iiif", CacheConfigurationBuilder.newCacheConfigurationBuilder(String.class, byte[].class,
                 ResourcePoolsBuilder.newResourcePoolsBuilder().heap(500, EntryUnit.ENTRIES).disk(5000, MemoryUnit.MB, true)));
-        MAP.put("iiif", new CacheWrapper(IIIF, "iiif"));
-        MAP_DISK.put("iiif", new CacheWrapper(IIIF, "iiif"));
+        MAP.put("iiif", new CacheWrapper(IIIF_PDF, "iiif"));
+        MAP_DISK.put("iiif", new CacheWrapper(IIIF_PDF, "iiif"));
         CACHE_STATS.put("iiif", statsService.getCacheStatistics("iiif"));
 
         /**** MEMORY CACHES ***/
@@ -192,7 +192,7 @@ public class EHServerCache {
         try {
             IIIF_IMG.clear();
             IIIF_ZIP.clear();
-            IIIF.clear();
+            IIIF_PDF.clear();
             PDF_ITEM_INFO.clear();
             ARCHIVE_INFO.clear();
             return true;
