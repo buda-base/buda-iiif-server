@@ -24,6 +24,7 @@ import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
+import org.ehcache.spi.loaderwriter.CacheWritingException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,7 +38,6 @@ import io.bdrc.libraries.Identifier;
 
 public class ArchiveBuilder {
 
-    public static final String IIIF = "IIIF";
     public static final String IIIF_ZIP = "IIIF_ZIP";
     public final static String PDF_TYPE = "pdf";
     public final static String ZIP_TYPE = "zip";
@@ -119,7 +119,7 @@ public class ArchiveBuilder {
             Application.logPerf("pdf document finished and closed for {} after {}", inf.volumeId,
                     System.currentTimeMillis() - deb);
             EHServerCache.IIIF_PDF.put(output, baos.toByteArray());
-        } catch (ExecutionException | InterruptedException e) {
+        } catch (CacheWritingException | ExecutionException | InterruptedException e) {
             log.error("Error while building pdf for identifier info " + inf.toString(), "");
             throw new IIIFException(500, IIIFException.GENERIC_APP_ERROR_CODE, e);
         } finally {

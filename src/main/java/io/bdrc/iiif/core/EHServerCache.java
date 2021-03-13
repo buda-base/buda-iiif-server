@@ -61,7 +61,7 @@ public class EHServerCache {
         PersistentCacheManager iiif_img = CacheManagerBuilder.newCacheManagerBuilder().using(statsService)
                 .with(CacheManagerBuilder.persistence(System.getProperty("user.dir") + File.separator + "EH_IIIF_IMG")).build(true);
         IIIF_IMG = iiif_img.createCache("iiif_img", CacheConfigurationBuilder.newCacheConfigurationBuilder(String.class, byte[].class,
-                ResourcePoolsBuilder.newResourcePoolsBuilder().heap(2000, EntryUnit.ENTRIES).disk(15000, MemoryUnit.MB, true)));
+                ResourcePoolsBuilder.newResourcePoolsBuilder().heap(2000, EntryUnit.ENTRIES).disk(10000, MemoryUnit.MB, true)));
         MAP.put("iiif_img", new CacheWrapper(IIIF_IMG, "iiif_img"));
         MAP_DISK.put("iiif_img", new CacheWrapper(IIIF_IMG, "iiif_img"));
         CACHE_STATS.put("iiif_img", statsService.getCacheStatistics("iiif_img"));
@@ -69,18 +69,18 @@ public class EHServerCache {
         PersistentCacheManager iiif_zip = CacheManagerBuilder.newCacheManagerBuilder().using(statsService)
                 .with(CacheManagerBuilder.persistence(System.getProperty("user.dir") + File.separator + "EH_IIIF_ZIP")).build(true);
         IIIF_ZIP = iiif_zip.createCache("iiif_zip", CacheConfigurationBuilder.newCacheConfigurationBuilder(String.class, byte[].class,
-                ResourcePoolsBuilder.newResourcePoolsBuilder().heap(500, EntryUnit.ENTRIES).disk(5000, MemoryUnit.MB, true)));
+                ResourcePoolsBuilder.newResourcePoolsBuilder().heap(500, EntryUnit.ENTRIES).disk(10000, MemoryUnit.MB, true)));
         MAP.put("iiif_zip", new CacheWrapper(IIIF_ZIP, "iiif_zip"));
         MAP_DISK.put("iiif_zip", new CacheWrapper(IIIF_ZIP, "iiif_zip"));
         CACHE_STATS.put("iiif_zip", statsService.getCacheStatistics("iiif_zip"));
 
         PersistentCacheManager iiif = CacheManagerBuilder.newCacheManagerBuilder().using(statsService)
-                .with(CacheManagerBuilder.persistence(System.getProperty("user.dir") + File.separator + "EH_IIIF")).build(true);
-        IIIF_PDF = iiif.createCache("iiif", CacheConfigurationBuilder.newCacheConfigurationBuilder(String.class, byte[].class,
-                ResourcePoolsBuilder.newResourcePoolsBuilder().heap(500, EntryUnit.ENTRIES).disk(5000, MemoryUnit.MB, true)));
-        MAP.put("iiif", new CacheWrapper(IIIF_PDF, "iiif"));
-        MAP_DISK.put("iiif", new CacheWrapper(IIIF_PDF, "iiif"));
-        CACHE_STATS.put("iiif", statsService.getCacheStatistics("iiif"));
+                .with(CacheManagerBuilder.persistence(System.getProperty("user.dir") + File.separator + "EH_IIIF_PDF")).build(true);
+        IIIF_PDF = iiif.createCache("iiif_pdf", CacheConfigurationBuilder.newCacheConfigurationBuilder(String.class, byte[].class,
+                ResourcePoolsBuilder.newResourcePoolsBuilder().heap(500, EntryUnit.ENTRIES).disk(10000, MemoryUnit.MB, true)));
+        MAP.put("iiif_pdf", new CacheWrapper(IIIF_PDF, "iiif_pdf"));
+        MAP_DISK.put("iiif_pdf", new CacheWrapper(IIIF_PDF, "iiif_pdf"));
+        CACHE_STATS.put("iiif_pdf", statsService.getCacheStatistics("iiif_pdf"));
 
         /**** MEMORY CACHES ***/
         PDF_ITEM_INFO = cacheManager.createCache("pdfItemInfo", CacheConfigurationBuilder.newCacheConfigurationBuilder(String.class,
