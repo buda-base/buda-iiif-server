@@ -199,6 +199,13 @@ public class ArchivesController {
     public ResponseEntity<ByteArrayResource> downloadPdf(@PathVariable String name, @PathVariable String type,
             HttpServletRequest request) throws Exception {
         String[] nameParts = name.replace("FAIR_USE", "").split(":");
+        HttpHeaders headers = new HttpHeaders();
+        if (nameParts.length < 3) {
+            log.error("invalid PDF download argument: {}", name);
+            headers.setContentType(MediaType.parseMediaType("text/plain"));
+            return new ResponseEntity<ByteArrayResource>(new ByteArrayResource("Invalid link"
+                    .getBytes()), headers, HttpStatus.NOT_FOUND);
+        }
         log.info("downloadPdf(name {} , type {})", name, type);
         Identifier idf = new Identifier("v:" + nameParts[0] + ":" + nameParts[1] + "::" + nameParts[2],
                 Identifier.MANIFEST_ID);
@@ -226,7 +233,6 @@ public class ArchivesController {
             array = (byte[]) EHServerCache.IIIF_ZIP.get(name);
             log.info("READ from cache {} name={}", IIIF_ZIP, name);
         }
-        HttpHeaders headers = new HttpHeaders();
         if (array == null) {
             headers.setContentType(MediaType.parseMediaType("text/plain"));
             array = new String(
