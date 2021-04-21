@@ -94,6 +94,7 @@ public class ImageInfoListService extends ConcurrentResourceService<List<ImageIn
                     logger.error("NoSuchKey: {}", s3key);
                     throw new IIIFException(404, 5000, "sorry, BDRC did not complete the data migration for this Work");
                 } else {
+                    logger.error("S3 error on: {}", s3key);
                     throw new IIIFException(500, 5000, e);
                 }
             }
