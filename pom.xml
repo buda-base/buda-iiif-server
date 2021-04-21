@@ -13,7 +13,6 @@
     <jena.version>3.14.0</jena.version>    
     <version.maven-compiler-plugin>3.8.0</version.maven-compiler-plugin>
     <version.imgscalr-lib>4.2</version.imgscalr-lib>
-    <version.spring-boot>2.2.6.RELEASE</version.spring-boot>
     <version.twelvemonkeys>3.6.4</version.twelvemonkeys>
     <aws.version>1.11.1000</aws.version>
   </properties>
@@ -46,12 +45,12 @@
     <dependency>
       <groupId>io.micrometer</groupId>
       <artifactId>micrometer-core</artifactId>
-      <version>1.4.1</version><!--$NO-MVN-MAN-VER$-->
+      <version>1.6.6</version><!--$NO-MVN-MAN-VER$-->
     </dependency>
     <dependency>
       <groupId>io.micrometer</groupId>
       <artifactId>micrometer-registry-prometheus</artifactId>
-      <version>1.4.1</version><!--$NO-MVN-MAN-VER$-->
+      <version>1.6.6</version><!--$NO-MVN-MAN-VER$-->
     </dependency>    
     <dependency>
       <groupId>org.imgscalr</groupId>
