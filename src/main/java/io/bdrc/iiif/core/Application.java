@@ -69,9 +69,6 @@ public class Application extends SpringBootServletInitializer {
             log.error("can't load load /etc/buda/share/shared-private.properties");
         }
         AuthProps.init(props);
-        if ("true".equals(props.getProperty("authEnabled")) && !isInChina()) {
-            RdfAuthModel.init();
-        }
         if (props.getProperty("logPerf") != null) {
             logPerf = Boolean.parseBoolean(props.getProperty("logPerf"));
         }
@@ -80,6 +77,9 @@ public class Application extends SpringBootServletInitializer {
         EHServerCache.init();
         new Timer(true).schedule(new MetricsTask(), 0, 60000);
         SpringApplication.run(Application.class, args);
+        if ("true".equals(props.getProperty("authEnabled")) && !isInChina()) {
+            RdfAuthModel.init();
+        }
         logPerf("Application main", "Test PERF Log ");
     }
 
