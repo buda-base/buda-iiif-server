@@ -115,7 +115,7 @@ public class IIIFImageApiController {
         return resp;
     }
 
-    @RequestMapping(value = "{identifier}/{region}/{size}/{rotation}/{quality}.{format}")
+    @RequestMapping(value = "/{identifier}/{region}/{size}/{rotation}/{quality}.{format}")
     public ResponseEntity<byte[]> getImageRepresentation(@PathVariable String identifier, @PathVariable String region,
             @PathVariable String size, @PathVariable String rotation, @PathVariable String quality,
             @PathVariable String format, HttpServletRequest request, HttpServletResponse response,
@@ -257,7 +257,7 @@ public class IIIFImageApiController {
 
     public static final PropertyValue pngHint = new PropertyValue("png", "jpg");
 
-    @RequestMapping(value = "{identifier}/info.json", method = {RequestMethod.GET, RequestMethod.HEAD})
+    @RequestMapping(value = "/{identifier}/info.json", method = {RequestMethod.GET, RequestMethod.HEAD})
     public ResponseEntity<String> getInfo(@PathVariable String identifier, HttpServletRequest req,
             HttpServletResponse res, WebRequest webRequest) throws ClientProtocolException, IOException, IIIFException,
             UnsupportedOperationException, UnsupportedFormatException, InterruptedException, ExecutionException {
@@ -334,7 +334,7 @@ public class IIIFImageApiController {
         }
     }
 
-    @RequestMapping(value = "{identifier}", method = {RequestMethod.GET, RequestMethod.HEAD})
+    @RequestMapping(value = "/{identifier}", method = {RequestMethod.GET, RequestMethod.HEAD})
     public void getInfoRedirect(@PathVariable String identifier, HttpServletRequest request,
             HttpServletResponse response) throws IOException {
         if (!identifier.startsWith("bdr:")) {
@@ -347,7 +347,7 @@ public class IIIFImageApiController {
         response.sendRedirect(base + identifier + "/info.json");
     }
 
-    @RequestMapping(value = "cache/clear", method = RequestMethod.POST)
+    @RequestMapping(value = "/cache/clear", method = RequestMethod.POST)
     ResponseEntity<String> clearCache(HttpServletRequest req, HttpServletResponse response) {
         log.info("cache/clear endpoint clearCache()");
         ResponseEntity<String> resp = null;
@@ -359,7 +359,7 @@ public class IIIFImageApiController {
         return resp;
     }
 
-    @RequestMapping(value = "cache/view", method = RequestMethod.GET, produces = MediaType.TEXT_HTML_VALUE)
+    @RequestMapping(value = "/cache/view", method = RequestMethod.GET, produces = MediaType.TEXT_HTML_VALUE)
     public ModelAndView getCacheInfo() {
         log.info("Call to getCacheInfo()");
         ModelAndView model = new ModelAndView();
