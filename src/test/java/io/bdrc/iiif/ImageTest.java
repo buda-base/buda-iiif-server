@@ -9,9 +9,15 @@ import java.awt.image.BufferedImage;
 import java.awt.image.ColorConvertOp;
 import java.awt.image.ColorModel;
 import java.awt.image.ComponentColorModel;
+import java.awt.image.DataBufferByte;
+import java.awt.image.DataBufferInt;
+import java.awt.image.MultiPixelPackedSampleModel;
 import java.awt.image.SampleModel;
+import java.awt.image.SinglePixelPackedSampleModel;
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
@@ -36,9 +42,18 @@ import org.apache.commons.imaging.Imaging;
 import org.apache.commons.io.IOUtils;
 import org.w3c.dom.NodeList;
 
+import com.google.common.collect.Streams;
+import com.sun.media.jai.codec.ImageCodec;
+import com.sun.media.jai.codec.ImageEncodeParam;
+import com.sun.media.jai.codec.ImageEncoder;
+import com.sun.media.jai.codec.PNGEncodeParam;
 import com.twelvemonkeys.imageio.plugins.jpeg.JPEGImageReader;
 import com.twelvemonkeys.imageio.plugins.jpeg.JPEGImageWriter;
 
+import ar.com.hjg.pngj.ImageInfo;
+import ar.com.hjg.pngj.ImageLineByte;
+import ar.com.hjg.pngj.PngWriter;
+import ar.com.hjg.pngj.PngjException;
 import de.digitalcollections.turbojpeg.imageio.TurboJpegImageReader;
 import io.bdrc.iiif.exceptions.UnsupportedFormatException;
 
@@ -298,6 +313,78 @@ public class ImageTest {
         iis.close();
     }
 
+    public static void tiffToPNGSunPipeline(String filename) throws IOException, UnsupportedFormatException {
+        InputStream is = new FileInputStream(new File(filename));
+        // to emulate the live conditions, we put the image into a byte[]:
+
+        byte[] bytes = IOUtils.toByteArray(is);
+
+        ImageInputStream iis = ImageIO.createImageInputStream(new ByteArrayInputStream(bytes));
+
+        ImageReader r = Streams.stream(ImageIO.getImageReaders(iis)).findFirst().orElseThrow(UnsupportedFormatException::new);
+        System.out.println("using reader: " + r.toString());
+        r.setInput(iis);
+
+        ImageTypeSpecifier its = r.getRawImageType(0);
+        ImageReadParam p = r.getDefaultReadParam();
+        p.setDestinationType(its);
+
+        BufferedImage bi = r.read(0, p);
+
+        ImageEncodeParam param = PNGEncodeParam.getDefaultEncodeParam(bi);
+        String format = "PNG";
+        
+        FileOutputStream out = new FileOutputStream(new File("testpng-sun.png"));
+        long deb1 = System.currentTimeMillis();
+        ImageEncoder encoder = ImageCodec.createImageEncoder(format, out, param);
+        System.out.println("using encoder: " + encoder.toString());
+        encoder.encode(bi);
+        out.flush();
+        out.close();
+        System.out.println(System.currentTimeMillis()-deb1);
+        
+        out = new FileOutputStream(new File("testpng-pngj.png"));
+        // TODO: don't hardcode the 1
+        
+        deb1 = System.currentTimeMillis();
+        ImageInfo imi = new ImageInfo(bi.getWidth(), bi.getHeight(), 1, false, true, false);
+        PngWriter pngw = new PngWriter(out, imi);
+        // pngw.setCompLevel(6); // tuning
+        // pngw.setFilterType(FilterType.FILTER_PAETH); // tuning
+        DataBufferByte db =((DataBufferByte) bi.getRaster().getDataBuffer());
+        if(db.getNumBanks()!=1) {
+            pngw.close();
+            throw new PngjException("This method expects one bank");
+        }
+        MultiPixelPackedSampleModel samplemodel =  (MultiPixelPackedSampleModel) bi.getSampleModel();
+        ImageLineByte line = new ImageLineByte(imi);
+        byte[] dbbuf = db.getData();
+        int len = dbbuf.length;
+        for (int row = 0; row < imi.rows; row++) {
+            int elem=samplemodel.getOffset(0,row);
+            for (int col = 0,j=0; col < imi.cols/8; col++) {
+                if (elem >= len) {
+                    break;
+                }
+                byte sample = dbbuf[elem++];
+                line.getScanline()[j++] =  (byte) (((sample & -128) >> 7) ^ 1);
+                line.getScanline()[j++] =  (byte) (((sample & 64) >> 6) ^ 1);
+                line.getScanline()[j++] =  (byte) (((sample & 32) >> 5) ^ 1);
+                line.getScanline()[j++] =  (byte) (((sample & 16) >> 4) ^ 1);
+                line.getScanline()[j++] =  (byte) (((sample & 8) >> 3) ^ 1);
+                line.getScanline()[j++] =  (byte) (((sample & 4) >> 2) ^ 1);
+                line.getScanline()[j++] =  (byte) (((sample & 2) >> 1) ^ 1);
+                line.getScanline()[j++] =  (byte) ((sample & 1) ^ 1);
+            }
+            pngw.writeRow(line, row);
+        }
+        pngw.end();
+        pngw.close();
+        System.out.println(System.currentTimeMillis()-deb1);
+        is.close();
+        iis.close();
+    }
+    
     private static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
 
     public static String bytesToHex(byte[] bytes) {
@@ -340,9 +427,10 @@ public class ImageTest {
     }
 
     public static void main(String[] args) throws IOException, UnsupportedFormatException {
-        readAndWriteTwelveMonkeysPipeline("ORIGINAL_S3.jpg");
-        readAndWritePerfectPipeline("ORIGINAL_S3.jpg");
-        readAndWritePerfectPipeline("ORIGINAL_S3.jpg");
+        //readAndWriteTwelveMonkeysPipeline("ORIGINAL_S3.jpg");
+        //readAndWritePerfectPipeline("ORIGINAL_S3.jpg");
+        //readAndWritePerfectPipeline("ORIGINAL_S3.jpg");
+        tiffToPNGSunPipeline("src/test/resources/61450006.tif");
         // readAndWriteTurboPipeline("ORIGINAL_S3.jpg");
         // readAndWriteTwelveMonkeysPipeline("ORIGINAL_S3.jpg");
         // readAndWriteTurboPipeline("ORIGINAL_S3.jpg");

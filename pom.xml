@@ -73,6 +73,11 @@
       <version>${version.twelvemonkeys}</version>
     </dependency>
     <dependency>
+      <groupId>com.alexdupre</groupId>
+      <artifactId>pngj</artifactId>
+      <version>2.1.2.1</version>
+    </dependency>
+    <dependency>
       <groupId>io.bdrc.libraries</groupId>
       <artifactId>bdrc-libraries</artifactId>
       <version>0.17.0</version>
