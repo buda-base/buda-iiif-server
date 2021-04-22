@@ -3,6 +3,8 @@ package io.bdrc.iiif.image.service;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferByte;
+import java.awt.image.MultiPixelPackedSampleModel;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Iterator;
@@ -28,6 +30,10 @@ import com.sun.media.jai.codec.ImageEncodeParam;
 import com.sun.media.jai.codec.ImageEncoder;
 import com.sun.media.jai.codec.PNGEncodeParam;
 
+import ar.com.hjg.pngj.ImageInfo;
+import ar.com.hjg.pngj.ImageLineByte;
+import ar.com.hjg.pngj.PngWriter;
+import ar.com.hjg.pngj.PngjException;
 import io.bdrc.iiif.core.Application;
 import io.bdrc.iiif.exceptions.InvalidParametersException;
 import io.bdrc.iiif.exceptions.UnsupportedFormatException;
@@ -99,7 +105,50 @@ public class WriteImageProcess {
         }
         return img;
     }
+    
+    public static void bitonalPngToOS_pngj(OutputStream os, BufferedImage bi) {
+        ImageInfo imi = new ImageInfo(bi.getWidth(), bi.getHeight(), 1, false, true, false);
+        PngWriter pngw = new PngWriter(os, imi);
+        // pngw.setCompLevel(6); // tuning
+        // pngw.setFilterType(FilterType.FILTER_PAETH); // tuning
+        DataBufferByte db =((DataBufferByte) bi.getRaster().getDataBuffer());
+        if(db.getNumBanks()!=1) {
+            pngw.close();
+            throw new PngjException("This method expects one bank");
+        }
+        MultiPixelPackedSampleModel samplemodel =  (MultiPixelPackedSampleModel) bi.getSampleModel();
+        ImageLineByte line = new ImageLineByte(imi);
+        byte[] dbbuf = db.getData();
+        int len = dbbuf.length;
+        for (int row = 0; row < imi.rows; row++) {
+            int elem=samplemodel.getOffset(0,row);
+            for (int col = 0,j=0; col < imi.cols/8; col++) {
+                if (elem >= len) {
+                    break;
+                }
+                int sample = ~dbbuf[elem++];
+                line.getScanline()[j++] =  (byte) (sample >> 7);
+                line.getScanline()[j++] =  (byte) (sample >> 6);
+                line.getScanline()[j++] =  (byte) (sample >> 5);
+                line.getScanline()[j++] =  (byte) (sample >> 4);
+                line.getScanline()[j++] =  (byte) (sample >> 3);
+                line.getScanline()[j++] =  (byte) (sample >> 2);
+                line.getScanline()[j++] =  (byte) (sample >> 1);
+                line.getScanline()[j++] =  (byte) (sample);
+            }
+            pngw.writeRow(line, row);
+        }
+        pngw.end();
+        pngw.close();
+    }
 
+    public static void pngToOS(OutputStream os, BufferedImage bi) throws IOException {
+        // this is pretty slow
+        ImageEncodeParam param = PNGEncodeParam.getDefaultEncodeParam(bi);
+        ImageEncoder encoder = ImageCodec.createImageEncoder("PNG", os, param);
+        encoder.encode(bi);
+    }
+    
     public static void processImage(DecodedImage img, String identifier, ImageApiSelector selector, ImageApiProfile profile, OutputStream os,
             ImageReader_ICC imgReader)
             throws InvalidParametersException, UnsupportedOperationException, UnsupportedFormatException, IOException, ImageReadException {
@@ -125,11 +174,24 @@ public class WriteImageProcess {
             switch (selector.getFormat()) {
 
             case PNG:
-                Application.logPerf("USING PNG JAI ENCODER for {} ", identifier);
-                ImageEncodeParam param = PNGEncodeParam.getDefaultEncodeParam(outImg);
-                String format = "PNG";
-                ImageEncoder encoder = ImageCodec.createImageEncoder(format, os, param);
-                encoder.encode(outImg);
+                // in case of bintonal images, we encode using pngj, see
+                // https://github.com/buda-base/buda-iiif-server/issues/74
+                // we could do it for other types too but it would require new functions
+                // and these cases are not very common
+                if (outImg.getColorModel().getPixelSize() == 1) {
+                    try {
+                        Application.logPerf("USING PNGJ ENCODER for {} ", identifier);
+                        bitonalPngToOS_pngj(os, outImg);
+                    } catch (Exception e) {
+                        log.error("tried to use the pngj encoder on {} but failed", identifier);
+                        Application.logPerf("USING PNG JAI ENCODER for {} ", identifier);
+                        pngToOS(os, outImg);
+                    }
+                } else {
+                    Application.logPerf("USING PNG JAI ENCODER for {} ", identifier);
+                    pngToOS(os, outImg);
+                }
+                
                 os.flush();
                 break;
 

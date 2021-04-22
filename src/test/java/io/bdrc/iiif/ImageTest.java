@@ -346,6 +346,8 @@ public class ImageTest {
         out = new FileOutputStream(new File("testpng-pngj.png"));
         // TODO: don't hardcode the 1
         
+        System.out.println("pixel size: "+bi.getColorModel().getPixelSize());
+        
         deb1 = System.currentTimeMillis();
         ImageInfo imi = new ImageInfo(bi.getWidth(), bi.getHeight(), 1, false, true, false);
         PngWriter pngw = new PngWriter(out, imi);
