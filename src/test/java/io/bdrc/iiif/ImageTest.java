@@ -366,15 +366,15 @@ public class ImageTest {
                 if (elem >= len) {
                     break;
                 }
-                byte sample = dbbuf[elem++];
-                line.getScanline()[j++] =  (byte) (((sample & -128) >> 7) ^ 1);
-                line.getScanline()[j++] =  (byte) (((sample & 64) >> 6) ^ 1);
-                line.getScanline()[j++] =  (byte) (((sample & 32) >> 5) ^ 1);
-                line.getScanline()[j++] =  (byte) (((sample & 16) >> 4) ^ 1);
-                line.getScanline()[j++] =  (byte) (((sample & 8) >> 3) ^ 1);
-                line.getScanline()[j++] =  (byte) (((sample & 4) >> 2) ^ 1);
-                line.getScanline()[j++] =  (byte) (((sample & 2) >> 1) ^ 1);
-                line.getScanline()[j++] =  (byte) ((sample & 1) ^ 1);
+                int sample = ~dbbuf[elem++];
+                line.getScanline()[j++] =  (byte) (sample >> 7);
+                line.getScanline()[j++] =  (byte) (sample >> 6);
+                line.getScanline()[j++] =  (byte) (sample >> 5);
+                line.getScanline()[j++] =  (byte) (sample >> 4);
+                line.getScanline()[j++] =  (byte) (sample >> 3);
+                line.getScanline()[j++] =  (byte) (sample >> 2);
+                line.getScanline()[j++] =  (byte) (sample >> 1);
+                line.getScanline()[j++] =  (byte) (sample);
             }
             pngw.writeRow(line, row);
         }
