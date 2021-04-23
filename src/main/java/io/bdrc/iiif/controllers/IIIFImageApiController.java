@@ -1,7 +1,8 @@
 package io.bdrc.iiif.controllers;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
@@ -20,6 +21,7 @@ import org.apache.jena.atlas.logging.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -32,6 +34,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -77,6 +80,8 @@ public class IIIFImageApiController {
     private AuthServiceInfo serviceInfo;
 
     private static final Logger log = LoggerFactory.getLogger(IIIFImageApiController.class);
+    
+    private static boolean useCacheForSameAsS3 = false;
 
     @RequestMapping(value = "/setcookie")
     ResponseEntity<String> getCookie(HttpServletRequest req, HttpServletResponse response)
@@ -116,7 +121,7 @@ public class IIIFImageApiController {
     }
 
     @RequestMapping(value = "/{identifier}/{region}/{size}/{rotation}/{quality}.{format}")
-    public ResponseEntity<byte[]> getImageRepresentation(@PathVariable String identifier, @PathVariable String region,
+    public ResponseEntity<?> getImageRepresentation(@PathVariable String identifier, @PathVariable String region,
             @PathVariable String size, @PathVariable String rotation, @PathVariable String quality,
             @PathVariable String format, HttpServletRequest request, HttpServletResponse response,
             WebRequest webRequest)
@@ -134,6 +139,7 @@ public class IIIFImageApiController {
         HttpHeaders headers = new HttpHeaders();
         ImageApiSelector selector = getImageApiSelector(identifier, region, size, rotation, quality, format);
         final ImageApiProfile profile = ImageApiProfile.LEVEL_TWO;
+        final String decodedIdentifier = URLDecoder.decode(identifier, "UTF-8");
         // TODO: the first part seems ignored?
         // ImageService info = new ImageService("https://iiif.bdrc.io/" +
         // identifier,
@@ -142,18 +148,17 @@ public class IIIFImageApiController {
         headers.set("Content-Disposition",
                 "inline; filename=" + path.replaceFirst("/image/", "").replace('/', '_').replace(',', '_'));
         headers.add("Link", String.format("<%s>;rel=\"profile\"", profile.getIdentifier().toString()));
-        if (identifier.split("::").length > 1) {
-            img = identifier.split("::")[1];
-            staticImg = identifier.split("::")[0].trim().equals("static");
+        if (decodedIdentifier.split("::").length > 1) {
+            img = decodedIdentifier.split("::")[1];
+            staticImg = decodedIdentifier.split("::")[0].trim().equals("static");
         }
         ResourceAccessValidation accValidation = null;
         IdentifierInfo idi = null;
         if (!staticImg) {
-            idi = new IdentifierInfo(identifier);
+            idi = new IdentifierInfo(decodedIdentifier);
             accValidation = new ResourceAccessValidation((Access) request.getAttribute("access"), idi, img);
             log.info("Access Validation is {} and is Accessible={}", accValidation,
                     accValidation.isAccessible(request));
-            identifier = URLDecoder.decode(identifier, "UTF-8");
             if (!accValidation.isAccessible(request)) {
                 HttpHeaders headers1 = new HttpHeaders();
                 headers1.setCacheControl(CacheControl.noCache());
@@ -180,74 +185,61 @@ public class IIIFImageApiController {
 
         // Now a shortcut:
 
-        if (!requestDiffersFromOriginal(identifier, selector)) {
+        if (!requestDiffersFromOriginal(decodedIdentifier, selector)) {
             // let's get our hands dirty
             final String s3key;
             final ImageProviderService service;
-            if (identifier.startsWith("static::")) {
-                s3key = identifier.substring(8);
+            if (decodedIdentifier.startsWith("static::")) {
+                s3key = decodedIdentifier.substring(8);
                 service = ImageProviderService.InstanceStatic;
             } else {
                 s3key = ImageProviderService.getKey(idi);
                 service = ImageProviderService.InstanceArchive;
             }
-            byte[] bytes = null;
-            try {
-                bytes = service.getAsync(s3key).get();
-            } catch (InterruptedException | ExecutionException e) {
-                throw new IIIFException(404, 5000, e);
+            InputStream is;
+            if (useCacheForSameAsS3) {
+                try {
+                    service.ensureCacheReady(s3key).get();
+                } catch (InterruptedException | ExecutionException e) {
+                    throw new IIIFException(404, 5000, e);
+                }
+                is = service.getFromCache(s3key);
+            } else {
+                if (service.isInCache(s3key)) {
+                    is = service.getFromCache(s3key);
+                } else {
+                    is = service.getNoCache(s3key);
+                }
             }
             Application.logPerf("got the bytes in {} ms for {}", (System.currentTimeMillis() - deb1), identifier);
             ImageMetrics.imageCount(ImageMetrics.IMG_CALLS_COMMON, (String) request.getAttribute("origin"));
-            return new ResponseEntity<>(bytes, headers, HttpStatus.OK);
-
+            return ResponseEntity.ok().headers(headers).body(new InputStreamResource(is));
         }
-        deb1 = System.currentTimeMillis();
-        ByteArrayOutputStream os = null;
-        ImageReader_ICC imgReader = null;
-        try {
-            // imgReader = ReadImageProcess.readImageInfo(identifier, info,
-            // null,false);
-            Application.logPerf("end reading from image service after {} ms for {} with reader {}",
-                    (System.currentTimeMillis() - deb1), identifier, imgReader);
-            // final String canonicalForm = idi.getCanonical();
-            // TODO: make it actually canonical...
-            // headers.add("Link", String.format("<%s>;rel=\"canonical\"",
-            // Application.getProperty("iiifserv_baseurl") + canonicalForm));
-            deb1 = System.currentTimeMillis();
-            Application.logPerf("processing image output stream for {}", identifier);
-            os = new ByteArrayOutputStream();
-            Object[] obj = ReadImageProcess.readImage(identifier, selector, profile, false);
-            DecodedImage decImg = (DecodedImage) obj[0];
-            imgReader = (ImageReader_ICC) obj[1];
-            WriteImageProcess.processImage(decImg, identifier, selector, profile, os, imgReader);
-            Application.logPerf("ended processing image after {} ms for {}", (System.currentTimeMillis() - deb1),
-                    identifier);
-            Application.logPerf("Total request time {} ms ", (System.currentTimeMillis() - deb), identifier);
-            imgReader.getReader().dispose();
-            ImageMetrics.imageCount(ImageMetrics.IMG_CALLS_COMMON, (String) request.getAttribute("origin"));
-        } catch (Exception e) {
-            log.error("Resource was not found for identifier " + identifier + " Message: " + e.getMessage()
-                    + " Trying failover method");
-            try {
-                os = new ByteArrayOutputStream();
-                Object[] obj = ReadImageProcess.readImage(identifier, selector, profile, true);
-                DecodedImage decImg = (DecodedImage) obj[0];
-                imgReader = (ImageReader_ICC) obj[1];
-                WriteImageProcess.processImage(decImg, identifier, selector, profile, os, imgReader);
-                Application.logPerf("ended processing image after {} ms for {}", (System.currentTimeMillis() - deb1),
-                        identifier);
-                Application.logPerf("Total request time {} ms ", (System.currentTimeMillis() - deb), identifier);
-                imgReader.getReader().dispose();
-                ImageMetrics.imageCount(ImageMetrics.IMG_CALLS_COMMON, (String) request.getAttribute("origin"));
-            } catch (Exception ex) {
-                log.error("Somethng WENT WRONG ");
-                ex.printStackTrace();
-                return new ResponseEntity<>(("Resource was not found for identifier " + identifier).getBytes(),
-                        HttpStatus.NOT_FOUND);
+        
+        final StreamingResponseBody stream = new StreamingResponseBody() {
+            @Override
+            public void writeTo(final OutputStream os) throws IOException {
+                Object[] obj;
+                try {
+                    Application.logPerf("processing image output stream for {}", decodedIdentifier);
+                    obj = ReadImageProcess.readImage(decodedIdentifier, selector, profile, false);
+                    WriteImageProcess.processImage((DecodedImage) obj[0], decodedIdentifier, selector, profile, os, (ImageReader_ICC) obj[1]);
+                    ((ImageReader_ICC) obj[1]).getReader().dispose();
+                } catch (Exception e) {
+                    log.error("Resource was not found for identifier " + decodedIdentifier + " Message: " + e.getMessage()
+                            + " Trying failover method");
+                    try {
+                        obj = ReadImageProcess.readImage(decodedIdentifier, selector, profile, true);
+                        WriteImageProcess.processImage((DecodedImage) obj[0], decodedIdentifier, selector, profile, os, (ImageReader_ICC) obj[1]);
+                        ((ImageReader_ICC) obj[1]).getReader().dispose();
+                    } catch (Exception ex) {
+                        log.error("Somethng WENT WRONG ", ex);
+                    }
+                }
             }
-        }
-        return new ResponseEntity<>(os.toByteArray(), headers, HttpStatus.OK);
+        };
+        ImageMetrics.imageCount(ImageMetrics.IMG_CALLS_COMMON, (String) request.getAttribute("origin"));
+        return ResponseEntity.ok().headers(headers).body(stream);
     }
 
     public static boolean pngOutput(final String filename) {

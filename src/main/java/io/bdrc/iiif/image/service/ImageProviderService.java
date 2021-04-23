@@ -73,16 +73,14 @@ public class ImageProviderService extends ConcurrentCacheAccessService {
         return "Works/" + md5firsttwo + "/" + w_id + "/images/" + w_id + "-" + imageGroupId + "/";
     }
     
-    boolean isInCache(final String s3key) {
+    public boolean isInCache(final String s3key) {
         if (!isS3)
             return true;
         final String cacheKey = this.cachePrefix + s3key;
-        // TODO: perhaps check the status to make sure
-        // it's not currently being written
         return cache.hasKey(cacheKey);
     }
     
-    InputStream getFromCache(String s3Key) throws FileNotFoundException {
+    public InputStream getFromCache(String s3Key) throws FileNotFoundException {
         if (isS3) {
             return cache.getIs(this.cachePrefix + s3Key);
         } else {
@@ -118,6 +116,33 @@ public class ImageProviderService extends ConcurrentCacheAccessService {
         } catch (IOException e) {
             cache.remove(s3key, true);
             throw new IIIFException(500, 5000, e);
+        }
+    }
+    
+    final public InputStream getNoCache(final String s3key) throws IIIFException {
+        if (!isS3) {
+            String rootDir = AuthProps.getProperty("imageSourceDiskRootDir");
+            try {
+                return new FileInputStream(new File(rootDir + s3key));
+            } catch (FileNotFoundException e) {
+                throw new IIIFException("can't find file "+rootDir+s3key);
+            }
+        }
+        final AmazonS3 s3Client = getClient();
+        logger.info("fetching s3 key {}", s3key);
+        final S3Object object;
+        try {
+            object = s3Client.getObject(new GetObjectRequest(bucketName, s3key));
+            return object.getObjectContent();
+        } catch (AmazonS3Exception e) {
+            if (e.getErrorCode().equals("NoSuchKey")) {
+                logger.error("NoSuchKey: {}", s3key);
+                cache.remove(s3key, true);
+                throw new IIIFException(404, 5000, "image not available in our archive");
+            } else {
+                cache.remove(s3key, true);
+                throw new IIIFException(500, 5000, e);
+            }
         }
     }
 
