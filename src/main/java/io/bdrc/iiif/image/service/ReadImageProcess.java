@@ -3,9 +3,11 @@ package io.bdrc.iiif.image.service;
 import java.awt.Dimension;
 import java.awt.Rectangle;
 import java.awt.color.ICC_Profile;
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.util.Iterator;
 import java.util.concurrent.ExecutionException;
@@ -46,6 +48,8 @@ public class ReadImageProcess {
 
     @Value("${custom.iiif.image.maxHeight:65500}")
     private static int maxHeight;
+    
+    private static final int expectedBytesForICCDiscovery = 40000;
 
     /** Update ImageService based on the image **/
     private static void enrichInfo(ImageReader reader, ImageService info) throws IOException {
@@ -155,16 +159,26 @@ public class ReadImageProcess {
                 }
             }
         }
-        byte[] bytes = null;
         try {
-            bytes = service.getAsync(s3key).get();
+            service.ensureCacheReady(s3key).get();
         } catch (InterruptedException | ExecutionException e) {
             throw new IIIFException(404, 5000, e);
         }
-        ImageInputStream iis = ImageIO.createImageInputStream(new ByteArrayInputStream(bytes));
+        InputStream is = service.getFromCache(s3key);
+        
         ImageReader reader = null;
         if (ext.equals("jpg")) {
-            
+            // we buffer the inputstream so that we can read the headers
+            // including the ICC
+            BufferedInputStream bis  = new BufferedInputStream(is);
+            bis.mark(expectedBytesForICCDiscovery);
+            try {
+                icc = Imaging.getICCProfile(bis, s3key);
+                bis.reset();
+            } catch (ImageReadException e) {
+                e.printStackTrace();
+            }
+            ImageInputStream iis = ImageIO.createImageInputStream(bis);
             Iterator<ImageReader> itr = ImageIO.getImageReaders(iis);
             while (itr.hasNext()) {
                 reader = itr.next();
@@ -172,23 +186,19 @@ public class ReadImageProcess {
                     if (reader.getClass().equals(com.twelvemonkeys.imageio.plugins.jpeg.JPEGImageReader.class)) {
                         break;
                     }                    
-                }else {
+                } else {
                     if (reader.getClass().equals(TurboJpegImageReader.class)) {
                         break;
                     }
                 }
-            }
+            }            
+            reader.setInput(iis);
         } else {
+            ImageInputStream iis = ImageIO.createImageInputStream(is);
             reader = Streams.stream(ImageIO.getImageReaders(iis)).findFirst().orElseThrow(UnsupportedFormatException::new);
+            reader.setInput(iis);
         }
-        reader.setInput(iis);
-        if (reader.getClass().equals(TurboJpegImageReader.class)) {
-            try {
-                icc = Imaging.getICCProfile(bytes);
-            } catch (ImageReadException e) {
-                e.printStackTrace();
-            }
-        }
+
         Application.logPerf("S3 object IIIS READER >> {}", reader);
         Application.logPerf("Image service return reader at {} ms {}", System.currentTimeMillis() - deb, identifier);
         return new ImageReader_ICC(reader, icc);

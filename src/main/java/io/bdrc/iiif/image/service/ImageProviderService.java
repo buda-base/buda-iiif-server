@@ -2,8 +2,10 @@ package io.bdrc.iiif.image.service;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
@@ -17,12 +19,12 @@ import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
 
 import io.bdrc.auth.AuthProps;
-import io.bdrc.iiif.core.Application;
+import io.bdrc.iiif.core.DiskCache;
 import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 import io.bdrc.libraries.GlobalHelpers;
 
-public class ImageProviderService extends ConcurrentResourceService<byte[]> {
+public class ImageProviderService extends ConcurrentCacheAccessService {
 
     private static final ClientConfiguration config = new ClientConfiguration().withConnectionTimeout(3000).withMaxConnections(50)
             .withMaxErrorRetry(5).withSocketTimeout(3000);
@@ -34,6 +36,9 @@ public class ImageProviderService extends ConcurrentResourceService<byte[]> {
     public static final ImageProviderService InstanceArchive = new ImageProviderService(bucketNameArchive, "archive:");
     public String bucketName;
     private static AmazonS3ClientBuilder clientBuilder = null;
+    private static DiskCache cache;
+    private String cachePrefix;
+    boolean isS3 = false;
     
     static {
         if ("s3".equals(AuthProps.getProperty("imageSourceType")))
@@ -42,8 +47,11 @@ public class ImageProviderService extends ConcurrentResourceService<byte[]> {
             
 
     ImageProviderService(final String bucketName, final String cachePrefix) {
-        super("iiif_img", cachePrefix);
+        super();
+        this.cachePrefix = cachePrefix;
         this.bucketName = bucketName;
+        if ("s3".equals(AuthProps.getProperty("imageSourceType")))
+            isS3 = true;
     }
 
     public static AmazonS3 getClient() {
@@ -64,50 +72,53 @@ public class ImageProviderService extends ConcurrentResourceService<byte[]> {
         String imageGroupId = ImageInfoListService.getS3ImageGroupId(idf.igi.imageGroup);
         return "Works/" + md5firsttwo + "/" + w_id + "/images/" + w_id + "-" + imageGroupId + "/";
     }
-
-    @Override
-    final public byte[] getFromApi(final String s3key) throws IIIFException {
-        String source = Application.getProperty("imageSourceType");
-        switch (source) {
-        case Application.S3_SOURCE:
-            final AmazonS3 s3Client = getClient();
-            logger.info("fetching s3 key {}", s3key);
-            final S3Object object;
-            try {
-                object = s3Client.getObject(new GetObjectRequest(bucketName, s3key));
-                InputStream objectData = object.getObjectContent();
-                final byte[] rawContent = IOUtils.toByteArray(objectData);
-                objectData.close();
-                return rawContent;
-            } catch (AmazonS3Exception e) {
-                if (e.getErrorCode().equals("NoSuchKey")) {
-                    logger.error("NoSuchKey: {}", s3key);
-                    throw new IIIFException(404, 5000, "image not available in our archive");
-                } else {
-                    throw new IIIFException(500, 5000, e);
-                }
-            } catch (IOException e) {
-                throw new IIIFException(500, 5000, e);
-            }
-
-        case Application.DISK_SOURCE:
-            try {
-                String rootDir = Application.getProperty("imageSourceDiskRootDir");
-                return getImageAsBytes(rootDir + s3key);
-            } catch (Exception e) {
-                throw new IIIFException(500, 5000, e);
-            }
-        default:
-            return new byte[0];
+    
+    boolean isInCache(final String s3key) {
+        if (!isS3)
+            return true;
+        final String cacheKey = this.cachePrefix + s3key;
+        // TODO: perhaps check the status to make sure
+        // it's not currently being written
+        return cache.hasKey(cacheKey);
+    }
+    
+    InputStream getFromCache(String s3Key) throws FileNotFoundException {
+        if (isS3) {
+            return cache.getIs(this.cachePrefix + s3Key);
+        } else {
+            String rootDir = AuthProps.getProperty("imageSourceDiskRootDir");
+            return new FileInputStream(new File(rootDir + s3Key));
         }
-
     }
 
-    public static byte[] getImageAsBytes(String filePath) throws Exception {
-        FileInputStream in = new FileInputStream(new File(filePath));
-        byte[] data = IOUtils.toByteArray(in);
-        in.close();
-        return data;
+    @Override
+    final public void putInCache(final String s3key) throws IIIFException {
+        if (!isS3)
+            return;
+        final AmazonS3 s3Client = getClient();
+        logger.info("fetching s3 key {}", s3key);
+        final S3Object object;
+        final String cacheKey = this.cachePrefix + s3key;
+        try {
+            object = s3Client.getObject(new GetObjectRequest(bucketName, s3key));
+            InputStream objectData = object.getObjectContent();
+            OutputStream os = cache.getOs(cacheKey);
+            IOUtils.copy(objectData, os);
+            objectData.close();
+            cache.outputDone(cacheKey);
+        } catch (AmazonS3Exception e) {
+            if (e.getErrorCode().equals("NoSuchKey")) {
+                logger.error("NoSuchKey: {}", s3key);
+                cache.remove(s3key, true);
+                throw new IIIFException(404, 5000, "image not available in our archive");
+            } else {
+                cache.remove(s3key, true);
+                throw new IIIFException(500, 5000, e);
+            }
+        } catch (IOException e) {
+            cache.remove(s3key, true);
+            throw new IIIFException(500, 5000, e);
+        }
     }
 
 }
