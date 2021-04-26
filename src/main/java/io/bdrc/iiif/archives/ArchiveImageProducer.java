@@ -5,16 +5,13 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
-import java.net.MalformedURLException;
+import java.io.InputStream;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.amazonaws.services.s3.AmazonS3;
-
-import io.bdrc.iiif.core.EHServerCache;
 import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.iiif.image.service.ImageProviderService;
 import io.bdrc.iiif.metrics.ImageMetrics;
@@ -26,8 +23,9 @@ public class ArchiveImageProducer implements Callable {
     final static String S3_BUCKET = "archive.tbrc.org";
     public static final String IIIF_IMG = "iiif_img";
     public final static Logger log = LoggerFactory.getLogger(ArchiveImageProducer.class);
+    
+    private static boolean cacheImages = false;
 
-    AmazonS3 s3;
     String id;
     String imageName;
     String origin;
@@ -46,32 +44,46 @@ public class ArchiveImageProducer implements Callable {
         }
     }
 
-    public Object[] getImageAsBytes() throws IIIFException {
-        return getImageAsBytes(this.id, this.imageName, this.origin, this.isTiff);
+    public Object[] getImageInputStream() throws IIIFException {
+        return getImageInputStream(this.id, this.imageName, this.origin, this.isTiff);
     }
     
-    static public Object[] getImageAsBytes(IdentifierInfo inf, String imgId, String origin) throws IIIFException {
+    static public Object[] getImageInputStream(IdentifierInfo inf, String imgId, String origin) throws IIIFException {
         String id = ImageProviderService.getKeyPrefix(inf) + imgId;
         String imageName = id.substring(id.lastIndexOf("/") + 1);
-        return getImageAsBytes(id, imageName, origin, false);
+        return getImageInputStream(id, imageName, origin, false);
     }
     
-    static public Object[] getImageAsBytes(String id, String imageName, String origin, boolean isTiff) throws IIIFException {
+    static public Object[] getImageInputStream(String id, String imageName, String origin, boolean isTiff) throws IIIFException {
         Object[] obj = new Object[2];
         obj[1] = imageName;
-        byte[] imgbytes = null;
+        InputStream imgis = null;
+        final String s3key;
+        final ImageProviderService service;
+        if (id.startsWith("static::")) {
+            s3key = id.substring(8);
+            service = ImageProviderService.InstanceStatic;
+        } else {
+            IdentifierInfo idi = new IdentifierInfo(id);
+            s3key = ImageProviderService.getKey(idi);
+            service = ImageProviderService.InstanceArchive;
+        }
         try {
-            imgbytes = (byte[]) EHServerCache.get(IIIF_IMG, id);
-            if (imgbytes != null) {
-                log.debug("Got {} from cache ...", id);
-                ImageMetrics.imageCount(ImageMetrics.IMG_CALLS_COMMON, origin);
-                obj[0] = imgbytes;
-                return obj;
+            if (cacheImages) {
+                try {
+                    service.ensureCacheReady(s3key).get();
+                } catch (InterruptedException | ExecutionException e) {
+                    throw new IIIFException(404, 5000, e);
+                }
+                imgis = service.getFromCache(s3key);
+            } else {
+                if (service.isInCache(s3key)) {
+                    imgis = service.getFromCache(s3key);
+                } else {
+                    imgis = service.getNoCache(s3key);
+                }
             }
-            imgbytes = ImageProviderService.InstanceArchive.getFromApi(id);
-            obj[0] = imgbytes;
-            log.debug("Got {} from S3 ...added to cache", id);
-            EHServerCache.put(IIIF_IMG, id, imgbytes);
+            obj[0] = imgis;
             ImageMetrics.imageCount(ImageMetrics.IMG_CALLS_ARCHIVES, origin);
         } catch (IIIFException e) {
             log.error("Could not get Image as bytes for id=" + id, e.getMessage());
@@ -97,7 +109,7 @@ public class ArchiveImageProducer implements Callable {
 
     @Override
     public Object call() throws IIIFException {
-        return getImageAsBytes();
+        return getImageInputStream();
     }
 
 }

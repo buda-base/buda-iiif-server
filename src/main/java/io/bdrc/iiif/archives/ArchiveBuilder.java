@@ -1,8 +1,10 @@
 package io.bdrc.iiif.archives;
 
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,11 +20,14 @@ import java.util.zip.ZipOutputStream;
 
 import javax.imageio.ImageIO;
 
+import org.apache.commons.imaging.Imaging;
+import org.apache.pdfbox.cos.COSName;
 import org.apache.pdfbox.pdfwriter.COSWriter;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
+import org.apache.pdfbox.pdmodel.graphics.image.JPEGFactory;
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 import org.ehcache.spi.loaderwriter.CacheWritingException;
 import org.slf4j.Logger;
@@ -150,26 +155,35 @@ public class ArchiveBuilder {
                     log.debug("adding {}", imgInf.filename);
                     imgDim.put(imgInf.filename, imgInf);
                     // ArchiveImageProducer tmp = null;
-                    Object[] obj = ArchiveImageProducer.getImageAsBytes(inf, imgInf.filename, origin);
-                    byte[] bmg = (byte[]) obj[0];
+                    Object[] obj = ArchiveImageProducer.getImageInputStream(inf, imgInf.filename, origin);
+                    InputStream bmg = (InputStream) obj[0];
                     String imgKey = (String) obj[1];
+                    PDImageXObject pdImage;
+                    final ImageInfo dim = imgDim.get(imgKey);
                     if (bmg == null) {
                         // Trying to insert image indicating that original image
                         // is
                         // missing
                         try {
-                            bmg = toByteArray(
-                                    ArchiveImageProducer.getBufferedMissingImage("Page {}" + k + " couldn't be found"));
+                            final BufferedImage bimg = ArchiveImageProducer.getBufferedMissingImage("Page {}" + k + " couldn't be found");
+                            pdImage = JPEGFactory.createFromImage(doc, bimg);
                         } catch (Exception e) {
                             // We don't interrupt the pdf generation process
                             log.error("Could not get Buffered Missing image from producer for page {} of volume {}", k,
                                     inf.volumeId);
                         }
+                    } else {
+                        Imaging.guessFormat(null);
+                        
+                        pdImage = new PDImageXObject(doc, bmg, 
+                                COSName.DCT_DECODE, dim.getWidth(), dim.getHeight(), 8,
+                                getColorSpaceFromAWT(awtColorImage));
                     }
+                    
                     PDPage page = new PDPage(
-                            new PDRectangle(imgDim.get(imgKey).getWidth(), imgDim.get(imgKey).getHeight()));
+                            new PDRectangle(dim.getWidth(), dim.getHeight()));
                     doc.addPage(page);
-                    PDImageXObject pdImage = PDImageXObject.createFromByteArray(doc, bmg, "");
+                    
                     PDPageContentStream contents = new PDPageContentStream(doc, page);
                     contents.drawImage(pdImage, 0, 0);
                     //log.debug("page was drawn for img {}", imgInf.filename);
@@ -346,6 +360,17 @@ public class ArchiveBuilder {
         return inf.ensureImageListInfo(acc, startPage.intValue(), endPage.intValue());
     }
 
+    public static InputStream toInputStream(BufferedImage img) throws IOException {
+        final ByteArrayOutputStream output = new ByteArrayOutputStream() {
+            @Override
+            public synchronized byte[] toByteArray() {
+                return this.buf;
+            }
+        };
+        ImageIO.write(img, "jpg", output);
+        return new ByteArrayInputStream(output.toByteArray(), 0, output.size());
+    }
+    
     public static byte[] toByteArray(BufferedImage img) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ImageIO.write(img, "jpg", baos);

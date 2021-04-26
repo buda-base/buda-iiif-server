@@ -4,7 +4,6 @@ import java.awt.Dimension;
 import java.awt.Rectangle;
 import java.awt.color.ICC_Profile;
 import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -17,8 +16,13 @@ import javax.imageio.ImageReadParam;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
 
+import org.apache.commons.imaging.ImageInfo;
 import org.apache.commons.imaging.ImageReadException;
 import org.apache.commons.imaging.Imaging;
+import org.apache.pdfbox.pdmodel.graphics.color.PDColorSpace;
+import org.apache.pdfbox.pdmodel.graphics.color.PDDeviceCMYK;
+import org.apache.pdfbox.pdmodel.graphics.color.PDDeviceGray;
+import org.apache.pdfbox.pdmodel.graphics.color.PDDeviceRGB;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -50,6 +54,7 @@ public class ReadImageProcess {
     private static int maxHeight;
     
     private static final int expectedBytesForICCDiscovery = 40000;
+    private static final int expectedBytesForCSDiscovery = 40000;
 
     /** Update ImageService based on the image **/
     private static void enrichInfo(ImageReader reader, ImageService info) throws IOException {
@@ -130,6 +135,39 @@ public class ReadImageProcess {
         return imgReader;
     }
     
+    // extract ICC Profile from an image input stream, does it without reading the entire image in memory
+    // but instead just read the beginning of the inputstream and then resetting it
+    // note that it requires the inputstream to be buffered
+    public static ICC_Profile getIcc(InputStream is, String fileName) throws IOException {
+        is.mark(expectedBytesForICCDiscovery);
+        try {
+            ICC_Profile icc = Imaging.getICCProfile(is, fileName);
+            is.reset();
+            return icc;
+        } catch (ImageReadException e) {
+            log.error("can't read ICC profile in {}: {}", fileName, e.getMessage());
+        }
+        return null;
+    }
+
+    // same as before, but with PDColorSpace
+    public static PDColorSpace getPDColorSpace(InputStream is, String fileName) throws IOException {
+        is.mark(expectedBytesForCSDiscovery);
+        try {
+            final ImageInfo ii = Imaging.getImageInfo(is, fileName);
+            is.reset();
+            ImageInfo.ColorType ct = ii.getColorType();
+            if (ct.equals(ImageInfo.ColorType.BW) || ct.equals(ImageInfo.ColorType.GRAYSCALE))
+                return PDDeviceGray.INSTANCE;
+            if (ct.equals(ImageInfo.ColorType.YCCK) || ct.equals(ImageInfo.ColorType.CMYK))
+                return PDDeviceCMYK.INSTANCE;
+            return PDDeviceRGB.INSTANCE;
+        } catch (ImageReadException e) {
+            log.error("can't read ICC profile in {}: {}", fileName, e.getMessage());
+        }
+        return null;
+    }
+    
     /**
      * Try to obtain a {@link ImageReader} for a given identifier
      * 
@@ -171,13 +209,7 @@ public class ReadImageProcess {
             // we buffer the inputstream so that we can read the headers
             // including the ICC
             BufferedInputStream bis  = new BufferedInputStream(is);
-            bis.mark(expectedBytesForICCDiscovery);
-            try {
-                icc = Imaging.getICCProfile(bis, s3key);
-                bis.reset();
-            } catch (ImageReadException e) {
-                e.printStackTrace();
-            }
+            icc = getIcc(bis, s3key);
             ImageInputStream iis = ImageIO.createImageInputStream(bis);
             Iterator<ImageReader> itr = ImageIO.getImageReaders(iis);
             while (itr.hasNext()) {

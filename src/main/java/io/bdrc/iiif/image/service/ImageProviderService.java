@@ -80,12 +80,17 @@ public class ImageProviderService extends ConcurrentCacheAccessService {
         return cache.hasKey(cacheKey);
     }
     
-    public InputStream getFromCache(String s3Key) throws FileNotFoundException {
+    public InputStream getFromCache(String s3Key) throws IIIFException {
         if (isS3) {
             return cache.getIs(this.cachePrefix + s3Key);
         } else {
             String rootDir = AuthProps.getProperty("imageSourceDiskRootDir");
-            return new FileInputStream(new File(rootDir + s3Key));
+            try {
+                return new FileInputStream(new File(rootDir + s3Key));
+            } catch (FileNotFoundException e) {
+                logger.error("could not find file for {}", s3Key);
+                throw new IIIFException(e);
+            }
         }
     }
 
