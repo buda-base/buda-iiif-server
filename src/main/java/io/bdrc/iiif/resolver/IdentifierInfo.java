@@ -48,8 +48,7 @@ public class IdentifierInfo {
             this.igi = ImageGroupInfoService.Instance.getAsync(this.volumeId).get();
             this.ili = ImageInfoListService.Instance
                     .getAsync(igi.imageInstanceId.substring(AppConstants.BDR_len), igi.imageGroup).get();
-            imgMap = buildImageMap(ili);
-
+            imgMap = buildImageMapAndAddImgNum(ili);
         } catch (InterruptedException | ExecutionException e) {
             throw new IIIFException(404, 5000, e);
         }
@@ -64,10 +63,13 @@ public class IdentifierInfo {
         }
     }
 
-    private HashMap<String, ImageInfo> buildImageMap(List<ImageInfo> inf) {
+    private HashMap<String, ImageInfo> buildImageMapAndAddImgNum(List<ImageInfo> inf) {
         HashMap<String, ImageInfo> map = new HashMap<>();
+        int imgNum = 1;
         for (ImageInfo imf : inf) {
+            imf.imgNum = imgNum;
             map.put(imf.filename, imf);
+            imgNum += 1;
         }
         return map;
     }
@@ -80,15 +82,14 @@ public class IdentifierInfo {
         return igi.access.equals(AccessType.FAIR_USE);
     }
 
-    public List<ImageInfo> ensureImageListInfo(Access acc, int start, int end) throws IIIFException {
+    public List<ImageInfo> getImageListInfo(Access acc, int start, int end) throws IIIFException {
         // get the full list;
         List<ImageInfo> info = null;
         try {
             info = ImageInfoListService.Instance
                     .getAsync(igi.imageInstanceId.substring(AppConstants.BDR_len), igi.imageGroup).get();
         } catch (InterruptedException | ExecutionException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            throw new IIIFException(e);
         }
         // work is fair use but and user is not authorized to see it in full
         // return full list
@@ -109,10 +110,8 @@ public class IdentifierInfo {
 
     public List<ImageInfo> getImageListRange(List<ImageInfo> src, int start, int end) {
         List<ImageInfo> info = new ArrayList<>();
-        int k = 0;
         for (int x = start - 1; x < end; x++) {
-            info.add(k, src.get(x));
-            k++;
+            info.add(src.get(x));
         }
         return info;
     }

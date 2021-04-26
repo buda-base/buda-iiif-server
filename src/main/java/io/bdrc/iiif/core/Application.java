@@ -51,7 +51,7 @@ public class Application extends SpringBootServletInitializer {
     static final String configPath = System.getProperty("iiifserv.configpath");
     public static Logger perfLog = LoggerFactory.getLogger("performance");
     public static Logger log = LoggerFactory.getLogger(Application.class);
-    private static Properties props;
+    public static Properties props;
     private static boolean logPerf = true;
     public static final String DISK_SOURCE = "disk";
     public static final String S3_SOURCE = "s3";

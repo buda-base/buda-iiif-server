@@ -15,6 +15,7 @@ import org.apache.http.client.ClientProtocolException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -23,6 +24,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -34,6 +36,7 @@ import io.bdrc.iiif.archives.ArchiveProducer;
 import io.bdrc.iiif.archives.PdfItemInfo;
 import io.bdrc.iiif.auth.ResourceAccessValidation;
 import io.bdrc.iiif.core.Application;
+import io.bdrc.iiif.core.DiskCache;
 import io.bdrc.iiif.core.EHServerCache;
 import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.iiif.resolver.IdentifierInfo;
@@ -103,15 +106,6 @@ public class ArchivesController {
                 }
                 log.info("Pdf requested numPage in identifierInfo {}", inf);
                 log.info("Pdf requested start page {} and end page {}", bPage.intValue(), ePage.intValue());
-
-                /*
-                 * List<ImageInfo> ili = null; try { ili =
-                 * ImageInfoListService.Instance
-                 * .getAsync(inf.igi.imageInstanceId.substring(AppConstants.
-                 * BDR_len), inf.igi.imageGroup) .get(); } catch
-                 * (InterruptedException | ExecutionException e) { throw new
-                 * IIIFException(404, 5000, e); }
-                 */
                 ResourceAccessValidation accValidation = new ResourceAccessValidation(
                         (Access) request.getAttribute("access"), inf);
                 AccessLevel al = accValidation.getAccessLevel(request);
@@ -128,29 +122,27 @@ public class ArchivesController {
                 Double percentdone = null;
                 if (type.equals(ArchiveBuilder.PDF_TYPE)) {
                     percentdone = ArchiveBuilder.pdfjobs.get(output);
-                    cached = EHServerCache.IIIF_PDF.containsKey(output);
+                    cached = EHServerCache.IIIF_PDF.hasKey(output);
                     log.error("PDF {} from IIIF cached {}, jobstarted: {}", id, cached, percentdone);
                     if (!cached && percentdone == null) {
                         // Start building pdf since the pdf file doesn't exist yet
                         if (!Application.isPdfSync()) {
                             ArchiveBuilder.service.submit(new ArchiveProducer(accValidation.getAccess(), inf, idf, output,
-                                    (String) request.getAttribute("origin"), ArchiveProducer.PDF));
+                                    (String) request.getAttribute("origin"), ArchiveProducer.PDF, EHServerCache.IIIF_PDF));
                             //ArchiveBuilder.buildPdf(accValidation.getAccess(), inf, idf, output,
                             //        (String) request.getAttribute("origin"));
                         }
                     }
                 }
                 if (type.equals(ArchiveBuilder.ZIP_TYPE)) {
-                    cached = EHServerCache.IIIF_ZIP.containsKey(output);
+                    cached = EHServerCache.IIIF_ZIP.hasKey(output);
                     percentdone = ArchiveBuilder.zipjobs.get(output);
                     log.debug("ZIP {} from IIIF_ZIP cached: {}, jobstarted: {}", id, cached, percentdone);
                     if (!cached &&  percentdone == null) {
-                        // Build pdf since the pdf file doesn't exist yet
+                        // Build zip since the zip file doesn't exist yet
                         if (!Application.isPdfSync()) {
-                            ArchiveBuilder.buildZip(accValidation.getAccess(), inf, idf, output,
-                                    (String) request.getAttribute("origin"));
-                            //ArchiveBuilder.service.submit(new ArchiveProducer(accValidation.getAccess(), inf, idf, output,
-                            //        (String) request.getAttribute("origin"), ArchiveProducer.ZIP));
+                            ArchiveBuilder.service.submit(new ArchiveProducer(accValidation.getAccess(), inf, idf, output,
+                                    (String) request.getAttribute("origin"), ArchiveProducer.ZIP, EHServerCache.IIIF_ZIP));
                         }
                     }
                 }
@@ -196,7 +188,7 @@ public class ArchivesController {
     }
 
     @RequestMapping(value = "/download/file/{type}/{name}", method = {RequestMethod.GET, RequestMethod.HEAD})
-    public ResponseEntity<ByteArrayResource> downloadPdf(@PathVariable String name, @PathVariable String type,
+    public ResponseEntity<?> downloadPdf(@PathVariable String name, @PathVariable String type,
             HttpServletRequest request) throws Exception {
         String[] nameParts = name.replace("FAIR_USE", "").split(":");
         HttpHeaders headers = new HttpHeaders();
@@ -215,34 +207,34 @@ public class ArchivesController {
         ResourceAccessValidation accValidation = new ResourceAccessValidation((Access) request.getAttribute("access"),
                 inf);
         if (Application.isPdfSync()) {
+            headers.setContentType(MediaType.parseMediaType("application/" + type));
+            headers.setContentDispositionFormData("attachment", name.substring(4) + "." + type);
             if (type.equals(ArchiveBuilder.PDF_TYPE)) {
-                ArchiveBuilder.buildSyncPdf(accValidation.getAccess(), inf, idf, name,
+                final StreamingResponseBody s = ArchiveBuilder.getPDFStreamingResponseBody(accValidation.getAccess(), inf, idf, name,
                         (String) request.getAttribute("origin"));
-            }
-            if (type.equals(ArchiveBuilder.ZIP_TYPE)) {
-                ArchiveBuilder.buildSyncZip(accValidation.getAccess(), inf, idf, name,
+                return ResponseEntity.ok().headers(headers).body(s);
+            } else { //if (type.equals(ArchiveBuilder.ZIP_TYPE)) {
+                final StreamingResponseBody s = ArchiveBuilder.getZipStreamingResponseBody(accValidation.getAccess(), inf, idf, name,
                         (String) request.getAttribute("origin"));
+                return ResponseEntity.ok().headers(headers).body(s);
             }
         }
-        byte[] array = null;
+        InputStream is = null;
         if (type.equals(ArchiveBuilder.PDF_TYPE)) {
-            array = (byte[]) EHServerCache.IIIF_PDF.get(name);
-            log.info("READ from cache {} name={}", IIIF, name);
+            is = EHServerCache.IIIF_PDF.getIs(name);
+        } else {
+            is = EHServerCache.IIIF_ZIP.getIs(name);
         }
-        if (type.equals(ArchiveBuilder.ZIP_TYPE)) {
-            array = (byte[]) EHServerCache.IIIF_ZIP.get(name);
-            log.info("READ from cache {} name={}", IIIF_ZIP, name);
-        }
-        if (array == null) {
+        if (is == null) {
             headers.setContentType(MediaType.parseMediaType("text/plain"));
-            array = new String(
+            byte[] array = new String(
                     "The link is wrong or has expired: please retry loading the archive and proceed to its download within 10 mn")
                             .getBytes();
             return new ResponseEntity<ByteArrayResource>(new ByteArrayResource(array), headers, HttpStatus.NOT_FOUND);
         }
         headers.setContentType(MediaType.parseMediaType("application/" + type));
         headers.setContentDispositionFormData("attachment", name.substring(4) + "." + type);
-        ResponseEntity<ByteArrayResource> response = new ResponseEntity<ByteArrayResource>(new ByteArrayResource(array),
+        ResponseEntity<InputStreamResource> response = new ResponseEntity<>(new InputStreamResource(is),
                 headers, HttpStatus.OK);
         return response;
     }
@@ -275,11 +267,11 @@ public class ArchivesController {
             output = idf.getImageGroupId() + ":" + bPage.intValue() + "-" + ePage.intValue();// +"."+type;
         }
         if (type.equals(ArchiveBuilder.PDF_TYPE)) {
-            cached = EHServerCache.IIIF_PDF.containsKey(output);
+            cached = EHServerCache.IIIF_PDF.hasKey(output);
             percentdone = ArchiveBuilder.pdfjobs.get(output);
         }
         if (type.equals(ArchiveBuilder.ZIP_TYPE)) {
-            cached = EHServerCache.IIIF_ZIP.containsKey(output);
+            cached = EHServerCache.IIIF_ZIP.hasKey(output);
             percentdone = ArchiveBuilder.zipjobs.get(output);
         }
         HashMap<String, Object> json = new HashMap<>();

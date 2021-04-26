@@ -15,6 +15,7 @@
     <version.imgscalr-lib>4.2</version.imgscalr-lib>
     <version.twelvemonkeys>3.6.4</version.twelvemonkeys>
     <aws.version>1.11.1000</aws.version>
+    <itext.version>7.1.15</itext.version>
   </properties>
   <parent>
     <groupId>org.springframework.boot</groupId>
@@ -28,7 +29,13 @@
         <groupId>org.ehcache</groupId>
         <artifactId>ehcache</artifactId>
         <version>3.9.2</version><!--$NO-MVN-MAN-VER$-->        
-    </dependency>          
+    </dependency>
+    <dependency>
+        <groupId>com.itextpdf</groupId>
+        <artifactId>itext7-core</artifactId>
+        <version>${itext.version}</version>
+        <type>pom</type>
+    </dependency>
     <dependency>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-test</artifactId>
@@ -110,13 +117,7 @@
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-java-sdk-s3</artifactId>
       <version>${aws.version}</version>
-    </dependency>
-   <!-- https://mvnrepository.com/artifact/org.apache.pdfbox/pdfbox -->
-    <dependency>
-        <groupId>org.apache.pdfbox</groupId>
-        <artifactId>pdfbox</artifactId>
-        <version>2.0.16</version>
-    </dependency>    
+    </dependency>  
     <!-- https://mvnrepository.com/artifact/org.apache.jena/jena-arq -->
       <dependency>
         <groupId>org.apache.jena</groupId>

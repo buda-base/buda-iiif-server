@@ -1,6 +1,7 @@
 package io.bdrc.iiif.core;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -33,9 +34,9 @@ public class EHServerCache {
 
     private static final Logger log = LoggerFactory.getLogger(EHServerCache.class);
 
-    public static Cache<String, byte[]> IIIF_IMG;
-    public static Cache<String, byte[]> IIIF_ZIP;
-    public static Cache<String, byte[]> IIIF_PDF;
+    public static DiskCache IIIF_IMG;
+    public static DiskCache IIIF_ZIP;
+    public static DiskCache IIIF_PDF;
     public static Cache<String, PdfItemInfo> PDF_ITEM_INFO;
     public static Cache<String, ArchiveInfo> ARCHIVE_INFO;
     public static Cache<String, ImageGroupInfo> IMAGE_GROUP_INFO;
@@ -46,41 +47,39 @@ public class EHServerCache {
     private static StatisticsService statsService;
     private static HashMap<String, CacheStatistics> CACHE_STATS;
 
-    public static void init() {
+    public static DiskCache getDiskCache(String shortName) throws IOException {
+        String path = Application.props.getOrDefault("diskCache."+shortName+".path", shortName.toUpperCase()+"CACHE").toString();
+        String nbSecondsMaxS = Application.props.getOrDefault("diskCache."+shortName+".nbSecondsMax", "1800").toString();
+        Integer nbSecondsMax = Integer.valueOf(nbSecondsMaxS);
+        String sizeMaxMBS = Application.props.getOrDefault("diskCache."+shortName+".sizeMaxMB", "20000").toString();
+        Long sizeMaxMB = Long.valueOf(sizeMaxMBS);
+        String nbItemsMaxS = Application.props.getOrDefault("diskCache."+shortName+".nbItemsMax", "100").toString();
+        Integer nbItemsMax = Integer.valueOf(nbItemsMaxS);
+        String cleanupClockSS = Application.props.getOrDefault("diskCache."+shortName+".cleanupClockS", "600").toString();
+        Integer cleanupClockS = Integer.valueOf(cleanupClockSS);
+        return new DiskCache(path, cleanupClockS, nbSecondsMax, nbItemsMax, sizeMaxMB, shortName);
+    }
+    
+    public static void init() throws IIIFException {
         MAP = new HashMap<>();
         MAP_DISK = new HashMap<>();
         MAP_MEM = new HashMap<>();
+        
+        try {
+            IIIF_IMG = getDiskCache("img");
+            IIIF_PDF = getDiskCache("pdf");
+            IIIF_ZIP = getDiskCache("zip");
+        } catch (IOException e) {
+            log.error("error when creating caches: ", e);
+            throw new IIIFException(e);
+        }
+        
         // We must reference CacheStatistics object
         // so they are not garbaed collected before being passed to prometheus
         CACHE_STATS = new HashMap<>();
         statsService = new DefaultStatisticsService();
         CacheManager cacheManager = CacheManagerBuilder.newCacheManagerBuilder().using(statsService).build();
         cacheManager.init();
-
-        /**** PERSISTENT CACHES ***/
-        PersistentCacheManager iiif_img = CacheManagerBuilder.newCacheManagerBuilder().using(statsService)
-                .with(CacheManagerBuilder.persistence(System.getProperty("user.dir") + File.separator + "EH_IIIF_IMG")).build(true);
-        IIIF_IMG = iiif_img.createCache("iiif_img", CacheConfigurationBuilder.newCacheConfigurationBuilder(String.class, byte[].class,
-                ResourcePoolsBuilder.newResourcePoolsBuilder().heap(2000, EntryUnit.ENTRIES).disk(1000, MemoryUnit.MB, true)));
-        MAP.put("iiif_img", new CacheWrapper(IIIF_IMG, "iiif_img"));
-        MAP_DISK.put("iiif_img", new CacheWrapper(IIIF_IMG, "iiif_img"));
-        CACHE_STATS.put("iiif_img", statsService.getCacheStatistics("iiif_img"));
-
-        PersistentCacheManager iiif_zip = CacheManagerBuilder.newCacheManagerBuilder().using(statsService)
-                .with(CacheManagerBuilder.persistence(System.getProperty("user.dir") + File.separator + "EH_IIIF_ZIP")).build(true);
-        IIIF_ZIP = iiif_zip.createCache("iiif_zip", CacheConfigurationBuilder.newCacheConfigurationBuilder(String.class, byte[].class,
-                ResourcePoolsBuilder.newResourcePoolsBuilder().heap(50, EntryUnit.ENTRIES).disk(10000, MemoryUnit.MB, true)));
-        MAP.put("iiif_zip", new CacheWrapper(IIIF_ZIP, "iiif_zip"));
-        MAP_DISK.put("iiif_zip", new CacheWrapper(IIIF_ZIP, "iiif_zip"));
-        CACHE_STATS.put("iiif_zip", statsService.getCacheStatistics("iiif_zip"));
-
-        PersistentCacheManager iiif = CacheManagerBuilder.newCacheManagerBuilder().using(statsService)
-                .with(CacheManagerBuilder.persistence(System.getProperty("user.dir") + File.separator + "EH_IIIF_PDF")).build(true);
-        IIIF_PDF = iiif.createCache("iiif_pdf", CacheConfigurationBuilder.newCacheConfigurationBuilder(String.class, byte[].class,
-                ResourcePoolsBuilder.newResourcePoolsBuilder().heap(50, EntryUnit.ENTRIES).disk(20000, MemoryUnit.MB, true)));
-        MAP.put("iiif_pdf", new CacheWrapper(IIIF_PDF, "iiif_pdf"));
-        MAP_DISK.put("iiif_pdf", new CacheWrapper(IIIF_PDF, "iiif_pdf"));
-        CACHE_STATS.put("iiif_pdf", statsService.getCacheStatistics("iiif_pdf"));
 
         /**** MEMORY CACHES ***/
         PDF_ITEM_INFO = cacheManager.createCache("pdfItemInfo", CacheConfigurationBuilder.newCacheConfigurationBuilder(String.class,
@@ -190,9 +189,9 @@ public class EHServerCache {
 
     public static boolean clearCache() {
         try {
-            IIIF_IMG.clear();
-            IIIF_ZIP.clear();
-            IIIF_PDF.clear();
+            IIIF_IMG.clear(false);
+            IIIF_ZIP.clear(false);
+            IIIF_PDF.clear(false);
             PDF_ITEM_INFO.clear();
             ARCHIVE_INFO.clear();
             return true;

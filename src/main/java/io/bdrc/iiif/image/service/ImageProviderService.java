@@ -20,6 +20,7 @@ import com.amazonaws.services.s3.model.S3Object;
 
 import io.bdrc.auth.AuthProps;
 import io.bdrc.iiif.core.DiskCache;
+import io.bdrc.iiif.core.EHServerCache;
 import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 import io.bdrc.libraries.GlobalHelpers;
@@ -36,7 +37,6 @@ public class ImageProviderService extends ConcurrentCacheAccessService {
     public static final ImageProviderService InstanceArchive = new ImageProviderService(bucketNameArchive, "archive:");
     public String bucketName;
     private static AmazonS3ClientBuilder clientBuilder = null;
-    private static DiskCache cache;
     private String cachePrefix;
     boolean isS3 = false;
     
@@ -77,12 +77,12 @@ public class ImageProviderService extends ConcurrentCacheAccessService {
         if (!isS3)
             return true;
         final String cacheKey = this.cachePrefix + s3key;
-        return cache.hasKey(cacheKey);
+        return EHServerCache.IIIF_IMG.hasKey(cacheKey);
     }
     
     public InputStream getFromCache(String s3Key) throws IIIFException {
         if (isS3) {
-            return cache.getIs(this.cachePrefix + s3Key);
+            return EHServerCache.IIIF_IMG.getIs(this.cachePrefix + s3Key);
         } else {
             String rootDir = AuthProps.getProperty("imageSourceDiskRootDir");
             try {
@@ -105,21 +105,21 @@ public class ImageProviderService extends ConcurrentCacheAccessService {
         try {
             object = s3Client.getObject(new GetObjectRequest(bucketName, s3key));
             InputStream objectData = object.getObjectContent();
-            OutputStream os = cache.getOs(cacheKey);
+            OutputStream os = EHServerCache.IIIF_IMG.getOs(cacheKey);
             IOUtils.copy(objectData, os);
             objectData.close();
-            cache.outputDone(cacheKey);
+            EHServerCache.IIIF_IMG.outputDone(cacheKey);
         } catch (AmazonS3Exception e) {
             if (e.getErrorCode().equals("NoSuchKey")) {
                 logger.error("NoSuchKey: {}", s3key);
-                cache.remove(s3key, true);
+                EHServerCache.IIIF_IMG.remove(s3key, true);
                 throw new IIIFException(404, 5000, "image not available in our archive");
             } else {
-                cache.remove(s3key, true);
+                EHServerCache.IIIF_IMG.remove(s3key, true);
                 throw new IIIFException(500, 5000, e);
             }
         } catch (IOException e) {
-            cache.remove(s3key, true);
+            EHServerCache.IIIF_IMG.remove(s3key, true);
             throw new IIIFException(500, 5000, e);
         }
     }
@@ -142,10 +142,10 @@ public class ImageProviderService extends ConcurrentCacheAccessService {
         } catch (AmazonS3Exception e) {
             if (e.getErrorCode().equals("NoSuchKey")) {
                 logger.error("NoSuchKey: {}", s3key);
-                cache.remove(s3key, true);
+                EHServerCache.IIIF_IMG.remove(s3key, true);
                 throw new IIIFException(404, 5000, "image not available in our archive");
             } else {
-                cache.remove(s3key, true);
+                EHServerCache.IIIF_IMG.remove(s3key, true);
                 throw new IIIFException(500, 5000, e);
             }
         }

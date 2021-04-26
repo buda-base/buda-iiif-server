@@ -16,13 +16,8 @@ import javax.imageio.ImageReadParam;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
 
-import org.apache.commons.imaging.ImageInfo;
 import org.apache.commons.imaging.ImageReadException;
 import org.apache.commons.imaging.Imaging;
-import org.apache.pdfbox.pdmodel.graphics.color.PDColorSpace;
-import org.apache.pdfbox.pdmodel.graphics.color.PDDeviceCMYK;
-import org.apache.pdfbox.pdmodel.graphics.color.PDDeviceGray;
-import org.apache.pdfbox.pdmodel.graphics.color.PDDeviceRGB;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -150,23 +145,23 @@ public class ReadImageProcess {
         return null;
     }
 
-    // same as before, but with PDColorSpace
-    public static PDColorSpace getPDColorSpace(InputStream is, String fileName) throws IOException {
-        is.mark(expectedBytesForCSDiscovery);
-        try {
-            final ImageInfo ii = Imaging.getImageInfo(is, fileName);
-            is.reset();
-            ImageInfo.ColorType ct = ii.getColorType();
-            if (ct.equals(ImageInfo.ColorType.BW) || ct.equals(ImageInfo.ColorType.GRAYSCALE))
-                return PDDeviceGray.INSTANCE;
-            if (ct.equals(ImageInfo.ColorType.YCCK) || ct.equals(ImageInfo.ColorType.CMYK))
-                return PDDeviceCMYK.INSTANCE;
-            return PDDeviceRGB.INSTANCE;
-        } catch (ImageReadException e) {
-            log.error("can't read ICC profile in {}: {}", fileName, e.getMessage());
-        }
-        return null;
-    }
+    // same as before, but with PDColorSpace, only for PDFBox + jpg
+//    public static PDColorSpace getPDColorSpace(InputStream is, String fileName) throws IOException {
+//        is.mark(expectedBytesForCSDiscovery);
+//        try {
+//            final ImageInfo ii = Imaging.getImageInfo(is, fileName);
+//            is.reset();
+//            ImageInfo.ColorType ct = ii.getColorType();
+//            if (ct.equals(ImageInfo.ColorType.BW) || ct.equals(ImageInfo.ColorType.GRAYSCALE))
+//                return PDDeviceGray.INSTANCE;
+//            if (ct.equals(ImageInfo.ColorType.YCCK) || ct.equals(ImageInfo.ColorType.CMYK))
+//                return PDDeviceCMYK.INSTANCE;
+//            return PDDeviceRGB.INSTANCE;
+//        } catch (ImageReadException e) {
+//            log.error("can't read ICC profile in {}: {}", fileName, e.getMessage());
+//        }
+//        return null;
+//    }
     
     /**
      * Try to obtain a {@link ImageReader} for a given identifier

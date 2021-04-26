@@ -15,6 +15,8 @@ public class ImageInfo {
     public String filename;
     @JsonProperty("size")
     public Integer size = null;
+    
+    public Integer imgNum = null;
 
     public ImageInfo(int width, int height, String filename, Integer size) {
         this.width = width;

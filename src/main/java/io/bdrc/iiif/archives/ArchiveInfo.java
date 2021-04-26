@@ -1,7 +1,6 @@
 package io.bdrc.iiif.archives;
 
 import java.io.IOException;
-import java.util.Calendar;
 import java.util.HashMap;
 
 import org.apache.http.client.ClientProtocolException;
@@ -12,7 +11,6 @@ import org.apache.jena.rdf.model.Property;
 import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.ResourceFactory;
-import org.apache.pdfbox.pdmodel.PDDocumentInformation;
 
 import io.bdrc.iiif.core.Application;
 import io.bdrc.iiif.core.EHServerCache;
@@ -170,22 +168,22 @@ public class ArchiveInfo {
         return tmp;
     }
 
-    public PDDocumentInformation getDocInformation() throws ClientProtocolException, IOException {
-        PDDocumentInformation docInf = new PDDocumentInformation();
-        docInf.setCreator("Buddhist Digital Resource Center");
-        docInf.setCreationDate(Calendar.getInstance());
-        // TODO
-        // docInf.setCustomMetadataValue("license", inf.getLicense());
-        // docInf.setCustomMetadataValue("URL", inf.getAsset());
-        docInf.setCustomMetadataValue("Bibliographical note", getBiblioNote());
-        docInf.setCustomMetadataValue("Catalog info", getCatalogInfo());
-        docInf.setCustomMetadataValue("Number of volumes", getNumVolumes());
-        docInf.setCustomMetadataValue("Volume number", Integer.toString(inf.igi.volumeNumber));
-        docInf.setCustomMetadataValue("Publisher name", getPublisherName());
-        docInf.setCustomMetadataValue("Publisher location", getPublisherLocation());
-        docInf.setTitle(getPrefLabel());
-        docInf.setAuthor(getAuthor());
-        return docInf;
-    }
+//    public PDDocumentInformation getDocInformation() throws ClientProtocolException, IOException {
+//        PDDocumentInformation docInf = new PDDocumentInformation();
+//        docInf.setCreator("Buddhist Digital Resource Center");
+//        docInf.setCreationDate(Calendar.getInstance());
+//        // TODO
+//        // docInf.setCustomMetadataValue("license", inf.getLicense());
+//        // docInf.setCustomMetadataValue("URL", inf.getAsset());
+//        docInf.setCustomMetadataValue("Bibliographical note", getBiblioNote());
+//        docInf.setCustomMetadataValue("Catalog info", getCatalogInfo());
+//        docInf.setCustomMetadataValue("Number of volumes", getNumVolumes());
+//        docInf.setCustomMetadataValue("Volume number", Integer.toString(inf.igi.volumeNumber));
+//        docInf.setCustomMetadataValue("Publisher name", getPublisherName());
+//        docInf.setCustomMetadataValue("Publisher location", getPublisherLocation());
+//        docInf.setTitle(getPrefLabel());
+//        docInf.setAuthor(getAuthor());
+//        return docInf;
+//    }
 
 }
