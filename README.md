@@ -39,3 +39,5 @@ java -Dserver.port=8080 -Dspring.profiles.active=local -Diiifserv.configpath=/yo
 ### Note
 
 You must implement `de.digitalcollections.core.backend.impl.file.repository.resource.resolver.S3Resolver` if you wish to use a different identifier format (see `Bdrcs3Resolver` for BDRC's identifer format).
+
+https://www.qoppa.com/pdfwriter/

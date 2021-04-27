@@ -6,6 +6,6 @@
 </head>
 <body>
     <h3>Download link:</h3>    
-    <a href="${links}">${file}</a>
+    <a href="${link}">${file}</a>
 </body>
 </html>

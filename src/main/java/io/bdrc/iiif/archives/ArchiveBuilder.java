@@ -63,6 +63,7 @@ public class ArchiveBuilder {
             log.error("Error while building pdf for identifier info {}", inf.toString());
             throw new IIIFException(500, IIIFException.GENERIC_APP_ERROR_CODE, e);
         }
+        EHServerCache.IIIF_PDF.outputDone(output);
     }
     
     public static StreamingResponseBody getPDFStreamingResponseBody(Access acc, IdentifierInfo inf, Identifier idf, String output, String origin) {
@@ -122,15 +123,17 @@ public class ArchiveBuilder {
                         ImageData imageData = ImageDataFactory.create(baos.toByteArray());
                         baos.close();
                         Image pdfImg = new Image(imageData);
-                        doc.addNewPage(new PageSize(11712, 2848));
-                        PdfPage page = doc.getPage(k);
-                        page.setPageLabel(PageLabelNumberingStyle.UPPERCASE_LETTERS, imgInf.filename);
-                        page.setPageLabel(PageLabelNumberingStyle.DECIMAL_ARABIC_NUMERALS, "i. "+Integer.toString(imgInf.imgNum));
+                        doc.addNewPage(new PageSize(imgInf.getWidth(), imgInf.getHeight()));
+                        //PdfPage page = doc.getPage(k);
+                        //page.setPageLabel(PageLabelNumberingStyle.UPPERCASE_LETTERS, imgInf.filename);
+                        //page.setPageLabel(PageLabelNumberingStyle.DECIMAL_ARABIC_NUMERALS, "i. "+Integer.toString(imgInf.imgNum));
                         pdfImg.setFixedPosition(k, 0, 0);
                         pdfImg.setWidth(imgInf.getWidth());
                         pdfImg.setHeight(imgInf.getHeight());
                         d.add(pdfImg);
                         d.flush();
+                        pdfWriter.flush();
+                        os.flush();
                     }
                 }
                 if ((k % 5) == 0 && jobs != null) {
@@ -157,13 +160,14 @@ public class ArchiveBuilder {
     public static void buildZipInCache(Access acc, IdentifierInfo inf, Identifier idf, String output, String origin)
             throws IIIFException {
         OutputStream os = EHServerCache.IIIF_ZIP.getOs(output);
-        buildPdf(acc, inf, idf, output, origin, os, zipjobs);
+        buildZip(acc, inf, idf, output, origin, os, zipjobs);
         try {
             os.close();
         } catch (IOException e) {
             log.error("Error while building zip for identifier info {}", inf.toString());
             throw new IIIFException(500, IIIFException.GENERIC_APP_ERROR_CODE, e);
         }
+        EHServerCache.IIIF_ZIP.outputDone(output);
     }
     
     public static StreamingResponseBody getZipStreamingResponseBody(Access acc, IdentifierInfo inf, Identifier idf, String output, String origin) {
@@ -212,6 +216,7 @@ public class ArchiveBuilder {
                 bmg.close();
                 zipOut.closeEntry();
                 zipOut.flush();
+                os.flush();
                 if ((k % 5) == 0 && jobs != null) {
                     // every 5 images, update the percentage
                     final double rate = k / ((double) totalImages);
