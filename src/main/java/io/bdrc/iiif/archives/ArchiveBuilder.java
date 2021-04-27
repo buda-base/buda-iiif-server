@@ -98,7 +98,7 @@ public class ArchiveBuilder {
             log.info("Setting output {} ", output);
             PdfWriter pdfWriter = new PdfWriter(os);
             PdfDocument doc = new PdfDocument(pdfWriter);
-            Document d = new Document(doc);
+            Document d = new Document(doc, PageSize.Default, true);
             // TODO: wire the metadata from Fuseki, in the ArchiveInfo class
             PdfDocumentInfo info = doc.getDocumentInfo();
             info.addCreationDate();
@@ -143,7 +143,7 @@ public class ArchiveBuilder {
                 }
                 k++;
             }
-            log.error("Closing doc after writing {} ", doc);
+            log.info("Closing doc after writing {} ", doc);
             d.close();
             Application.logPerf("pdf document finished and closed for {} after {}", inf.volumeId,
                     System.currentTimeMillis() - deb);
