@@ -30,8 +30,8 @@ public class IdentifierInfo {
     public int totalPages = 0;
     public boolean accessibleInFairUse = false;
     public ImageGroupInfo igi = null;
-    public List<ImageInfo> ili = null;
-    public HashMap<String, ImageInfo> imgMap = null;
+    private List<ImageInfo> ili = null;
+    private HashMap<String, ImageInfo> imgMap = null;
     public Integer imageIndex = null;
     public String computedImageName = null;
 
@@ -46,15 +46,14 @@ public class IdentifierInfo {
         log.info("IdentifierInfo parsed volumeId= {}", this.volumeId);
         try {
             this.igi = ImageGroupInfoService.Instance.getAsync(this.volumeId).get();
-            this.ili = ImageInfoListService.Instance
-                    .getAsync(igi.imageInstanceId.substring(AppConstants.BDR_len), igi.imageGroup).get();
-            imgMap = buildImageMapAndAddImgNum(ili);
         } catch (InterruptedException | ExecutionException e) {
             throw new IIIFException(404, 5000, e);
         }
         if (isFairUse() || AppConstants.IGSI.equals(prefix)) {
+            // this could be optimized even further by initializing the
+            // accessibleInFairUse thing only when the user can't see all the images
             if (isFairUse()) {
-                this.igi.initAccessibleInFairUse(this.ili);
+                this.igi.initAccessibleInFairUse(this.getImageList());
                 this.accessibleInFairUse = this.igi.isAccessibleInFairUse(this.imageId);
             }
             if (AppConstants.IGSI.equals(prefix)) {
@@ -63,6 +62,20 @@ public class IdentifierInfo {
         }
     }
 
+    public List<ImageInfo> getImageList() throws IIIFException {
+        if (this.ili != null) {
+            return this.ili;
+        }
+        try {
+            log.info("get image list for {}", this.volumeId);
+            this.ili = ImageInfoListService.Instance
+                    .getAsync(igi.imageInstanceId.substring(AppConstants.BDR_len), igi.imageGroup).get();
+        } catch (InterruptedException | ExecutionException | IIIFException e) {
+            throw new IIIFException(404, 5000, e);
+        }
+        return this.ili;
+    }
+    
     private HashMap<String, ImageInfo> buildImageMapAndAddImgNum(List<ImageInfo> inf) {
         HashMap<String, ImageInfo> map = new HashMap<>();
         int imgNum = 1;
@@ -74,7 +87,12 @@ public class IdentifierInfo {
         return map;
     }
 
-    public ImageInfo getImageInfo(String filename) {
+    public ImageInfo getImageInfo(String filename) throws IIIFException {
+        if (this.imgMap != null) {
+            return imgMap.get(filename);
+        }
+        List<ImageInfo> ili = this.getImageList();
+        this.imgMap = buildImageMapAndAddImgNum(ili);
         return imgMap.get(filename);
     }
 
@@ -86,8 +104,9 @@ public class IdentifierInfo {
         // get the full list;
         List<ImageInfo> info = null;
         try {
+            log.info("get image list for {}", this.identifier);
             info = ImageInfoListService.Instance
-                    .getAsync(igi.imageInstanceId.substring(AppConstants.BDR_len), igi.imageGroup).get();
+                    .getAsync(this.igi.imageInstanceId.substring(AppConstants.BDR_len), this.igi.imageGroup).get();
         } catch (InterruptedException | ExecutionException e) {
             throw new IIIFException(e);
         }
@@ -148,12 +167,9 @@ public class IdentifierInfo {
         return info;
     }
 
-    public Integer getTotalPages() {
-        if (ili != null) {
-            return ili.size();
-        } else {
-            return null;
-        }
+    public Integer getTotalPages() throws IIIFException {
+        List<ImageInfo> ili = this.getImageList();
+        return ili.size();
     }
 
     public String getCanonical() throws ClientProtocolException, IOException, IIIFException, ResourceNotFoundException {
