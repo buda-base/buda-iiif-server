@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.Properties;
 import java.util.Timer;
 
@@ -56,6 +57,14 @@ public class Application extends SpringBootServletInitializer {
     public static final String DISK_SOURCE = "disk";
     public static final String S3_SOURCE = "s3";
 
+    static class GlobalThreadExceptionHandler implements UncaughtExceptionHandler {
+        @Override
+        public void uncaughtException(Thread thread, Throwable throwable) {
+            log.error(String.format("Caught unhandled exception in thread %s", thread), throwable);
+            Runtime.getRuntime().halt(137);
+        }
+    }
+    
     public static void main(String[] args) throws Exception {
         log.info("load {}", configPath + "iiifserv.properties");
         InputStream input = new FileInputStream(new File(configPath + "iiifserv.properties"));
@@ -81,8 +90,10 @@ public class Application extends SpringBootServletInitializer {
             RdfAuthModel.init();
         }
         logPerf("Application main", "Test PERF Log ");
+        Thread.setDefaultUncaughtExceptionHandler(new GlobalThreadExceptionHandler());
     }
 
+    
     public static void logPerf(String msg) {
         if (logPerf) {
             perfLog.debug(msg);
