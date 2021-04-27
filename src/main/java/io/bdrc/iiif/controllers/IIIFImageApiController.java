@@ -120,6 +120,8 @@ public class IIIFImageApiController {
         return resp;
     }
 
+    
+    
     @RequestMapping(value = "/{identifier}/{region}/{size}/{rotation}/{quality}.{format}")
     public ResponseEntity<?> getImageRepresentation(@PathVariable String identifier, @PathVariable String region,
             @PathVariable String size, @PathVariable String rotation, @PathVariable String quality,
@@ -239,7 +241,7 @@ public class IIIFImageApiController {
             }
         };
         ImageMetrics.imageCount(ImageMetrics.IMG_CALLS_COMMON, (String) request.getAttribute("origin"));
-        return ResponseEntity.ok().headers(headers).body(stream);
+        return (ResponseEntity<StreamingResponseBody>) ResponseEntity.ok().headers(headers).body(stream);
     }
 
     public static boolean pngOutput(final String filename) {

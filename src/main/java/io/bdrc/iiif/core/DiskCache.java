@@ -76,7 +76,7 @@ public class DiskCache {
     ExecutorService service;
     
     public DiskCache(String path, int cleanupClockS, int nbSecondsMax, int nbItemsMax, long sizeMaxMB, String cacheName) throws IOException {
-        this.logger = LoggerFactory.getLogger(cacheName);
+        this.logger = LoggerFactory.getLogger("DiskCache@"+cacheName);
         this.items = new ConcurrentHashMap<>();
         this.nbSecondsMax = nbSecondsMax;
         this.nbItemsMax = nbItemsMax;

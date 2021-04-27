@@ -104,7 +104,7 @@ public class ArchivesController {
                 if (ePage < bPage) {
                     return new ResponseEntity<>("PDF would be empty", HttpStatus.NOT_FOUND);
                 }
-                log.info("Pdf requested numPage in identifierInfo {}", inf);
+                log.debug("Pdf requested numPage in identifierInfo {}", inf);
                 log.info("Pdf requested start page {} and end page {}", bPage.intValue(), ePage.intValue());
                 ResourceAccessValidation accValidation = new ResourceAccessValidation(
                         (Access) request.getAttribute("access"), inf);
