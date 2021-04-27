@@ -15,13 +15,13 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.compress.utils.IOUtils;
 import org.apache.commons.imaging.ImageReadException;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.jena.atlas.logging.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -123,14 +123,13 @@ public class IIIFImageApiController {
     
     
     @RequestMapping(value = "/{identifier}/{region}/{size}/{rotation}/{quality}.{format}")
-    public ResponseEntity<?> getImageRepresentation(@PathVariable String identifier, @PathVariable String region,
+    public ResponseEntity<StreamingResponseBody> getImageRepresentation(@PathVariable String identifier, @PathVariable String region,
             @PathVariable String size, @PathVariable String rotation, @PathVariable String quality,
             @PathVariable String format, HttpServletRequest request, HttpServletResponse response,
             WebRequest webRequest)
             throws ClientProtocolException, IOException, IIIFException, InvalidParametersException,
             UnsupportedOperationException, UnsupportedFormatException, ResourceNotFoundException, ImageReadException {
         log.info("main endpoint getImageRepresentation() for id {}", identifier);
-        long deb = System.currentTimeMillis();
         long maxAge = Long.parseLong(Application.getProperty("maxage"));
         boolean staticImg = false;
         String path = request.getServletPath();
@@ -142,10 +141,6 @@ public class IIIFImageApiController {
         ImageApiSelector selector = getImageApiSelector(identifier, region, size, rotation, quality, format);
         final ImageApiProfile profile = ImageApiProfile.LEVEL_TWO;
         final String decodedIdentifier = URLDecoder.decode(identifier, "UTF-8");
-        // TODO: the first part seems ignored?
-        // ImageService info = new ImageService("https://iiif.bdrc.io/" +
-        // identifier,
-        // profile);
         headers.setContentType(MediaType.parseMediaType(selector.getFormat().getMimeType().getTypeName()));
         headers.set("Content-Disposition",
                 "inline; filename=" + path.replaceFirst("/image/", "").replace('/', '_').replace(',', '_'));
@@ -165,10 +160,10 @@ public class IIIFImageApiController {
                 HttpHeaders headers1 = new HttpHeaders();
                 headers1.setCacheControl(CacheControl.noCache());
                 if (serviceInfo.authEnabled() && serviceInfo.hasValidProperties()) {
-                    return new ResponseEntity<>("You must be authenticated before accessing this resource".getBytes(),
+                    return new ResponseEntity<StreamingResponseBody>(streamingResponseFrom("You must be authenticated before accessing this resource"),
                             headers1, HttpStatus.UNAUTHORIZED);
                 } else {
-                    return new ResponseEntity<>("Insufficient rights".getBytes(), headers1, HttpStatus.FORBIDDEN);
+                    return new ResponseEntity<StreamingResponseBody>(streamingResponseFrom("Insufficient rights"), headers1, HttpStatus.FORBIDDEN);
                 }
             }
             headers.setCacheControl(CacheControl.maxAge(maxAge, TimeUnit.MILLISECONDS).cachePrivate());
@@ -215,7 +210,7 @@ public class IIIFImageApiController {
             }
             Application.logPerf("got the bytes in {} ms for {}", (System.currentTimeMillis() - deb1), identifier);
             ImageMetrics.imageCount(ImageMetrics.IMG_CALLS_COMMON, (String) request.getAttribute("origin"));
-            return ResponseEntity.ok().headers(headers).body(new InputStreamResource(is));
+            return ResponseEntity.ok().headers(headers).body(streamingResponseFrom(is));
         }
         
         final StreamingResponseBody stream = new StreamingResponseBody() {
@@ -244,11 +239,31 @@ public class IIIFImageApiController {
         return (ResponseEntity<StreamingResponseBody>) ResponseEntity.ok().headers(headers).body(stream);
     }
 
+    public static StreamingResponseBody streamingResponseFrom(final InputStream is) {
+        return new StreamingResponseBody() {
+            @Override
+            public void writeTo(final OutputStream os) throws IOException {
+                IOUtils.copy(is,  os);
+            }
+        };
+    }
+
+    public static StreamingResponseBody streamingResponseFrom(final String s) {
+        return new StreamingResponseBody() {
+            @Override
+            public void writeTo(final OutputStream os) throws IOException {
+                os.write(s.getBytes("UTF8"));
+            }
+        };
+    }
+    
     public static boolean pngOutput(final String filename) {
         final String ext = filename.substring(filename.length() - 4).toLowerCase();
         return (ext.equals(".tif") || ext.equals("tiff"));
     }
 
+    
+    
     public static final PropertyValue pngHint = new PropertyValue("png", "jpg");
 
     @RequestMapping(value = "/{identifier}/info.json", method = {RequestMethod.GET, RequestMethod.HEAD})
