@@ -171,6 +171,7 @@ public class WriteImageProcess {
             if (writer == null) {
                 throw new UnsupportedFormatException(selector.getFormat().getMimeType().getTypeName());
             }
+            writer.dispose();
             switch (selector.getFormat()) {
 
             case PNG:
@@ -193,6 +194,7 @@ public class WriteImageProcess {
                 }
                 
                 os.flush();
+                os.close();
                 break;
 
             case JPG:
@@ -212,8 +214,12 @@ public class WriteImageProcess {
                 ImageOutputStream is = ImageIO.createImageOutputStream(os);
                 wtr.setOutput(is);
                 wtr.write(null, new IIOImage(outImg, null, null), jpgWriteParam);
-                wtr.dispose();
                 is.flush();
+                is.close();
+                os.flush();
+                os.close();
+                log.info("disposing JPEG writer");
+                wtr.dispose();
                 break;
 
             case WEBP:
@@ -225,8 +231,9 @@ public class WriteImageProcess {
                 ImageOutputStream iss = ImageIO.createImageOutputStream(os);
                 writer.setOutput(iss);
                 writer.write(null, new IIOImage(outImg, null, null), writeParam);
-                writer.dispose();
                 iss.flush();
+                iss.close();
+                writer.dispose();
                 break;
 
             default:
@@ -234,8 +241,10 @@ public class WriteImageProcess {
                 ImageOutputStream ios = ImageIO.createImageOutputStream(os);
                 writer.setOutput(ios);
                 writer.write(outImg);
-                writer.dispose();
                 ios.flush();
+                ios.close();
+                writer.dispose();
+                
             }
             Application.logPerf("Done with Processimage.... in {} ms", System.currentTimeMillis() - deb);
         } catch (UnsupportedOperationException | UnsupportedFormatException | IOException e) {

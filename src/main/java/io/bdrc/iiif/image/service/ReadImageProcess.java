@@ -198,14 +198,14 @@ public class ReadImageProcess {
             throw new IIIFException(404, 5000, e);
         }
         InputStream is = service.getFromCache(s3key);
-        
+        ImageInputStream iis;
         ImageReader reader = null;
         if (ext.equals("jpg")) {
             // we buffer the inputstream so that we can read the headers
             // including the ICC
             BufferedInputStream bis  = new BufferedInputStream(is);
             icc = getIcc(bis, s3key);
-            ImageInputStream iis = ImageIO.createImageInputStream(bis);
+            iis = ImageIO.createImageInputStream(bis);
             Iterator<ImageReader> itr = ImageIO.getImageReaders(iis);
             while (itr.hasNext()) {
                 reader = itr.next();
@@ -221,7 +221,7 @@ public class ReadImageProcess {
             }            
             reader.setInput(iis);
         } else {
-            ImageInputStream iis = ImageIO.createImageInputStream(is);
+            iis = ImageIO.createImageInputStream(is);
             reader = Streams.stream(ImageIO.getImageReaders(iis)).findFirst().orElseThrow(UnsupportedFormatException::new);
             reader.setInput(iis);
         }

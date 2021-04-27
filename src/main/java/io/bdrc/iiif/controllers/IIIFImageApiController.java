@@ -221,14 +221,14 @@ public class IIIFImageApiController {
                     Application.logPerf("processing image output stream for {}", decodedIdentifier);
                     obj = ReadImageProcess.readImage(decodedIdentifier, selector, profile, false);
                     WriteImageProcess.processImage((DecodedImage) obj[0], decodedIdentifier, selector, profile, os, (ImageReader_ICC) obj[1]);
-                    ((ImageReader_ICC) obj[1]).getReader().dispose();
+                    ((ImageReader_ICC) obj[1]).closeAndDispose();
                 } catch (Exception e) {
                     log.error("Resource was not found for identifier " + decodedIdentifier + " Message: " + e.getMessage()
                             + " Trying failover method");
                     try {
                         obj = ReadImageProcess.readImage(decodedIdentifier, selector, profile, true);
                         WriteImageProcess.processImage((DecodedImage) obj[0], decodedIdentifier, selector, profile, os, (ImageReader_ICC) obj[1]);
-                        ((ImageReader_ICC) obj[1]).getReader().dispose();
+                        ((ImageReader_ICC) obj[1]).closeAndDispose();
                     } catch (Exception ex) {
                         log.error("Somethng WENT WRONG ", ex);
                     }

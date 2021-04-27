@@ -8,6 +8,8 @@ import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.Properties;
 import java.util.Timer;
 
+import javax.imageio.ImageIO;
+
 import org.apache.http.client.ClientProtocolException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -91,6 +93,7 @@ public class Application extends SpringBootServletInitializer {
         }
         logPerf("Application main", "Test PERF Log ");
         Thread.setDefaultUncaughtExceptionHandler(new GlobalThreadExceptionHandler());
+        //ImageIO.setUseCache(false);
     }
 
     
