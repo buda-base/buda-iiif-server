@@ -10,17 +10,21 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.bdrc.iiif.core.DiskCache.Status;
 
 public class DiskCacheCleanup implements Callable<Void> {
 
     DiskCache dc;
     Instant now;
-    
+    final Logger logger;
     
     public DiskCacheCleanup(DiskCache dc) {
         this.dc = dc;
         this.now = Instant.now();
+        this.logger = LoggerFactory.getLogger("DiskCacheCleanup@"+dc.cacheName);
     }
     
     public static <K, V extends Comparable<? super V>> Map<K, V> sortByValue(Map<K, V> map) {
@@ -55,6 +59,7 @@ public class DiskCacheCleanup implements Callable<Void> {
 
     @Override
     public Void call() {
+        this.logger.info("starting disk cache cleanup");
         // first remove old entries plus the ones that are too numerous
         LinkedHashMap<String,Status> queue = getKeyQueue(this.dc.items);
         int totalItems = queue.size();
@@ -64,12 +69,15 @@ public class DiskCacheCleanup implements Callable<Void> {
         for (Entry<String,Status> e : queue.entrySet()) {
             // if we don't need to remove more items, break:
             if (e.getValue().lastActivityDate.compareTo(removeAllBefore) <= 0 || (this.dc.nbItemsMax > 0 && totalItems <= this.dc.nbItemsMax)) {
+                this.logger.info("removing {}", e.getKey());
                 this.dc.remove(e.getKey(), true);
             }
             totalItems -= 1;
         }
-        if (this.dc.sizeMaxMB == 0)
+        if (this.dc.sizeMaxMB == 0) {
+            this.logger.info("finishing disk cache cleanup");
             return null;
+        }
         // compute remaining size on disk:
         // recompute the queue first
         queue = getKeyQueue(this.dc.items);
@@ -78,15 +86,19 @@ public class DiskCacheCleanup implements Callable<Void> {
             totalSize += s.size;
         }
         long sizeToRemove = totalSize - (this.dc.sizeMaxMB * 1048576);
-        if (sizeToRemove <= 0)
+        if (sizeToRemove <= 0) {
+            this.logger.info("finishing disk cache cleanup");
             return null;
+        }
         for (Entry<String,Status> e : queue.entrySet()) {
             long thissize = e.getValue().size;
             this.dc.remove(e.getKey(), true);
             sizeToRemove -= thissize;
+            this.logger.info("removing {} because of size", e.getKey());
             if (sizeToRemove <= 0)
                 break;
         }
+        this.logger.info("finishing disk cache cleanup");
         return null;
     }
 

@@ -23,6 +23,8 @@ import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 
 public class DiskCache {
 
@@ -32,6 +34,7 @@ public class DiskCache {
     MessageDigest md;
     File dir;
     int cleanupClockS;
+    String cacheName;
     
     Instant lastCleanup = null;
     
@@ -44,6 +47,7 @@ public class DiskCache {
     static final class Status implements Comparator<Status> {
         int status;
         Instant lastActivityDate;
+        @JsonIgnore
         OutputStream os;
         long size = 0;
         
@@ -77,6 +81,7 @@ public class DiskCache {
     
     public DiskCache(String path, int cleanupClockS, int nbSecondsMax, int nbItemsMax, long sizeMaxMB, String cacheName) throws IOException {
         this.logger = LoggerFactory.getLogger("DiskCache@"+cacheName);
+        this.cacheName = cacheName;
         this.items = new ConcurrentHashMap<>();
         this.nbSecondsMax = nbSecondsMax;
         this.nbItemsMax = nbItemsMax;
@@ -121,13 +126,13 @@ public class DiskCache {
             return;
         }
         long secondsDiff = (now.getEpochSecond()-this.lastCleanup.getEpochSecond());
-        this.lastCleanup = now;
         if (secondsDiff > this.cleanupClockS) {
             this.cleanup();
         }
     }
      
     public void cleanup() {
+        this.lastCleanup = Instant.now();
         DiskCacheCleanup dcc = new DiskCacheCleanup(this);
         this.service.submit(dcc);
     }
