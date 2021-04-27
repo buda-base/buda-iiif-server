@@ -92,18 +92,10 @@ public class IdentifierInfo {
             throw new IIIFException(e);
         }
         // work is fair use but and user is not authorized to see it in full
-        // return full list
-        log.info("USER HAS FAIR USE RESOURCE ACCESS {}", acc.hasResourceAccess(RdfConstants.FAIR_USE));
         if (isFairUse() && !acc.hasResourceAccess(RdfConstants.FAIR_USE)) {
+            log.info("USER DOES NOT HAVE FAIR USE RESOURCE ACCESS");
             log.debug("START {}, END {}", start, end);
             return getFairUseImageList(info, start, end);
-        }
-        // work is fair use but user is authorized to see it in full
-        // return full list
-        log.info("USER HAS FAIR USE RESOURCE ACCESS {} and IS ADMIN {}", acc.hasResourceAccess(RdfConstants.FAIR_USE),
-                acc.getUserProfile().isAdmin());
-        if (isFairUse() && acc.hasResourceAccess(RdfConstants.FAIR_USE)) {
-            return info;
         }
         return getImageListRange(info, start, end);
     }

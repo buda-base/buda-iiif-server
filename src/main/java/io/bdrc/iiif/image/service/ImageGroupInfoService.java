@@ -42,6 +42,7 @@ public class ImageGroupInfoService extends ConcurrentResourceService<ImageGroupI
             builder.setParameter("R_RES", volumeId);
             builder.setParameter("format", "json");
             final HttpGet request = new HttpGet(builder.build());
+            logger.info("LDS request for {}: {}", volumeId, request);
             // we suppose that the volumeId is well formed, which is checked by the
             // Identifier constructor
             final HttpResponse response = httpClient.execute(request);
