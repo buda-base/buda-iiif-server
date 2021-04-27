@@ -36,7 +36,6 @@ import io.bdrc.iiif.archives.ArchiveProducer;
 import io.bdrc.iiif.archives.PdfItemInfo;
 import io.bdrc.iiif.auth.ResourceAccessValidation;
 import io.bdrc.iiif.core.Application;
-import io.bdrc.iiif.core.DiskCache;
 import io.bdrc.iiif.core.EHServerCache;
 import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.iiif.resolver.IdentifierInfo;
@@ -349,5 +348,23 @@ public class ArchivesController {
     public static String getShortName(String st) {
         return st.substring(st.lastIndexOf("/") + 1);
     }
+    
+    @RequestMapping(value = "/cachecleanup", method = {RequestMethod.GET, RequestMethod.HEAD})
+    public ResponseEntity<String> cacheCleanup() throws Exception {
+        EHServerCache.IIIF_IMG.cleanup();
+        EHServerCache.IIIF_PDF.cleanup();
+        EHServerCache.IIIF_ZIP.cleanup();
+        ResponseEntity<String> response = new ResponseEntity<String>("OK", HttpStatus.OK);
+        return response;
+    }
+
+//    @RequestMapping(value = "/diskcacheinfo/{type}", method = {RequestMethod.GET, RequestMethod.HEAD})
+//    public ResponseEntity<String> cacheCleanup() throws Exception {
+//        EHServerCache.IIIF_IMG.cleanup();
+//        EHServerCache.IIIF_PDF.cleanup();
+//        EHServerCache.IIIF_ZIP.cleanup();
+//        ResponseEntity<String> response = new ResponseEntity<String>("OK", HttpStatus.OK);
+//        return response;
+//    }
 
 }
