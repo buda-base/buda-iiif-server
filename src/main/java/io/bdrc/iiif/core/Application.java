@@ -93,7 +93,7 @@ public class Application extends SpringBootServletInitializer {
         }
         logPerf("Application main", "Test PERF Log ");
         Thread.setDefaultUncaughtExceptionHandler(new GlobalThreadExceptionHandler());
-        //ImageIO.setUseCache(false);
+        ImageIO.setUseCache(false);
     }
 
     
