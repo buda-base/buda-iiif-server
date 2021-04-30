@@ -33,27 +33,26 @@ public class ArchiveImageProducer {
         obj[1] = imageName;
         InputStream imgis = null;
         final ImageProviderService service = ImageProviderService.InstanceArchive;
-        try {
-            if (cacheImages) {
-                try {
-                    service.ensureCacheReady(s3key).get();
-                } catch (InterruptedException | ExecutionException e) {
-                    throw new IIIFException(404, 5000, e);
-                }
+        if (cacheImages) {
+            try {
+                log.info("ensuring cache is ready for {}", s3key);
+                service.ensureCacheReady(s3key).get();
+            } catch (InterruptedException | ExecutionException e) {
+                throw new IIIFException(404, 5000, e);
+            }
+            log.info("get from cache {}", s3key);
+            imgis = service.getFromCache(s3key);
+        } else {
+            if (service.isInCache(s3key)) {
+                log.info("get from cache {}", s3key);
                 imgis = service.getFromCache(s3key);
             } else {
-                if (service.isInCache(s3key)) {
-                    imgis = service.getFromCache(s3key);
-                } else {
-                    imgis = service.getNoCache(s3key);
-                }
+                log.info("get image without cache {}", s3key);
+                imgis = service.getNoCache(s3key);
             }
-            obj[0] = imgis;
-            ImageMetrics.imageCount(ImageMetrics.IMG_CALLS_ARCHIVES, origin);
-        } catch (IIIFException e) {
-            log.error("Could not get Image as bytes for s3key=" + s3key, e.getMessage());
-            throw e;
         }
+        obj[0] = imgis;
+        ImageMetrics.imageCount(ImageMetrics.IMG_CALLS_ARCHIVES, origin);
         return obj;
     }
 

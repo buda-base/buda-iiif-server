@@ -43,8 +43,7 @@ public class ConcurrentResourceService<T> {
         }
         return t;
     }
-    
-    @SuppressWarnings("unchecked")
+
     boolean isInCache(final String resId) {
         try {
             return EHServerCache.constainsKey(cacheName, cachePrefix + resId);
@@ -72,7 +71,6 @@ public class ConcurrentResourceService<T> {
         return resId;
     }
 
-    @SuppressWarnings("unchecked")
     public T getSync(String resId) throws IIIFException {
         resId = normalizeId(resId);
         if (skipCache) {

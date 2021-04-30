@@ -24,10 +24,8 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 import com.itextpdf.io.image.ImageData;
 import com.itextpdf.io.image.ImageDataFactory;
 import com.itextpdf.kernel.geom.PageSize;
-import com.itextpdf.kernel.pdf.PageLabelNumberingStyle;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfDocumentInfo;
-import com.itextpdf.kernel.pdf.PdfPage;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.layout.Document;
 import com.itextpdf.layout.element.Image;
@@ -145,6 +143,8 @@ public class ArchiveBuilder {
             }
             log.info("Closing doc after writing {} ", doc);
             d.close();
+            doc.close();
+            pdfWriter.close();
             Application.logPerf("pdf document finished and closed for {} after {}", inf.volumeId,
                     System.currentTimeMillis() - deb);
         } catch (Exception e) {

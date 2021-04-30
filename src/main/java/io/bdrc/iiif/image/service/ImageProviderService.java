@@ -19,7 +19,6 @@ import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
 
 import io.bdrc.auth.AuthProps;
-import io.bdrc.iiif.core.DiskCache;
 import io.bdrc.iiif.core.EHServerCache;
 import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.iiif.resolver.IdentifierInfo;
@@ -100,7 +99,7 @@ public class ImageProviderService extends ConcurrentCacheAccessService {
             return;
         final AmazonS3 s3Client = getClient();
         logger.info("fetching s3 key {}", s3key);
-        final S3Object object;
+        S3Object object = null;
         final String cacheKey = this.cachePrefix + s3key;
         try {
             object = s3Client.getObject(new GetObjectRequest(bucketName, s3key));
@@ -108,6 +107,8 @@ public class ImageProviderService extends ConcurrentCacheAccessService {
             OutputStream os = EHServerCache.IIIF_IMG.getOs(cacheKey);
             IOUtils.copy(objectData, os);
             objectData.close();
+            object.close();
+            os.close();
             EHServerCache.IIIF_IMG.outputDone(cacheKey);
         } catch (AmazonS3Exception e) {
             if (e.getErrorCode().equals("NoSuchKey")) {
@@ -119,6 +120,13 @@ public class ImageProviderService extends ConcurrentCacheAccessService {
                 throw new IIIFException(500, 5000, e);
             }
         } catch (IOException e) {
+            if (object != null) {
+                try {
+                    object.close();
+                } catch (IOException e1) {
+                    logger.error("error closing s3 object", e1);
+                }
+            }
             EHServerCache.IIIF_IMG.remove(s3key, true);
             throw new IIIFException(500, 5000, e);
         }
@@ -135,16 +143,32 @@ public class ImageProviderService extends ConcurrentCacheAccessService {
         }
         final AmazonS3 s3Client = getClient();
         logger.info("fetching s3 key {}", s3key);
-        final S3Object object;
+        S3Object object = null;
         try {
             object = s3Client.getObject(new GetObjectRequest(bucketName, s3key));
-            return object.getObjectContent();
+            InputStream res = object.getObjectContent();
+            //object.close();
+            return res;
         } catch (AmazonS3Exception e) {
-            if (e.getErrorCode().equals("NoSuchKey")) {
+            if (e instanceof AmazonS3Exception && ((AmazonS3Exception) e).getErrorCode().equals("NoSuchKey")) {
                 logger.error("NoSuchKey: {}", s3key);
+                if (object != null) {
+                    try {
+                        object.close();
+                    } catch (IOException e1) {
+                        logger.error("error closing s3 object", e1);
+                    }
+                }
                 EHServerCache.IIIF_IMG.remove(s3key, true);
                 throw new IIIFException(404, 5000, "image not available in our archive");
             } else {
+                if (object != null) {
+                    try {
+                        object.close();
+                    } catch (IOException e1) {
+                        logger.error("error closing s3 object", e1);
+                    }
+                }
                 EHServerCache.IIIF_IMG.remove(s3key, true);
                 throw new IIIFException(500, 5000, e);
             }

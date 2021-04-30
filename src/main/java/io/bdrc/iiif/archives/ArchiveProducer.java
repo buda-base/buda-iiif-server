@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory;
 
 import io.bdrc.auth.Access;
 import io.bdrc.iiif.core.DiskCache;
-import io.bdrc.iiif.core.EHServerCache;
 import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 import io.bdrc.libraries.Identifier;

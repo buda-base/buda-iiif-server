@@ -206,6 +206,7 @@ public class ReadImageProcess {
             BufferedInputStream bis  = new BufferedInputStream(is);
             icc = getIcc(bis, s3key);
             iis = ImageIO.createImageInputStream(bis);
+            //bis.close();
             Iterator<ImageReader> itr = ImageIO.getImageReaders(iis);
             while (itr.hasNext()) {
                 reader = itr.next();
@@ -228,6 +229,7 @@ public class ReadImageProcess {
 
         Application.logPerf("S3 object IIIS READER >> {}", reader);
         Application.logPerf("Image service return reader at {} ms {}", System.currentTimeMillis() - deb, identifier);
+        //is.close();
         return new ImageReader_ICC(reader, icc);
     }
 

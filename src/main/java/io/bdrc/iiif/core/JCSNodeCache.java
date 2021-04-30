@@ -27,7 +27,7 @@ public class JCSNodeCache implements NodeCache {
         CACHE = cacheManager.createCache("geoloc", CacheConfigurationBuilder.newCacheConfigurationBuilder(String.class, JsonNode.class,
                 ResourcePoolsBuilder.newResourcePoolsBuilder().heap(500, EntryUnit.ENTRIES)));
         log.debug("Cache was initialized {}", CACHE);
-
+        //cacheManager.close();
     }
 
     @Override

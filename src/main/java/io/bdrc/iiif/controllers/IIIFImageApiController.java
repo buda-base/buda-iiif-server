@@ -244,6 +244,8 @@ public class IIIFImageApiController {
             @Override
             public void writeTo(final OutputStream os) throws IOException {
                 IOUtils.copy(is,  os);
+                is.close();
+                os.close();
             }
         };
     }
@@ -253,6 +255,7 @@ public class IIIFImageApiController {
             @Override
             public void writeTo(final OutputStream os) throws IOException {
                 os.write(s.getBytes("UTF8"));
+                os.close();
             }
         };
     }

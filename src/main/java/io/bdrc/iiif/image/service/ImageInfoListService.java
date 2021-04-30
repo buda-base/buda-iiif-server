@@ -103,6 +103,7 @@ public class ImageInfoListService extends ConcurrentResourceService<List<ImageIn
                 final GZIPInputStream gis = new GZIPInputStream(objectData);
                 final List<ImageInfo> imageList = om.readValue(gis, new TypeReference<List<ImageInfo>>() {
                 });
+                gis.close();
                 objectData.close();
                 imageList.removeIf(imageInfo -> imageInfo.filename.endsWith("json"));
                 return imageList;
@@ -117,6 +118,8 @@ public class ImageInfoListService extends ConcurrentResourceService<List<ImageIn
                 final List<ImageInfo> imageList = om.readValue(gis, new TypeReference<List<ImageInfo>>() {
                 });
                 imageList.removeIf(imageInfo -> imageInfo.filename.endsWith("json"));
+                gis.close();
+                in.close();
                 return imageList;
             } catch (Exception e) {
                 throw new IIIFException(500, 5000, e);

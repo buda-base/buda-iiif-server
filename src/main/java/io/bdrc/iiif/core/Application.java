@@ -72,9 +72,11 @@ public class Application extends SpringBootServletInitializer {
         InputStream input = new FileInputStream(new File(configPath + "iiifserv.properties"));
         props = new Properties();
         props.load(input);
+        input.close();
         try {
             InputStream is = new FileInputStream("/etc/buda/share/shared-private.properties");
             props.load(is);
+            is.close();
         } catch (Exception ex) {
             // do nothing, continue props initialization
             log.error("can't load load /etc/buda/share/shared-private.properties");
@@ -132,10 +134,11 @@ public class Application extends SpringBootServletInitializer {
         InputStream input = new FileInputStream(new File("/etc/buda/iiifserv/iiifserv.properties"));
         props = new Properties();
         props.load(input);
+        input.close();
         try {
             InputStream is = new FileInputStream("/etc/buda/share/shared-private.properties");
             props.load(is);
-
+            is.close();
         } catch (Exception ex) {
             // do nothing, continue props initialization
         }

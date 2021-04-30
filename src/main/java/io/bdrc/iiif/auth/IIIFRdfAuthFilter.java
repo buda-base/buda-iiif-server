@@ -22,7 +22,6 @@ import io.bdrc.auth.TokenValidation;
 import io.bdrc.auth.UserProfile;
 import io.bdrc.auth.model.Endpoint;
 import io.bdrc.iiif.core.Application;
-import io.bdrc.iiif.exceptions.IIIFException;
 
 @Component
 @Order(1)

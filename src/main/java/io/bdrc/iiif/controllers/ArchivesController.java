@@ -14,8 +14,6 @@ import org.apache.commons.text.StringSubstitutor;
 import org.apache.http.client.ClientProtocolException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.io.ByteArrayResource;
-import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -187,15 +185,15 @@ public class ArchivesController {
     }
 
     @RequestMapping(value = "/download/file/{type}/{name}", method = {RequestMethod.GET, RequestMethod.HEAD})
-    public ResponseEntity<?> downloadPdf(@PathVariable String name, @PathVariable String type,
+    public ResponseEntity<StreamingResponseBody> downloadPdf(@PathVariable String name, @PathVariable String type,
             HttpServletRequest request) throws Exception {
         String[] nameParts = name.replace("FAIR_USE", "").split(":");
         HttpHeaders headers = new HttpHeaders();
         if (nameParts.length < 3) {
             log.error("invalid PDF download argument: {}", name);
             headers.setContentType(MediaType.parseMediaType("text/plain"));
-            return new ResponseEntity<ByteArrayResource>(new ByteArrayResource("Invalid link"
-                    .getBytes()), headers, HttpStatus.NOT_FOUND);
+            final String msg = "Invalid link";
+            return ResponseEntity.ok().headers(headers).body(IIIFImageApiController.streamingResponseFrom(msg));
         }
         log.info("downloadPdf(name {} , type {})", name, type);
         Identifier idf = new Identifier("v:" + nameParts[0] + ":" + nameParts[1] + "::" + nameParts[2],
@@ -226,16 +224,13 @@ public class ArchivesController {
         }
         if (is == null) {
             headers.setContentType(MediaType.parseMediaType("text/plain"));
-            byte[] array = new String(
-                    "The link is wrong or has expired: please retry loading the archive and proceed to its download within 10 mn")
-                            .getBytes();
-            return new ResponseEntity<ByteArrayResource>(new ByteArrayResource(array), headers, HttpStatus.NOT_FOUND);
+            final String msg = "The link is wrong or has expired: please retry loading the archive and proceed to its download within 10 mn";
+            return ResponseEntity.ok().headers(headers).body(IIIFImageApiController.streamingResponseFrom(msg));
         }
         headers.setContentType(MediaType.parseMediaType("application/" + type));
         headers.setContentDispositionFormData("attachment", name.substring(4) + "." + type);
-        ResponseEntity<InputStreamResource> response = new ResponseEntity<>(new InputStreamResource(is),
-                headers, HttpStatus.OK);
-        return response;
+        StreamingResponseBody stream = IIIFImageApiController.streamingResponseFrom(is);
+        return ResponseEntity.ok().headers(headers).body(stream);
     }
 
     @RequestMapping(value = "/download/job/{type}/{id}", method = {RequestMethod.GET, RequestMethod.HEAD})
@@ -305,6 +300,7 @@ public class ArchivesController {
                 sb.append(line + System.lineSeparator());
                 line = buffer.readLine();
             }
+            buffer.close();
         } catch (IOException e) {
             log.error("Could not get template as resource {}", template);
         }
