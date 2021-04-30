@@ -120,7 +120,7 @@ public class ArchivesController {
                 if (type.equals(ArchiveBuilder.PDF_TYPE)) {
                     percentdone = ArchiveBuilder.pdfjobs.get(output);
                     cached = EHServerCache.IIIF_PDF.hasKey(output);
-                    log.error("PDF {} from IIIF cached {}, jobstarted: {}", id, cached, percentdone);
+                    log.info("PDF {} from IIIF cached {}, jobstarted: {}", id, cached, percentdone);
                     if (!cached && percentdone == null) {
                         // Start building pdf since the pdf file doesn't exist yet
                         if (!Application.isPdfSync()) {
@@ -351,9 +351,10 @@ public class ArchivesController {
         EHServerCache.IIIF_PDF.cleanup();
         EHServerCache.IIIF_ZIP.cleanup();
         ResponseEntity<String> response = new ResponseEntity<String>("OK", HttpStatus.OK);
+        System.gc();
         return response;
     }
-
+    
 //    @RequestMapping(value = "/diskcacheinfo/{type}", method = {RequestMethod.GET, RequestMethod.HEAD})
 //    public ResponseEntity<String> cacheCleanup() throws Exception {
 //        EHServerCache.IIIF_IMG.cleanup();

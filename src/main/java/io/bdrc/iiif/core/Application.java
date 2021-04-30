@@ -73,6 +73,8 @@ public class Application extends SpringBootServletInitializer {
         props = new Properties();
         props.load(input);
         input.close();
+        SpringApplication app = new SpringApplication(Application.class);
+        app.setDefaultProperties(props);
         try {
             InputStream is = new FileInputStream("/etc/buda/share/shared-private.properties");
             props.load(is);
@@ -89,7 +91,7 @@ public class Application extends SpringBootServletInitializer {
         // every minute ?
         EHServerCache.init();
         new Timer(true).schedule(new MetricsTask(), 0, 60000);
-        SpringApplication.run(Application.class, args);
+        app.run(args);
         if ("true".equals(props.getProperty("authEnabled")) && !isInChina()) {
             RdfAuthModel.init();
         }
