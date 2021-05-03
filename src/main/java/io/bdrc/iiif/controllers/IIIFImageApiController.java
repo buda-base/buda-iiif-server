@@ -406,7 +406,7 @@ public class IIIFImageApiController {
         return null;
     }
 
-    public ImageApiSelector getImageApiSelector(String identifier, String region, String size, String rotation,
+    public static ImageApiSelector getImageApiSelector(String identifier, String region, String size, String rotation,
             String quality, String format) throws InvalidParametersException {
         ImageApiSelector selector = new ImageApiSelector();
         try {

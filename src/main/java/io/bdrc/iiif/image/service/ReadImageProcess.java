@@ -163,6 +163,15 @@ public class ReadImageProcess {
 //        return null;
 //    }
     
+    public static String getNormalizedExt(String filename) {
+        String res = filename.substring(filename.lastIndexOf(".") + 1).toLowerCase();
+        if (res.equals("jpeg"))
+            return "jpg";
+        if (res.equals("tiff"))
+            return "tif";
+        return res;
+    }
+    
     /**
      * Try to obtain a {@link ImageReader} for a given identifier
      * 
@@ -171,17 +180,16 @@ public class ReadImageProcess {
      * @throws ImageReadException
      **/
     private static ImageReader_ICC getReader(String identifier,boolean failover) throws UnsupportedFormatException, IOException, IIIFException {
-        long deb = System.currentTimeMillis();
-        ICC_Profile icc = null;
         final String s3key;
         String ext = "";
         final ImageProviderService service;
         if (identifier.startsWith("static::")) {
             s3key = identifier.substring(8);
+            ext = getNormalizedExt(s3key);
             service = ImageProviderService.InstanceStatic;
         } else {
             IdentifierInfo idf = new IdentifierInfo(identifier);
-            ext = idf.imageName.substring(idf.imageName.lastIndexOf(".") + 1);
+            ext = getNormalizedExt(idf.imageName);
             s3key = ImageProviderService.getKey(idf);
             service = ImageProviderService.InstanceArchive;
             log.debug("IN READ IDENTIFIER IMAGE NAME >> {}", idf.imageName);
@@ -198,13 +206,18 @@ public class ReadImageProcess {
             throw new IIIFException(404, 5000, e);
         }
         InputStream is = service.getFromCache(s3key);
+        return getReader(is, ext, s3key, failover);
+    }
+    
+    public static ImageReader_ICC getReader(final InputStream is, final String ext, final String fileName, final boolean failover) throws UnsupportedFormatException, IOException, IIIFException {
+        ICC_Profile icc = null;
         ImageInputStream iis;
         ImageReader reader = null;
         if (ext.equals("jpg")) {
             // we buffer the inputstream so that we can read the headers
             // including the ICC
             BufferedInputStream bis  = new BufferedInputStream(is);
-            icc = getIcc(bis, s3key);
+            icc = getIcc(bis, fileName);
             iis = ImageIO.createImageInputStream(bis);
             //bis.close();
             Iterator<ImageReader> itr = ImageIO.getImageReaders(iis);
@@ -228,7 +241,6 @@ public class ReadImageProcess {
         }
 
         Application.logPerf("S3 object IIIS READER >> {}", reader);
-        Application.logPerf("Image service return reader at {} ms {}", System.currentTimeMillis() - deb, identifier);
         //is.close();
         return new ImageReader_ICC(reader, icc);
     }
@@ -306,7 +318,7 @@ public class ReadImageProcess {
      * Determine parameters for image reading based on the IIIF selector and a given
      * scaling factor
      **/
-    private static ImageReadParam getReadParam(ImageReader reader, ImageApiSelector selector, double decodeScaleFactor)
+    public static ImageReadParam getReadParam(ImageReader reader, ImageApiSelector selector, double decodeScaleFactor)
             throws IOException, InvalidParametersException {
         ImageReadParam readParam = reader.getDefaultReadParam();
         Application.logPerf("Entering ReadParam with ImageReadParam {}", readParam);
