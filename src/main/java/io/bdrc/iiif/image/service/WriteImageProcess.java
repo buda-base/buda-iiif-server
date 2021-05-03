@@ -54,6 +54,7 @@ public class WriteImageProcess {
             ImageApiProfile.Quality quality) {
         BufferedImage img = inputImage;
         int inType = img.getType();
+        log.info("img type: {}", inType);
         boolean needsAdditionalScaling = !new Dimension(img.getWidth(), img.getHeight()).equals(targetSize);
         if (needsAdditionalScaling) {
             img = Scalr.resize(img, Scalr.Method.BALANCED, Scalr.Mode.FIT_EXACT, targetSize.width, targetSize.height);
@@ -78,7 +79,7 @@ public class WriteImageProcess {
             img = Scalr.rotate(img, Scalr.Rotation.FLIP_HORZ);
         }
         // Quality
-        int outType;
+        int outType = inType;
         switch (quality) {
         case GRAY:
             outType = BufferedImage.TYPE_BYTE_GRAY;
@@ -89,14 +90,11 @@ public class WriteImageProcess {
         case COLOR:
             outType = BufferedImage.TYPE_3BYTE_BGR;
             break;
-        case DEFAULT:
-            outType = BufferedImage.TYPE_3BYTE_BGR;
-            Application.logPerf("Transform image DEFAULT quality >>" + quality + " OutType: " + outType + " format " + format);
-            break;
         default:
             outType = inType;
         }
-        if (outType != img.getType()) {
+        if (outType != inType) {
+            log.error("img type: {}", img.getType());
             BufferedImage newImg = new BufferedImage(img.getWidth(), img.getHeight(), outType);
             Graphics2D g2d = newImg.createGraphics();
             g2d.drawImage(img, 0, 0, null);

@@ -25,6 +25,10 @@ public class ImageReader_ICC {
         return icc;
     }
 
+    public void setIcc(ICC_Profile icc) {
+        this.icc = icc;
+    }
+    
     public void closeAndDispose() throws IOException {
         //this.reader.g
         ImageInputStream iis = (ImageInputStream) reader.getInput();

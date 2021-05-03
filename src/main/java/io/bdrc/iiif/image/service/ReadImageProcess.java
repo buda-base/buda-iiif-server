@@ -3,6 +3,7 @@ package io.bdrc.iiif.image.service;
 import java.awt.Dimension;
 import java.awt.Rectangle;
 import java.awt.color.ICC_Profile;
+import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -14,6 +15,7 @@ import java.util.concurrent.ExecutionException;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReadParam;
 import javax.imageio.ImageReader;
+import javax.imageio.ImageTypeSpecifier;
 import javax.imageio.stream.ImageInputStream;
 
 import org.apache.commons.imaging.ImageReadException;
@@ -32,6 +34,7 @@ import io.bdrc.iiif.exceptions.InvalidParametersException;
 import io.bdrc.iiif.exceptions.UnsupportedFormatException;
 import io.bdrc.iiif.model.DecodedImage;
 import io.bdrc.iiif.model.ImageApiProfile;
+import io.bdrc.iiif.model.ImageApiProfile.Quality;
 import io.bdrc.iiif.model.ImageApiSelector;
 import io.bdrc.iiif.model.ImageReader_ICC;
 import io.bdrc.iiif.model.Size;
@@ -209,7 +212,7 @@ public class ReadImageProcess {
         return getReader(is, ext, s3key, failover);
     }
     
-    public static ImageReader_ICC getReader(final InputStream is, final String ext, final String fileName, final boolean failover) throws UnsupportedFormatException, IOException, IIIFException {
+    public static ImageReader_ICC getReader(final InputStream is, final String ext, final String fileName, boolean failover) throws UnsupportedFormatException, IOException, IIIFException {
         ICC_Profile icc = null;
         ImageInputStream iis;
         ImageReader reader = null;
@@ -223,7 +226,7 @@ public class ReadImageProcess {
             Iterator<ImageReader> itr = ImageIO.getImageReaders(iis);
             while (itr.hasNext()) {
                 reader = itr.next();
-                if(failover) {
+                if (failover) {
                     if (reader.getClass().equals(com.twelvemonkeys.imageio.plugins.jpeg.JPEGImageReader.class)) {
                         break;
                     }                    
@@ -249,7 +252,7 @@ public class ReadImageProcess {
             throws IOException, UnsupportedFormatException, InvalidParametersException, ImageReadException, IIIFException {
         long deb = System.currentTimeMillis();
         Object[] obj=new Object[2];
-        ImageReader_ICC imgReader=getReader(identifier,failover);
+        ImageReader_ICC imgReader = getReader(identifier,failover);
         Application.logPerf("Entering readImage for creating DecodedImage");
         if ((selector.getRotation().getRotation() % 90) != 0) {
             log.error("Rotation is not a multiple of 90 degrees for selector {}", selector.toString(), "");
@@ -286,7 +289,7 @@ public class ReadImageProcess {
                 imageIndex = idx;
             }
         }
-        ImageReadParam readParam = getReadParam(imgReader.getReader(), selector, decodeScaleFactor);
+        ImageReadParam readParam = getReadParam(imgReader, selector, decodeScaleFactor);
         int rotation = (int) selector.getRotation().getRotation();
         if (readParam instanceof TurboJpegImageReadParam && ((TurboJpegImageReadParam) readParam).getRotationDegree() != 0) {
             if (rotation == 90 || rotation == 270) {
@@ -318,9 +321,49 @@ public class ReadImageProcess {
      * Determine parameters for image reading based on the IIIF selector and a given
      * scaling factor
      **/
-    public static ImageReadParam getReadParam(ImageReader reader, ImageApiSelector selector, double decodeScaleFactor)
+    public static ImageReadParam getReadParam(ImageReader_ICC readerIcc, ImageApiSelector selector, double decodeScaleFactor)
             throws IOException, InvalidParametersException {
+        final ImageReader reader = readerIcc.getReader();
+        ICC_Profile icc = readerIcc.getIcc();
+        // if we have an icc profile in color but request gray or bitonal, we just ignore the icc profile
+        // TODO: this gives a result that is slightly off but we can live with it
+        if (icc != null && icc.getNumComponents() > 1 && (selector.getQuality() == Quality.GRAY || selector.getQuality() == Quality.BITONAL)) {
+            log.info("ignoring RGB icc profile while serving gray or bitonal image");
+            icc = null;
+            readerIcc.setIcc(null);
+        }
         ImageReadParam readParam = reader.getDefaultReadParam();
+        //log.info("create default image read params with {} components", readParam.getDestinationType().getNumComponents());
+        // if icc is null we need to read the image in its original color space so that we can
+        // reapply the icc profile later on
+        if (icc != null) {            
+            if (icc.getNumComponents() == 1) {
+                // code is a bit strange but we need to separate this case because of
+                // https://github.com/buda-base/buda-iiif-server/issues/79
+                ImageTypeSpecifier its = ImageTypeSpecifier.createFromBufferedImageType(BufferedImage.TYPE_BYTE_GRAY);
+                readParam.setDestinationType(its);
+                log.info("changing read params to gray because of icc profile");
+            } else {
+                log.info("don't transform image at read so that we can reapply icc profile");
+            }
+        } else {
+            ImageTypeSpecifier originalIts = reader.getRawImageType(0);
+            log.info("reading original num components: {}", originalIts.getNumComponents());
+            if (originalIts != null) {
+                switch(selector.getQuality()) {
+                case GRAY:
+                    log.info("read image as gray as per quality request");
+                    readParam.setDestinationType(ImageTypeSpecifier.createFromBufferedImageType(BufferedImage.TYPE_BYTE_GRAY));
+                    break;
+                case BITONAL:
+                    log.info("read image as bitonal as per quality request");
+                    readParam.setDestinationType(ImageTypeSpecifier.createFromBufferedImageType(BufferedImage.TYPE_BYTE_BINARY));
+                    break;
+                default:
+                    readParam.setDestinationType(originalIts);
+                }
+            }
+        }
         Application.logPerf("Entering ReadParam with ImageReadParam {}", readParam);
         Dimension nativeDimensions = new Dimension(reader.getWidth(0), reader.getHeight(0));
         Rectangle targetRegion;
