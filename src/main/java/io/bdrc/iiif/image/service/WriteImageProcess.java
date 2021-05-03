@@ -159,7 +159,11 @@ public class WriteImageProcess {
             BufferedImage outImg = transformImage(selector.getFormat(), img.getImg(), img.getTargetSize(), img.getRotation(),
                     selector.getRotation().isMirror(), selector.getQuality());
             if (imgReader.getIcc() != null) {
-                outImg = new ColorTools().relabelColorSpace(outImg, imgReader.getIcc());
+                try {
+                    outImg = new ColorTools().relabelColorSpace(outImg, imgReader.getIcc());
+                } catch (Exception e) {
+                    log.error("ignored error when applying icc profile: ", e);
+                }
             }
             ImageWriter writer = null;
             Iterator<ImageWriter> writers = ImageIO.getImageWritersByMIMEType(selector.getFormat().getMimeType().getTypeName());
