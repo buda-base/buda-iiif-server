@@ -34,6 +34,7 @@ import io.bdrc.iiif.exceptions.InvalidParametersException;
 import io.bdrc.iiif.exceptions.UnsupportedFormatException;
 import io.bdrc.iiif.model.DecodedImage;
 import io.bdrc.iiif.model.ImageApiProfile;
+import io.bdrc.iiif.model.ImageApiProfile.Format;
 import io.bdrc.iiif.model.ImageApiProfile.Quality;
 import io.bdrc.iiif.model.ImageApiSelector;
 import io.bdrc.iiif.model.ImageReader_ICC;
@@ -251,7 +252,7 @@ public class ReadImageProcess {
     public static Object[] readImage(String identifier, ImageApiSelector selector, ImageApiProfile profile, boolean failover)
             throws IOException, UnsupportedFormatException, InvalidParametersException, ImageReadException, IIIFException {
         long deb = System.currentTimeMillis();
-        Object[] obj=new Object[2];
+        Object[] obj = new Object[2];
         ImageReader_ICC imgReader = getReader(identifier,failover);
         Application.logPerf("Entering readImage for creating DecodedImage");
         if ((selector.getRotation().getRotation() % 90) != 0) {
@@ -348,8 +349,9 @@ public class ReadImageProcess {
             }
         } else {
             ImageTypeSpecifier originalIts = reader.getRawImageType(0);
-            log.info("reading original num components: {}", originalIts.getNumComponents());
-            if (originalIts != null) {
+            // TODO: for some reason, doing this with PNG output just breaks everything
+            if (originalIts != null && selector.getFormat() != Format.PNG) {
+                log.info("reading original num components: {}", originalIts.getNumComponents());
                 switch(selector.getQuality()) {
                 case GRAY:
                     log.info("read image as gray as per quality request");
@@ -364,7 +366,7 @@ public class ReadImageProcess {
                 }
             }
         }
-        Application.logPerf("Entering ReadParam with ImageReadParam {}", readParam);
+        //Application.logPerf("Entering ReadParam with ImageReadParam {}", readParam);
         Dimension nativeDimensions = new Dimension(reader.getWidth(0), reader.getHeight(0));
         Rectangle targetRegion;
         try {

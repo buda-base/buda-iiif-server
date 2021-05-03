@@ -35,6 +35,7 @@ import ar.com.hjg.pngj.ImageLineByte;
 import ar.com.hjg.pngj.PngWriter;
 import ar.com.hjg.pngj.PngjException;
 import io.bdrc.iiif.core.Application;
+import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.iiif.exceptions.InvalidParametersException;
 import io.bdrc.iiif.exceptions.UnsupportedFormatException;
 import io.bdrc.iiif.model.DecodedImage;
@@ -49,9 +50,10 @@ public class WriteImageProcess {
 
     private static final Logger log = LoggerFactory.getLogger(WriteImageProcess.class);
 
-    /** Apply transformations to an decoded image **/
+    /** Apply transformations to an decoded image 
+     * @throws IIIFException **/
     private static BufferedImage transformImage(Format format, BufferedImage inputImage, Dimension targetSize, int rotation, boolean mirror,
-            ImageApiProfile.Quality quality) {
+            ImageApiProfile.Quality quality) throws IIIFException {
         BufferedImage img = inputImage;
         int inType = img.getType();
         log.info("img type: {}", inType);
@@ -82,12 +84,18 @@ public class WriteImageProcess {
         int outType = inType;
         switch (quality) {
         case GRAY:
+            if (inType == BufferedImage.TYPE_BYTE_BINARY) {
+                throw new IIIFException(400, 5000, "cannot give gray representation of a binary image");
+            }
             outType = BufferedImage.TYPE_BYTE_GRAY;
             break;
         case BITONAL:
             outType = BufferedImage.TYPE_BYTE_BINARY;
             break;
         case COLOR:
+            if (inType == BufferedImage.TYPE_BYTE_GRAY || inType == BufferedImage.TYPE_BYTE_BINARY) {
+                throw new IIIFException(400, 5000, "cannot give color representation of a non-color image");
+            }
             outType = BufferedImage.TYPE_3BYTE_BGR;
             break;
         default:
@@ -149,7 +157,7 @@ public class WriteImageProcess {
     
     public static void processImage(DecodedImage img, String identifier, ImageApiSelector selector, ImageApiProfile profile, OutputStream os,
             ImageReader_ICC imgReader)
-            throws InvalidParametersException, UnsupportedOperationException, UnsupportedFormatException, IOException, ImageReadException {
+            throws InvalidParametersException, UnsupportedOperationException, UnsupportedFormatException, IOException, ImageReadException, IIIFException {
         long deb = System.currentTimeMillis();
         try {
             log.info("Processing Image for identifier >> {} ", identifier);
