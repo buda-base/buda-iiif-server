@@ -83,7 +83,9 @@ public class WriteImageProcess {
             // means we can't reapply the ICC profile if it's a gray one (because of some weird feature of AWT)
             if (inType == BufferedImage.TYPE_BYTE_GRAY || inType == BufferedImage.TYPE_BYTE_BINARY) {
                 log.info("resize image using homemade grayscale method");
-                img = grayScale(img, targetSize.width, targetSize.height);
+                BufferedImage newImg = grayScale(img, targetSize.width, targetSize.height);
+                img.flush();
+                img = newImg;
                 // TODO: this introduces some sort of padding on the resulting PNG on 
                 // http://iiif.bdrc.io/bdr:I0886::08860003.tif/full/!2000,500/0/default.png
                 // in some cases... I can't find any rational explanation!
@@ -147,6 +149,7 @@ public class WriteImageProcess {
             BufferedImage newImg = new BufferedImage(img.getWidth(), img.getHeight(), outType);
             Graphics2D g2d = newImg.createGraphics();
             g2d.drawImage(img, 0, 0, null);
+            img.flush();
             img = newImg;
             g2d.dispose();
         }
@@ -211,7 +214,9 @@ public class WriteImageProcess {
             if (imgReader.getIcc() != null) {
                 try {
                     log.info("relabel color space");
-                    outImg = new ColorTools().relabelColorSpace(outImg, imgReader.getIcc());
+                    BufferedImage newImg = new ColorTools().relabelColorSpace(outImg, imgReader.getIcc());
+                    outImg.flush();
+                    outImg = newImg;
                 } catch (Exception e) {
                     log.error("ignored error when applying icc profile: ", e);
                 }
@@ -247,7 +252,8 @@ public class WriteImageProcess {
                     log.info("using PNG JAI encoder for {} ", identifier);
                     pngToOS(os, outImg);
                 }
-                
+                outImg.flush();
+                outImg = null;
                 os.flush();
                 os.close();
                 break;
@@ -275,6 +281,8 @@ public class WriteImageProcess {
                 os.close();
                 log.info("disposing JPEG writer");
                 wtr.dispose();
+                outImg.flush();
+                outImg = null;
                 break;
 
             case WEBP:
@@ -289,6 +297,8 @@ public class WriteImageProcess {
                 iss.flush();
                 iss.close();
                 writer.dispose();
+                outImg.flush();
+                outImg = null;
                 break;
 
             default:
@@ -299,7 +309,8 @@ public class WriteImageProcess {
                 ios.flush();
                 ios.close();
                 writer.dispose();
-                
+                outImg.flush();
+                outImg = null;
             }
             Application.logPerf("Done with Processimage.... in {} ms", System.currentTimeMillis() - deb);
         } catch (UnsupportedOperationException | UnsupportedFormatException | IOException e) {
