@@ -253,7 +253,7 @@ public class ReadImageProcess {
             throws IOException, UnsupportedFormatException, InvalidParametersException, ImageReadException, IIIFException {
         long deb = System.currentTimeMillis();
         Object[] obj = new Object[2];
-        ImageReader_ICC imgReader = getReader(identifier,failover);
+        ImageReader_ICC imgReader = getReader(identifier, failover);
         Application.logPerf("Entering readImage for creating DecodedImage");
         if ((selector.getRotation().getRotation() % 90) != 0) {
             log.error("Rotation is not a multiple of 90 degrees for selector {}", selector.toString(), "");
@@ -386,6 +386,7 @@ public class ReadImageProcess {
         if (selector.getRotation().getRotation() != 0 && reader instanceof TurboJpegImageReader) {
             ((TurboJpegImageReadParam) readParam).setRotationDegree((int) selector.getRotation().getRotation());
         }
+        log.info("return params ", readParam);
         return readParam;
     }
 

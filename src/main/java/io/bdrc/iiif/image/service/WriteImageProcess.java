@@ -2,8 +2,16 @@ package io.bdrc.iiif.image.service;
 
 import java.awt.Dimension;
 import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.Transparency;
+import java.awt.color.ColorSpace;
+import java.awt.color.ICC_ColorSpace;
 import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
+import java.awt.image.ComponentColorModel;
 import java.awt.image.DataBufferByte;
+import java.awt.image.DirectColorModel;
+import java.awt.image.ImagingOpException;
 import java.awt.image.MultiPixelPackedSampleModel;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -50,6 +58,18 @@ public class WriteImageProcess {
 
     private static final Logger log = LoggerFactory.getLogger(WriteImageProcess.class);
 
+    public static BufferedImage grayScale(BufferedImage inputImage, int width, int height) {
+        // TODO: strange behavior: if we replace BufferedImage.TYPE_BYTE_GRAY with inputImage.getType()
+        // this creates a binary image, but also has some weird side effect when converting to PNG, see
+        // end of transformImage function
+        final BufferedImage res = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
+        Graphics2D graphics2D = res.createGraphics();
+        graphics2D.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        graphics2D.drawImage(inputImage, 0, 0, width, height, null);
+        graphics2D.dispose();
+        return res;
+    }
+    
     /** Apply transformations to an decoded image 
      * @throws IIIFException **/
     private static BufferedImage transformImage(Format format, BufferedImage inputImage, Dimension targetSize, int rotation, boolean mirror,
@@ -59,7 +79,19 @@ public class WriteImageProcess {
         log.info("img type: {}", inType);
         boolean needsAdditionalScaling = !new Dimension(img.getWidth(), img.getHeight()).equals(targetSize);
         if (needsAdditionalScaling) {
-            img = Scalr.resize(img, Scalr.Method.BALANCED, Scalr.Mode.FIT_EXACT, targetSize.width, targetSize.height);
+            // this sucks! it converts into RGB before resizing which is totally stupid for Gray images, and also
+            // means we can't reapply the ICC profile if it's a gray one (because of some weird feature of AWT)
+            if (inType == BufferedImage.TYPE_BYTE_GRAY || inType == BufferedImage.TYPE_BYTE_BINARY) {
+                log.info("resize image using homemade grayscale method");
+                img = grayScale(img, targetSize.width, targetSize.height);
+                // TODO: this introduces some sort of padding on the resulting PNG on 
+                // http://iiif.bdrc.io/bdr:I0886::08860003.tif/full/!2000,500/0/default.png
+                // in some cases... I can't find any rational explanation!
+                log.info("new imgType {}", img.getType());
+            } else {
+                log.info("resize image using homemade scalr");
+                img = Scalr.resize(img, Scalr.Method.BALANCED, Scalr.Mode.FIT_EXACT, targetSize.width, targetSize.height);
+            }
         }
 
         if (rotation != 0) {
@@ -75,9 +107,12 @@ public class WriteImageProcess {
                 rot = Scalr.Rotation.CW_270;
                 break;
             }
+            log.info("rotate image");
             img = Scalr.rotate(img, rot);
         }
         if (mirror) {
+            log.info("mirror image");
+            // TODO: this also converts gray images to RGB, I'm not sure it's a good idea...
             img = Scalr.rotate(img, Scalr.Rotation.FLIP_HORZ);
         }
         // Quality
@@ -101,8 +136,14 @@ public class WriteImageProcess {
         default:
             outType = inType;
         }
+        log.info("outType {}, imgGetType {}", outType, img.getType());
+        // TODO: this is rather odd: at this stage in the case of images that are originally
+        // binary, we might have img.getType() == TYPE_BYTE_GRAY because of the resizing that
+        // converts to gray... but here if we convert back to binary, we get a PNG file with inverted
+        // colors, which I haven't managed to really debug... so we just don't convert back to binary
+        // This is not ideal as this means we are producing PNGs that are a bit bigger
         if (outType != inType) {
-            log.error("img type: {}", img.getType());
+            log.info("transform image type {} into type {}", img.getType(), outType);
             BufferedImage newImg = new BufferedImage(img.getWidth(), img.getHeight(), outType);
             Graphics2D g2d = newImg.createGraphics();
             g2d.drawImage(img, 0, 0, null);
@@ -132,6 +173,7 @@ public class WriteImageProcess {
                 if (elem >= len) {
                     break;
                 }
+                //int sample = dbbuf[elem++];
                 int sample = ~dbbuf[elem++];
                 line.getScanline()[j++] =  (byte) (sample >> 7);
                 line.getScanline()[j++] =  (byte) (sample >> 6);
@@ -155,17 +197,20 @@ public class WriteImageProcess {
         encoder.encode(bi);
     }
     
+    
     public static void processImage(DecodedImage img, String identifier, ImageApiSelector selector, ImageApiProfile profile, OutputStream os,
             ImageReader_ICC imgReader)
             throws InvalidParametersException, UnsupportedOperationException, UnsupportedFormatException, IOException, ImageReadException, IIIFException {
         long deb = System.currentTimeMillis();
         try {
             log.info("Processing Image for identifier >> {} ", identifier);
-
+            log.info("color space: {}", img.getImg().getColorModel());
             BufferedImage outImg = transformImage(selector.getFormat(), img.getImg(), img.getTargetSize(), img.getRotation(),
                     selector.getRotation().isMirror(), selector.getQuality());
+            log.info("color space: {}", img.getImg().getColorModel());
             if (imgReader.getIcc() != null) {
                 try {
+                    log.info("relabel color space");
                     outImg = new ColorTools().relabelColorSpace(outImg, imgReader.getIcc());
                 } catch (Exception e) {
                     log.error("ignored error when applying icc profile: ", e);
@@ -189,17 +234,17 @@ public class WriteImageProcess {
                 // https://github.com/buda-base/buda-iiif-server/issues/74
                 // we could do it for other types too but it would require new functions
                 // and these cases are not very common
-                if (outImg.getColorModel().getPixelSize() == 1) {
+                if (outImg.getType() == BufferedImage.TYPE_BYTE_BINARY) {
                     try {
-                        Application.logPerf("USING PNGJ ENCODER for {} ", identifier);
+                        log.info("using PNGJ encoder for {} ", identifier);
                         bitonalPngToOS_pngj(os, outImg);
                     } catch (Exception e) {
                         log.error("tried to use the pngj encoder on {} but failed", identifier);
-                        Application.logPerf("USING PNG JAI ENCODER for {} ", identifier);
+                        log.info("using PNG JAI encoder for {} ", identifier);
                         pngToOS(os, outImg);
                     }
                 } else {
-                    Application.logPerf("USING PNG JAI ENCODER for {} ", identifier);
+                    log.info("using PNG JAI encoder for {} ", identifier);
                     pngToOS(os, outImg);
                 }
                 
