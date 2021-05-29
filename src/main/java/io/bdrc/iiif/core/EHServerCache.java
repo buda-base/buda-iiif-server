@@ -20,7 +20,6 @@ import org.ehcache.core.statistics.TierStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.bdrc.iiif.archives.ArchiveInfo;
 import io.bdrc.iiif.archives.PdfItemInfo;
 import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.iiif.metrics.CacheMetrics;
@@ -35,7 +34,6 @@ public class EHServerCache {
     public static DiskCache IIIF_ZIP;
     public static DiskCache IIIF_PDF;
     public static Cache<String, PdfItemInfo> PDF_ITEM_INFO;
-    public static Cache<String, ArchiveInfo> ARCHIVE_INFO;
     public static Cache<String, ImageGroupInfo> IMAGE_GROUP_INFO;
     public static Cache<String, List> IMAGE_LIST_INFO;
     private static HashMap<String, CacheWrapper> MAP;
@@ -84,12 +82,6 @@ public class EHServerCache {
         MAP.put("pdfItemInfo", new CacheWrapper(PDF_ITEM_INFO, "pdfItemInfo"));
         MAP_MEM.put("pdfItemInfo", new CacheWrapper(PDF_ITEM_INFO, "pdfItemInfo"));
         CACHE_STATS.put("pdfItemInfo", statsService.getCacheStatistics("pdfItemInfo"));
-
-        ARCHIVE_INFO = cacheManager.createCache("archiveInfo", CacheConfigurationBuilder.newCacheConfigurationBuilder(String.class, ArchiveInfo.class,
-                ResourcePoolsBuilder.newResourcePoolsBuilder().heap(500, EntryUnit.ENTRIES)));
-        MAP.put("archiveInfo", new CacheWrapper(ARCHIVE_INFO, "archiveInfo"));
-        MAP_MEM.put("archiveInfo", new CacheWrapper(ARCHIVE_INFO, "archiveInfo"));
-        CACHE_STATS.put("archiveInfo", statsService.getCacheStatistics("archiveInfo"));
 
         IMAGE_GROUP_INFO = cacheManager.createCache("imageGroupInfo", CacheConfigurationBuilder.newCacheConfigurationBuilder(String.class,
                 ImageGroupInfo.class, ResourcePoolsBuilder.newResourcePoolsBuilder().heap(500, EntryUnit.ENTRIES)));
@@ -192,7 +184,6 @@ public class EHServerCache {
             IIIF_ZIP.clear(false);
             IIIF_PDF.clear(false);
             PDF_ITEM_INFO.clear();
-            ARCHIVE_INFO.clear();
             return true;
         } catch (Exception ex) {
             return false;

@@ -23,6 +23,7 @@ public class ResourceAccessValidation {
     String statusShort;
     String imageInstanceUri;
     String imageFileName = null;
+    boolean isPDFRequest = false;
     ImageGroupInfo igi;
     boolean isRestrictedInChina;
 
@@ -41,6 +42,7 @@ public class ResourceAccessValidation {
 
     public ResourceAccessValidation(Access access, IdentifierInfo idInfo) {
         super();
+        this.isPDFRequest = true;
         this.access = access;
         final String accessUri = idInfo.igi.access.getUri();
         accessShort = accessUri.substring(accessUri.lastIndexOf('/') + 1);
@@ -76,6 +78,9 @@ public class ResourceAccessValidation {
             }
         }
         log.info("Getting access level for accessShort= {} and statusShort={} and imageUri '}", accessShort, statusShort, imageInstanceUri);
+        if (this.isPDFRequest) {
+            return access.hasResourcePDFAccess(accessShort, statusShort, imageInstanceUri, request.getHeader("X-Real-IP"), this.igi.inCollectionsLnames);
+        }
         return access.hasResourceAccess(accessShort, statusShort, imageInstanceUri);
     }
 

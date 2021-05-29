@@ -2,11 +2,17 @@ package io.bdrc.iiif.resolver;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.jena.query.QuerySolution;
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.Property;
+import org.apache.jena.rdf.model.ResIterator;
+import org.apache.jena.rdf.model.Resource;
+import org.apache.jena.rdf.model.ResourceFactory;
+import org.apache.jena.rdf.model.StmtIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,7 +21,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.bdrc.iiif.exceptions.IIIFException;
-import io.bdrc.iiif.image.service.ImageGroupInfoService;
+import io.bdrc.libraries.Models;
 
 public class ImageGroupInfo {
 
@@ -23,12 +29,8 @@ public class ImageGroupInfo {
     public AccessType access;
     @JsonProperty("restrictedInChina")
     public Boolean restrictedInChina = false;
-    @JsonProperty("license")
-    public LicenseType license;
     @JsonProperty("status")
     public String statusUri;
-    @JsonProperty("instanceId")
-    public String instanceId;
     @JsonProperty("imageInstanceId")
     public String imageInstanceId;
     @JsonProperty("pagesIntroTbrc")
@@ -39,43 +41,74 @@ public class ImageGroupInfo {
     public String imageGroup = null;
     @JsonProperty("iiifManifest")
     public URI iiifManifest = null;
+    @JsonProperty("inCollections")
+    public List<String> inCollectionsLnames = null;
     @JsonProperty("accessibleInFairUseList")
     public Map<String, Boolean> accessibleInFairUseList = null;
 
-    private static final Logger logger = LoggerFactory.getLogger(ImageGroupInfoService.class);
+    private static final Logger logger = LoggerFactory.getLogger(ImageGroupInfo.class);
 
+    static final Property volumeOfP = ResourceFactory.createProperty(Models.BDO + "volumeOf");
+    static final Property adminAboutP = ResourceFactory.createProperty(Models.ADM + "adminAbout");
+    static final Property accessP = ResourceFactory.createProperty(Models.ADM + "access");
+    static final Property statusP = ResourceFactory.createProperty(Models.ADM + "status");
+    static final Property restrictedInChinaP = ResourceFactory.createProperty(Models.ADM + "restrictedInChina");
+    static final Property inCollectionP = ResourceFactory.createProperty(Models.BDO + "inCollection");
+    static final Property volumeNumberP = ResourceFactory.createProperty(Models.BDO + "volumeNumber");
+    static final Property volumePagesTbrcIntroP = ResourceFactory.createProperty(Models.BDO + "volumePagesTbrcIntro");
+    static final Property hasIIIFManifestP = ResourceFactory.createProperty(Models.BDO + "hasIIIFManifest");
+    
     // result of volumeInfo query
-    public ImageGroupInfo(final QuerySolution sol, final String volumeId) {
-        logger.debug("creating VolumeInfo for solution {}", sol.toString());
+    public ImageGroupInfo(final Model m, final String volumeId) {
         if (volumeId.startsWith("bdr:")) {
             this.imageGroup = volumeId.substring(4);
         } else {
             this.imageGroup = volumeId;
         }
-        this.access = AccessType.fromString(sol.getResource("access").getURI());
-        this.statusUri = sol.getResource("status").getURI();
-        this.license = LicenseType.fromString(sol.getResource("license").getURI());
-        this.instanceId = sol.getResource("instanceId").getURI();
-        this.imageInstanceId = sol.getResource("iinstanceId").getURI();
-        if (sol.contains("?ric")) {
-            this.restrictedInChina = sol.get("?ric").asLiteral().getBoolean();
+        final Resource ig = m.getResource(Models.BDR+this.imageGroup);
+        final Resource ii = ig.getPropertyResourceValue(volumeOfP);
+        if (ii == null) {
+            logger.error("can't find image instance in model");
+            return;
         }
-        if (sol.contains("?volumeNumber")) {
-            this.volumeNumber = sol.get("?volumeNumber").asLiteral().getInt();
+        
+        final ResIterator admAboutiiIt = m.listResourcesWithProperty(adminAboutP, ii);
+        if (!admAboutiiIt.hasNext()) {
+            logger.error("can't find admin data in model");
+            return;
         }
-        if (sol.contains("?pagesIntroTbrc")) {
-            this.pagesIntroTbrc = sol.get("?pagesIntroTbrc").asLiteral().getInt();
+        final Resource iiAdm = admAboutiiIt.next();
+        this.restrictedInChina = iiAdm.hasLiteral(restrictedInChinaP, true);
+        final StmtIterator collectionIt = ii.listProperties(inCollectionP);
+        while (collectionIt.hasNext()) {
+            final Resource colR = collectionIt.next().getObject().asResource();
+            if (this.inCollectionsLnames == null) {
+                this.inCollectionsLnames = new ArrayList<String>();
+            }
+            this.inCollectionsLnames.add(colR.getLocalName());
         }
-        if (sol.contains("iiifManifest")) {
-            final String manifestURIString = sol.getResource("iiifManifest").getURI();
+        this.access = AccessType.fromString(iiAdm.getPropertyResourceValue(accessP).getURI());
+        this.statusUri = iiAdm.getPropertyResourceValue(statusP).getURI();
+        this.imageInstanceId = ii.getURI();
+        final StmtIterator volNumIt = ig.listProperties(volumeNumberP);
+        if (volNumIt.hasNext()) {
+            this.volumeNumber = volNumIt.next().getObject().asLiteral().getInt();
+        }
+        final StmtIterator pagesIntroTbrcIt = ig.listProperties(volumePagesTbrcIntroP);
+        if (pagesIntroTbrcIt.hasNext()) {
+            this.pagesIntroTbrc = pagesIntroTbrcIt.next().getObject().asLiteral().getInt();
+        }
+        final StmtIterator iiifManifestIt = ig.listProperties(hasIIIFManifestP);
+        if (iiifManifestIt.hasNext()) {
+            final String manifUri = iiifManifestIt.next().getObject().asResource().getURI();
             try {
-                this.iiifManifest = new URI(manifestURIString);
+                this.iiifManifest = new URI(manifUri);
             } catch (URISyntaxException e) {
-                logger.error("problem converting sparql result to URI: " + manifestURIString, e);
+                logger.error("problem converting sparql result to URI: " + manifUri, e);
             }
         }
     }
-
+    
     public void initAccessibleInFairUse(List<ImageInfo> ili) {
         if (this.accessibleInFairUseList != null)
             return;

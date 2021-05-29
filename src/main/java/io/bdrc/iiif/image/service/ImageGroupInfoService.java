@@ -7,15 +7,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
 
+import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.apache.jena.query.QuerySolution;
-import org.apache.jena.query.ResultSet;
-import org.apache.jena.riot.ResultSetMgr;
-import org.apache.jena.riot.resultset.ResultSetLang;
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,34 +41,20 @@ public class ImageGroupInfoService extends ConcurrentResourceService<ImageGroupI
         try {
             URIBuilder builder = new URIBuilder(LDS_VOLUME_QUERY);
             builder.setParameter("R_RES", volumeId);
-            builder.setParameter("format", "json");
+            builder.setParameter("format", "ttl");
             final HttpGet request = new HttpGet(builder.build());
-            logger.info("LDS request for {}: {}", volumeId, request);
-            // we suppose that the volumeId is well formed, which is checked by the
-            // Identifier constructor
             response = httpClient.execute(request);
+            request.addHeader(HttpHeaders.ACCEPT, "text/turtle");
             int code = response.getStatusLine().getStatusCode();
             if (code != 200) {
                 response.close();
                 httpClient.close();
-                throw new IIIFException(500, 5000, "LDS lookup returned an error for volume " + volumeId, response.toString(), "");
+                throw new IIIFException(500, 500, "LDS lookup returned an error", "request:\n" + request.toString() + "\nresponse:\n" + response.toString(), "");
             }
             body = response.getEntity().getContent();
-            final ResultSet res = ResultSetMgr.read(body, ResultSetLang.SPARQLResultSetJSON);
-            if (!res.hasNext()) {
-                body.close();
-                response.close();
-                httpClient.close();
-                throw new IIIFException(404, 5000, "cannot find image group " + volumeId + " in the database");
-            }
-            final QuerySolution sol = res.next();
-            resVolumeInfo = new ImageGroupInfo(sol, volumeId);
-            if (res.hasNext()) {
-                body.close();
-                response.close();
-                httpClient.close();
-                throw new IIIFException(500, 5000, "more than one volume found in the database for " + volumeId + ", this shouldn't happen");
-            }
+            final Model m = ModelFactory.createDefaultModel();
+            m.read(body, null, "TURTLE");
+            resVolumeInfo = new ImageGroupInfo(m, volumeId);
         } catch (IOException | URISyntaxException ex) {
             try {
                 if (body != null)

@@ -27,6 +27,7 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
 import io.bdrc.auth.AuthProps;
 import io.bdrc.auth.rdf.RdfAuthModel;
+import io.bdrc.auth.rdf.Subscribers;
 import io.bdrc.iiif.metrics.ImageMetrics;
 import io.bdrc.iiif.metrics.MetricsTask;
 
@@ -94,6 +95,7 @@ public class Application extends SpringBootServletInitializer {
         app.run(args);
         if ("true".equals(props.getProperty("authEnabled")) && !isInChina()) {
             RdfAuthModel.init();
+            Subscribers.setCache(new IPCacheImpl());
         }
         logPerf("Application main", "Test PERF Log ");
         Thread.setDefaultUncaughtExceptionHandler(new GlobalThreadExceptionHandler());
@@ -170,7 +172,6 @@ public class Application extends SpringBootServletInitializer {
         } catch (Exception ex) {
             return false;
         }
-
     }
 
     @Override
