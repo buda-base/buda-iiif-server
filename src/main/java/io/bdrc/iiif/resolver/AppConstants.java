@@ -28,7 +28,7 @@ public class AppConstants {
     public static final String LDS_QUERYPREFIX = AuthProps.getProperty("dataserver");
     public static final String LDS_IMAGEINSTANCEGRAPH_QUERY = LDS_QUERYPREFIX + "query/graph/IIIFServ_imageInstanceGraph";
 
-    public static final String LDS_VOLUME_QUERY = LDS_QUERYPREFIX + "query/graph/IIIFPres_volumeInfoGraph";
+    public static final String LDS_VOLUME_QUERY = LDS_QUERYPREFIX + "query/graph/IIIF_volumeInfoGraph";
     public static final String LDS_VOLUME_OUTLINE_QUERY = LDS_QUERYPREFIX + "query/graph/IIIFPres_volumeOutline";
 
     public static final int FAIRUSE_PAGES_S = 20;
