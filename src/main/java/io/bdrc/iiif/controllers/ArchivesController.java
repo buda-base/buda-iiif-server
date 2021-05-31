@@ -79,7 +79,8 @@ public class ArchivesController {
                 PdfItemInfo item = PdfItemInfo.getPdfItemInfo(idf.getImageInstanceId());
                 if (!acc.hasResourceAccess(item.getItemAccess())) {
                     final HttpStatus st = (serviceInfo.authEnabled() && serviceInfo.hasValidProperties() && !acc.isUserLoggedIn()) ? HttpStatus.UNAUTHORIZED : HttpStatus.FORBIDDEN;
-                    return new ResponseEntity<>("Insufficient rights", st);
+                    final String msg = st == HttpStatus.UNAUTHORIZED ? "Please log in to download archive files" : "Insufficient rights";
+                    return new ResponseEntity<>(msg, st);
                 }
                 if (json) {
                     jsonMap = getJsonVolumeLinks(item, type);
@@ -113,7 +114,8 @@ public class ArchivesController {
                 AccessLevel al = accValidation.getAccessLevel(request);
                 if (al.equals(AccessLevel.NOACCESS) || al.equals(AccessLevel.MIXED)) {
                     final HttpStatus st = (serviceInfo.authEnabled() && serviceInfo.hasValidProperties() && !acc.isUserLoggedIn()) ? HttpStatus.UNAUTHORIZED : HttpStatus.FORBIDDEN;
-                    return new ResponseEntity<>("Insufficient rights", st);
+                    final String msg = st == HttpStatus.UNAUTHORIZED ? "Please log in to download archive files" : "Insufficient rights";
+                    return new ResponseEntity<>(msg, st);
                 }
                 if (al.equals(AccessLevel.FAIR_USE)) {
                     output = idf.getImageGroupId() + "FAIR_USE:" + bPage.intValue() + "-" + ePage.intValue();// +"."+type;
