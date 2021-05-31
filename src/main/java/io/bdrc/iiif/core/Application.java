@@ -95,6 +95,7 @@ public class Application extends SpringBootServletInitializer {
         app.run(args);
         if ("true".equals(props.getProperty("authEnabled")) && !isInChina()) {
             RdfAuthModel.init();
+            Subscribers.init();
             Subscribers.setCache(new IPCacheImpl());
         }
         logPerf("Application main", "Test PERF Log ");
