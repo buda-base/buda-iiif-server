@@ -14,6 +14,7 @@ import org.apache.commons.text.StringSubstitutor;
 import org.apache.http.client.ClientProtocolException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -32,6 +33,7 @@ import io.bdrc.auth.Access.AccessLevel;
 import io.bdrc.iiif.archives.ArchiveBuilder;
 import io.bdrc.iiif.archives.ArchiveProducer;
 import io.bdrc.iiif.archives.PdfItemInfo;
+import io.bdrc.iiif.auth.AuthServiceInfo;
 import io.bdrc.iiif.auth.ResourceAccessValidation;
 import io.bdrc.iiif.core.Application;
 import io.bdrc.iiif.core.EHServerCache;
@@ -42,6 +44,9 @@ import io.bdrc.libraries.Identifier;
 @Controller
 public class ArchivesController {
 
+    @Autowired
+    private AuthServiceInfo serviceInfo;
+    
     public static final String IIIF = "IIIF";
     public static final String IIIF_ZIP = "IIIF_ZIP";
 
@@ -73,7 +78,8 @@ public class ArchivesController {
             case Identifier.MANIFEST_ID_WORK_IN_ITEM :
                 PdfItemInfo item = PdfItemInfo.getPdfItemInfo(idf.getImageInstanceId());
                 if (!acc.hasResourceAccess(item.getItemAccess())) {
-                    return new ResponseEntity<>("Insufficient rights", HttpStatus.FORBIDDEN);
+                    final HttpStatus st = (serviceInfo.authEnabled() && serviceInfo.hasValidProperties() && !acc.isUserLoggedIn()) ? HttpStatus.UNAUTHORIZED : HttpStatus.FORBIDDEN;
+                    return new ResponseEntity<>("Insufficient rights", st);
                 }
                 if (json) {
                     jsonMap = getJsonVolumeLinks(item, type);
@@ -103,11 +109,11 @@ public class ArchivesController {
                 }
                 log.debug("Pdf requested numPage in identifierInfo {}", inf);
                 log.info("Pdf requested start page {} and end page {}", bPage.intValue(), ePage.intValue());
-                ResourceAccessValidation accValidation = new ResourceAccessValidation(
-                        (Access) request.getAttribute("access"), inf);
+                ResourceAccessValidation accValidation = new ResourceAccessValidation(acc, inf);
                 AccessLevel al = accValidation.getAccessLevel(request);
                 if (al.equals(AccessLevel.NOACCESS) || al.equals(AccessLevel.MIXED)) {
-                    return new ResponseEntity<>("Insufficient rights", HttpStatus.FORBIDDEN);
+                    final HttpStatus st = (serviceInfo.authEnabled() && serviceInfo.hasValidProperties() && !acc.isUserLoggedIn()) ? HttpStatus.UNAUTHORIZED : HttpStatus.FORBIDDEN;
+                    return new ResponseEntity<>("Insufficient rights", st);
                 }
                 if (al.equals(AccessLevel.FAIR_USE)) {
                     output = idf.getImageGroupId() + "FAIR_USE:" + bPage.intValue() + "-" + ePage.intValue();// +"."+type;

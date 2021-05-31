@@ -153,13 +153,14 @@ public class IIIFImageApiController {
         IdentifierInfo idi = null;
         if (!staticImg) {
             idi = new IdentifierInfo(decodedIdentifier);
-            accValidation = new ResourceAccessValidation((Access) request.getAttribute("access"), idi, img);
+            final Access acc = (Access) request.getAttribute("access");
+            accValidation = new ResourceAccessValidation(acc, idi, img);
             log.info("Access Validation is {} and is Accessible={}", accValidation,
                     accValidation.isAccessible(request));
             if (!accValidation.isAccessible(request)) {
                 HttpHeaders headers1 = new HttpHeaders();
                 headers1.setCacheControl(CacheControl.noCache());
-                if (serviceInfo.authEnabled() && serviceInfo.hasValidProperties()) {
+                if (serviceInfo.authEnabled() && serviceInfo.hasValidProperties() && !acc.isUserLoggedIn()) {
                     return new ResponseEntity<StreamingResponseBody>(streamingResponseFrom("You must be authenticated before accessing this resource"),
                             headers1, HttpStatus.UNAUTHORIZED);
                 } else {
