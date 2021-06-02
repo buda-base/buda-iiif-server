@@ -11,8 +11,6 @@ import org.ehcache.config.units.EntryUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.databind.JsonNode;
-
 import io.bdrc.auth.rdf.IPCache;
 
 public class IPCacheImpl implements IPCache {
@@ -34,8 +32,12 @@ public class IPCacheImpl implements IPCache {
             String value = CACHE.get(ip);
             if (value == null) {
                 value = loader.loadSubscriber(ip);
+                if (value == null)
+                    value = "";
                 CACHE.put(ip, value);
             }
+            if (value.isEmpty())
+                return null;
             return value;
         } catch (IOException e) {
             log.error("An issue occured while getting Subscriber from cache for key " + ip + " message: " + e.getMessage());
