@@ -52,8 +52,8 @@ public class ReadImageProcess {
     @Value("${custom.iiif.image.maxHeight:65500}")
     private static int maxHeight;
     
-    private static final int expectedBytesForICCDiscovery = 40000;
-    private static final int expectedBytesForCSDiscovery = 40000;
+    private static final int expectedBytesForICCDiscovery = 60000;
+    private static final int expectedBytesForCSDiscovery = 60000;
 
     /** Update ImageService based on the image **/
     private static void enrichInfo(ImageReader reader, ImageService info) throws IOException {
