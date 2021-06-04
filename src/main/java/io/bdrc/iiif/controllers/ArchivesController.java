@@ -314,6 +314,11 @@ public class ArchivesController {
         }
         String res = sb.toString();
         templatesCache.put(template, res);
+        try {
+            buffer.close();
+        } catch (IOException e) {
+            log.error("can't close template buffer ", e);
+        }
         return res;
     }
 
@@ -321,6 +326,7 @@ public class ArchivesController {
             throws ClientProtocolException, IOException, IIIFException, ResourceNotFoundException {
         String links = "";
         List<String> vlist = item.getItemVolumes();
+        // TODO: sort list by volume number
         for (int i = 0; i < vlist.size(); i++) {
             String s = vlist.get(i);
             String shortName = getShortName(s);
@@ -343,7 +349,7 @@ public class ArchivesController {
             HashMap<String, String> vol = new HashMap<>();
             vol.put("link", Application.getProperty("iiifserv_baseurl") + "download/" + type + "/v:" + "bdr:"
                     + shortName + "::1-");
-            vol.put("volnum", Integer.toString(i));
+            vol.put("volnum", item.getItemVolumeNumber(shortName));
             map.put("bdr:" + shortName, vol);
         }
         return map;
