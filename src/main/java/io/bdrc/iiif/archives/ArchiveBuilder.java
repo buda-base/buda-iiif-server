@@ -86,6 +86,7 @@ public class ArchiveBuilder {
     public static void buildPdf(Access acc, IdentifierInfo inf, Identifier idf, String output, String origin, OutputStream os, Map<String, Double> jobs)
             throws IIIFException {
         long deb = System.currentTimeMillis();
+        int limitsize = Integer.parseInt(Application.getProperty("imgSizeLimit"));
         try {
             if (jobs != null)
                 jobs.put(output, 0.);
@@ -103,9 +104,10 @@ public class ArchiveBuilder {
             info.setCreator("Buddist Digital Resource Center");
             Application.logPerf("building pdf writer and document opened {} after {}", inf.volumeId,
                     System.currentTimeMillis() - deb);
-            int k = 1;
+            int nbImagesTried = 1;
+            int nbImagesAdded = 1;
             for (ImageInfo imgInf : imgInfo) {
-                if (imgInf.size == null || imgInf.size <= Integer.parseInt(Application.getProperty("imgSizeLimit"))) {
+                if (imgInf.size == null || imgInf.size <= limitsize) {
                     log.debug("adding {}", imgInf.filename);
                     // ArchiveImageProducer tmp = null;
                     Object[] obj = ArchiveImageProducer.getImageInputStream(inf, imgInf.filename, origin);
@@ -125,21 +127,22 @@ public class ArchiveBuilder {
                         //PdfPage page = doc.getPage(k);
                         //page.setPageLabel(PageLabelNumberingStyle.UPPERCASE_LETTERS, imgInf.filename);
                         //page.setPageLabel(PageLabelNumberingStyle.DECIMAL_ARABIC_NUMERALS, "i. "+Integer.toString(imgInf.imgNum));
-                        pdfImg.setFixedPosition(k, 0, 0);
+                        pdfImg.setFixedPosition(nbImagesAdded, 0, 0);
                         pdfImg.setWidth(imgInf.getWidth());
                         pdfImg.setHeight(imgInf.getHeight());
                         d.add(pdfImg);
                         d.flush();
                         pdfWriter.flush();
                         os.flush();
+                        nbImagesAdded++;
                     }
                 }
-                if ((k % 5) == 0 && jobs != null) {
+                if ((nbImagesTried % 5) == 0 && jobs != null) {
                     // every 5 images, update the percentage
-                    final double rate = k / ((double) totalImages);
+                    final double rate = nbImagesTried / ((double) totalImages);
                     jobs.put(output, rate);
                 }
-                k++;
+                nbImagesTried++;
             }
             log.info("Closing doc after writing {} ", doc);
             d.close();
