@@ -38,7 +38,9 @@ import io.bdrc.iiif.auth.ResourceAccessValidation;
 import io.bdrc.iiif.core.Application;
 import io.bdrc.iiif.core.EHServerCache;
 import io.bdrc.iiif.exceptions.IIIFException;
+import io.bdrc.iiif.resolver.AppConstants;
 import io.bdrc.iiif.resolver.IdentifierInfo;
+import io.bdrc.iiif.resolver.ImageGroupInfo;
 import io.bdrc.libraries.Identifier;
 
 @Controller
@@ -161,7 +163,7 @@ public class ArchivesController {
                         html = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(map);
                     } else {
                         html = getTemplate("downloadPdf.tpl");
-                        map.put("file", output + "." + type);
+                        map.put("file", getUserFilename(inf, idf, type, al.equals(AccessLevel.FAIR_USE)));
                         s = new StringSubstitutor(map);
                         html = s.replace(html);
                     }
@@ -189,13 +191,37 @@ public class ArchivesController {
         }
         ResponseEntity<String> response = new ResponseEntity<String>(html, headers, HttpStatus.OK);
         return response;
-
+    }
+    
+    // some tests: bdr:I00KG03511 (volume 1, 2 pages) bdr:I1CZ4768 (volume 2, 2 pages)
+    public static String getUserFilename(final IdentifierInfo inf, final Identifier idf, final String type, final boolean isFairUse) {
+        String userfilename = inf.igi.imageInstanceId.substring(AppConstants.BDR_len);
+        if (inf.igi.volumeNumber > 1)
+            userfilename += "-v"+inf.igi.volumeNumber;
+        boolean hasFirstPage = idf.getBPageNum() != null && idf.getBPageNum() > 2;
+        boolean hasEndPage = true;
+        try {
+            hasEndPage = idf.getEPageNum() != null && idf.getEPageNum() < inf.getTotalPages();
+        } catch (IIIFException e) {
+            log.error("exception while trying to determine total number of pages", e);
+        }
+        if (hasFirstPage || hasEndPage)
+            userfilename += "_img"+idf.getBPageNum()+"-"+idf.getEPageNum();
+        if (isFairUse)
+            userfilename += "-extracts";
+        userfilename += "." + type;
+        return userfilename;
     }
 
     @RequestMapping(value = "/download/file/{type}/{name}", method = {RequestMethod.GET, RequestMethod.HEAD})
     public ResponseEntity<StreamingResponseBody> downloadPdf(@PathVariable String name, @PathVariable String type,
             HttpServletRequest request) throws Exception {
-        String[] nameParts = name.replace("FAIR_USE", "").split(":");
+        boolean isFairUse = false;
+        if (name.contains("FAIR_USE")) {
+            isFairUse = true;
+            name = name.replace("FAIR_USE", "");
+        }
+        String[] nameParts = name.split(":");
         HttpHeaders headers = new HttpHeaders();
         if (nameParts.length < 3) {
             log.error("invalid PDF download argument: {}", name);
@@ -211,9 +237,10 @@ public class ArchivesController {
         IdentifierInfo inf = new IdentifierInfo(nameParts[0] + ":" + nameParts[1]);
         ResourceAccessValidation accValidation = new ResourceAccessValidation((Access) request.getAttribute("access"),
                 inf);
+        String userfilename = getUserFilename(inf, idf, type, isFairUse);
         if (Application.isPdfSync()) {
             headers.setContentType(MediaType.parseMediaType("application/" + type));
-            headers.setContentDispositionFormData("attachment", name.substring(4) + "." + type);
+            headers.setContentDispositionFormData("attachment", userfilename);
             if (type.equals(ArchiveBuilder.PDF_TYPE)) {
                 final StreamingResponseBody s = ArchiveBuilder.getPDFStreamingResponseBody(accValidation.getAccess(), inf, idf, name,
                         (String) request.getAttribute("origin"));
@@ -236,7 +263,7 @@ public class ArchivesController {
             return ResponseEntity.ok().headers(headers).body(IIIFImageApiController.streamingResponseFrom(msg));
         }
         headers.setContentType(MediaType.parseMediaType("application/" + type));
-        headers.setContentDispositionFormData("attachment", name.substring(4) + "." + type);
+        headers.setContentDispositionFormData("attachment", userfilename);
         StreamingResponseBody stream = IIIFImageApiController.streamingResponseFrom(is);
         return ResponseEntity.ok().headers(headers).body(stream);
     }
