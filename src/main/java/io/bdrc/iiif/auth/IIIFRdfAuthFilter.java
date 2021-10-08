@@ -85,7 +85,7 @@ public class IIIFRdfAuthFilter implements Filter {
             }
             chain.doFilter(req, res);
         } catch (IOException | ServletException e) {
-            log.error("IIIF RdfAuth filter failed ! Message: " + e.getMessage());
+            log.error("IIIF RdfAuth filter failed ! Message: " + e.getMessage(), e);
             throw e;
         }
     }
