@@ -100,7 +100,7 @@ public class TokenController {
         }
         
         rootNode.put("userprofile", acc.getUserProfile().toString());
-        rootNode.put("userprofile", acc.getUser().toString());
+        rootNode.put("user", acc.getUser().toString());
         List<String> personalAccessL = RdfAuthModel.getPersonalAccess(RdfConstants.AUTH_RESOURCE_BASE + acc.getUser().getUserId());
         ArrayNode an = mapper.valueToTree(personalAccessL);
         rootNode.putArray("personalAccess").addAll(an);
