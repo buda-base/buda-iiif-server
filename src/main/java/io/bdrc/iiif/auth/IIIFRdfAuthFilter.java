@@ -95,10 +95,13 @@ public class IIIFRdfAuthFilter implements Filter {
         //
     }
 
-    String getToken(String header) {
+    public static String getToken(String header) {
         try {
             if (header != null) {
-                return header.split(" ")[1];
+                int blankspaceidx = header.indexOf(' ');
+                if (blankspaceidx > 0)
+                    return header.substring(blankspaceidx+1);
+                return header;
             }
         } catch (Exception ex) {
             log.error("Could not get Token from header " + header + " Message: " + ex.getMessage());
