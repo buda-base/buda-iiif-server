@@ -32,6 +32,7 @@ import io.bdrc.auth.rdf.RdfAuthModel;
 import io.bdrc.auth.rdf.RdfConstants;
 import io.bdrc.auth.rdf.Subscribers;
 import io.bdrc.iiif.auth.IIIFRdfAuthFilter;
+import io.bdrc.iiif.core.GeoLocation;
 import io.bdrc.iiif.exceptions.IIIFException;
 
 @RestController
@@ -107,6 +108,9 @@ public class TokenController {
         final String ipAddress = request.getHeader("X-Real-IP");
         rootNode.put("ip", ipAddress);
         rootNode.put("subscriber", Subscribers.getCachedSubscriber(ipAddress));
+        String test = GeoLocation.getCountryName(ipAddress);
+        rootNode.put("inChina", test == null || "China".equalsIgnoreCase(test));
+        rootNode.put("isAdmin", acc.getUserProfile().isAdmin());
         
         return new ResponseEntity<StreamingResponseBody>(IIIFImageApiController.streamingResponseFrom(mapper.writeValueAsString(rootNode)),
                 headers, HttpStatus.OK);

@@ -8,6 +8,7 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.time.Instant;
 import java.util.Calendar;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -31,6 +32,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.ModelAndView;
@@ -52,6 +54,7 @@ import io.bdrc.iiif.core.EHServerCache;
 import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.iiif.exceptions.InvalidParametersException;
 import io.bdrc.iiif.exceptions.UnsupportedFormatException;
+import io.bdrc.iiif.image.service.ImageInfoListService;
 import io.bdrc.iiif.image.service.ImageProviderService;
 import io.bdrc.iiif.image.service.ImageService;
 import io.bdrc.iiif.image.service.ReadImageProcess;
@@ -68,6 +71,7 @@ import io.bdrc.iiif.model.RegionRequest;
 import io.bdrc.iiif.model.SizeRequest;
 import io.bdrc.iiif.model.TileInfo;
 import io.bdrc.iiif.resolver.AccessType;
+import io.bdrc.iiif.resolver.AppConstants;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 import io.bdrc.iiif.resolver.ImageInfo;
 
@@ -120,7 +124,23 @@ public class IIIFImageApiController {
         return resp;
     }
 
-    
+    @RequestMapping(value = "/tbrcredirect/browser/ImageService")
+    void tbrcRedirect(@RequestParam(name = "work") String scanLname, @RequestParam(name = "igroup") String igLname, @RequestParam(name = "image") Integer imgNum, HttpServletRequest req, HttpServletResponse response)
+            throws InterruptedException, ExecutionException, IIIFException, IOException {
+        if (!igLname.startsWith("I"))
+            igLname = "I"+igLname;
+        List<ImageInfo> ili = ImageInfoListService.Instance
+                .getAsync(scanLname, igLname).get();
+        if (ili == null || ili.size() < imgNum)
+            response.sendError(HttpStatus.NOT_FOUND.value(), "couldn't find the asked resource");
+        final String filename = ili.get(imgNum).filename;
+        String ext = "jpg";
+        final String filenamelow = filename.toLowerCase();
+        if (filenamelow.endsWith("tif") || filenamelow.endsWith("tiff"))
+            ext = "png";
+        final String redirectUrl = Application.getProperty("iiifserv_baseurl")+"bdr:"+igLname+"::"+filename+"/full/max/0/default."+ext;
+        response.sendRedirect(redirectUrl);
+    }
     
     @RequestMapping(value = "/{identifier}/{region}/{size}/{rotation}/{quality}.{format}")
     public ResponseEntity<StreamingResponseBody> getImageRepresentation(@PathVariable String identifier, @PathVariable String region,
