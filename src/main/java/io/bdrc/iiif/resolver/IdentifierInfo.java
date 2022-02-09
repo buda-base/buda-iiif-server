@@ -116,6 +116,8 @@ public class IdentifierInfo {
             log.debug("START {}, END {}", start, end);
             return getFairUseImageList(info, start, end);
         }
+        if (start < 1 || end > info.size())
+            throw new IIIFException("incorrect image range");
         return getImageListRange(info, start, end);
     }
 

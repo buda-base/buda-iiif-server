@@ -40,7 +40,7 @@ import io.bdrc.iiif.core.EHServerCache;
 import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.iiif.resolver.AppConstants;
 import io.bdrc.iiif.resolver.IdentifierInfo;
-import io.bdrc.iiif.resolver.ImageGroupInfo;
+import io.bdrc.iiif.resolver.ImageInfo;
 import io.bdrc.libraries.Identifier;
 
 @Controller
@@ -54,6 +54,12 @@ public class ArchivesController {
 
     public final static Logger log = LoggerFactory.getLogger(ArchivesController.class.getName());
 
+    public static void checkPageRange(final IdentifierInfo inf, final int start, final int end, final Access acc) throws IIIFException {
+        final List<ImageInfo> l = inf.getImageListInfo(acc, start, end);
+        if (l.size() == 0)
+            throw new IIIFException(404, IIIFException.GENERIC_APP_ERROR_CODE, "archive would be empty");
+    }
+    
     @RequestMapping(value = "/download/{type}/{id}", method = {RequestMethod.GET, RequestMethod.HEAD})
     public ResponseEntity<String> getPdfLink(@PathVariable String id, @PathVariable String type,
             HttpServletRequest request) throws Exception {
@@ -79,7 +85,7 @@ public class ArchivesController {
             // Case work in item
             case Identifier.MANIFEST_ID_WORK_IN_ITEM :
                 PdfItemInfo item = PdfItemInfo.getPdfItemInfo(idf.getImageInstanceId());
-                if (!acc.hasResourceAccess(item.getItemAccess())) {
+                if (serviceInfo.authEnabled() && !acc.hasResourceAccess(item.getItemAccess())) {
                     final HttpStatus st = (serviceInfo.authEnabled() && serviceInfo.hasValidProperties() && !acc.isUserLoggedIn()) ? HttpStatus.UNAUTHORIZED : HttpStatus.FORBIDDEN;
                     final String msg = st == HttpStatus.UNAUTHORIZED ? "Please log in to download archive files" : "Insufficient rights";
                     return new ResponseEntity<>(msg, st);
@@ -114,7 +120,7 @@ public class ArchivesController {
                 log.info("Pdf requested start page {} and end page {}", bPage.intValue(), ePage.intValue());
                 ResourceAccessValidation accValidation = new ResourceAccessValidation(acc, inf);
                 AccessLevel al = accValidation.getAccessLevel(request);
-                if (al.equals(AccessLevel.NOACCESS) || al.equals(AccessLevel.MIXED)) {
+                if (serviceInfo.authEnabled() && al.equals(AccessLevel.NOACCESS) || al.equals(AccessLevel.MIXED)) {
                     final HttpStatus st = (serviceInfo.authEnabled() && serviceInfo.hasValidProperties() && !acc.isUserLoggedIn()) ? HttpStatus.UNAUTHORIZED : HttpStatus.FORBIDDEN;
                     final String msg = st == HttpStatus.UNAUTHORIZED ? "Please log in to download archive files" : "Insufficient rights";
                     return new ResponseEntity<>(msg, st);
@@ -132,6 +138,9 @@ public class ArchivesController {
                     cached = EHServerCache.IIIF_PDF.hasKey(output);
                     log.info("PDF {} from IIIF cached {}, jobstarted: {}", id, cached, percentdone);
                     if (!cached && percentdone == null) {
+                        // before we start building the PDF, we make sure that the image range makes sense
+                        // see https://github.com/buda-base/buda-iiif-server/issues/87
+                        checkPageRange(inf, bPage, ePage, acc);
                         // Start building pdf since the pdf file doesn't exist yet
                         if (!Application.isPdfSync()) {
                             ArchiveBuilder.service.submit(new ArchiveProducer(accValidation.getAccess(), inf, idf, output,
@@ -146,6 +155,7 @@ public class ArchivesController {
                     percentdone = ArchiveBuilder.zipjobs.get(output);
                     log.debug("ZIP {} from IIIF_ZIP cached: {}, jobstarted: {}", id, cached, percentdone);
                     if (!cached &&  percentdone == null) {
+                        checkPageRange(inf, bPage, ePage, acc);
                         // Build zip since the zip file doesn't exist yet
                         if (!Application.isPdfSync()) {
                             ArchiveBuilder.service.submit(new ArchiveProducer(accValidation.getAccess(), inf, idf, output,
