@@ -110,14 +110,17 @@ public class IdentifierInfo {
         } catch (InterruptedException | ExecutionException e) {
             throw new IIIFException(e);
         }
+        if (start < 1 || end > info.size())
+            throw new IIIFException(404, 5001, "incorrect image range");
         // work is fair use but and user is not authorized to see it in full
         if (isFairUse() && !acc.hasResourceAccess(RdfConstants.FAIR_USE)) {
             log.info("USER DOES NOT HAVE FAIR USE RESOURCE ACCESS");
             log.debug("START {}, END {}", start, end);
-            return getFairUseImageList(info, start, end);
+            final List<ImageInfo> res = getFairUseImageList(info, start, end);
+            if (res.size() == 0)
+                throw new IIIFException(acc.isUserLoggedIn() ? 403 : 401, 5001, "image range unaccessible");
+            return res;
         }
-        if (start < 1 || end > info.size())
-            throw new IIIFException("incorrect image range");
         return getImageListRange(info, start, end);
     }
 

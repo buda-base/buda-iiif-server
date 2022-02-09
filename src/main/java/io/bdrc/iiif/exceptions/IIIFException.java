@@ -5,6 +5,7 @@ import java.io.StringWriter;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 
 public class IIIFException extends Exception {
     public static final int GENERIC_APP_ERROR_CODE = 5001;
@@ -79,6 +80,14 @@ public class IIIFException extends Exception {
         return code;
     }
 
+    public int getStatus() {
+        return status;
+    }
+    
+    public HttpStatus getHttpStatus() {
+        return HttpStatus.resolve(status);
+    }
+    
     public void setDeveloperMessage(String developerMessage) {
         this.developerMessage = developerMessage;
     }

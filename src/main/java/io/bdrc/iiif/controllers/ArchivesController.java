@@ -55,9 +55,8 @@ public class ArchivesController {
     public final static Logger log = LoggerFactory.getLogger(ArchivesController.class.getName());
 
     public static void checkPageRange(final IdentifierInfo inf, final int start, final int end, final Access acc) throws IIIFException {
+        // exceptions should be thrown already
         final List<ImageInfo> l = inf.getImageListInfo(acc, start, end);
-        if (l.size() == 0)
-            throw new IIIFException(404, IIIFException.GENERIC_APP_ERROR_CODE, "archive would be empty");
     }
     
     @RequestMapping(value = "/download/{type}/{id}", method = {RequestMethod.GET, RequestMethod.HEAD})
@@ -140,7 +139,11 @@ public class ArchivesController {
                     if (!cached && percentdone == null) {
                         // before we start building the PDF, we make sure that the image range makes sense
                         // see https://github.com/buda-base/buda-iiif-server/issues/87
-                        checkPageRange(inf, bPage, ePage, acc);
+                        try {
+                            checkPageRange(inf, bPage, ePage, acc);
+                        } catch (IIIFException e) {
+                            return new ResponseEntity<>(e.getMessage(), e.getHttpStatus());
+                        }
                         // Start building pdf since the pdf file doesn't exist yet
                         if (!Application.isPdfSync()) {
                             ArchiveBuilder.service.submit(new ArchiveProducer(accValidation.getAccess(), inf, idf, output,
@@ -155,7 +158,11 @@ public class ArchivesController {
                     percentdone = ArchiveBuilder.zipjobs.get(output);
                     log.debug("ZIP {} from IIIF_ZIP cached: {}, jobstarted: {}", id, cached, percentdone);
                     if (!cached &&  percentdone == null) {
-                        checkPageRange(inf, bPage, ePage, acc);
+                        try {
+                            checkPageRange(inf, bPage, ePage, acc);
+                        } catch (IIIFException e) {
+                            return new ResponseEntity<>(e.getMessage(), e.getHttpStatus());
+                        }
                         // Build zip since the zip file doesn't exist yet
                         if (!Application.isPdfSync()) {
                             ArchiveBuilder.service.submit(new ArchiveProducer(accValidation.getAccess(), inf, idf, output,
