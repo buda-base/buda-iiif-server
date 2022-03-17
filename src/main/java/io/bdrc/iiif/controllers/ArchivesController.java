@@ -276,7 +276,8 @@ public class ArchivesController {
         }
         if (is == null) {
             headers.setContentType(MediaType.parseMediaType("text/plain"));
-            final String msg = "The link is wrong or has expired: please retry loading the archive and proceed to its download within 10 mn";
+            final String nbMin = String.valueOf(EHServerCache.IIIF_PDF.nbSecondsMax / 60);
+            final String msg = "The link is wrong or has expired: please retry loading the archive and proceed to its download within "+nbMin+"mn";
             return ResponseEntity.ok().headers(headers).body(IIIFImageApiController.streamingResponseFrom(msg));
         }
         headers.setContentType(MediaType.parseMediaType("application/" + type));

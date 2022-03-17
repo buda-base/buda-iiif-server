@@ -28,7 +28,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class DiskCache {
 
-    int nbSecondsMax;
+    public int nbSecondsMax;
     int nbItemsMax;
     long sizeMaxMB;
     MessageDigest md;
