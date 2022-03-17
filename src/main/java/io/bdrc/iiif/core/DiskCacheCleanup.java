@@ -68,11 +68,11 @@ public class DiskCacheCleanup implements Callable<Void> {
         final Instant removeAllBefore = this.now.minusSeconds(this.dc.nbSecondsMax);
         for (Entry<String,Status> e : queue.entrySet()) {
             // if we don't need to remove more items, break:
-            if (e.getValue().lastActivityDate.compareTo(removeAllBefore) <= 0 || (this.dc.nbItemsMax > 0 && totalItems <= this.dc.nbItemsMax)) {
+            if (e.getValue().lastActivityDate.compareTo(removeAllBefore) <= 0 || (this.dc.nbItemsMax > 0 && totalItems > this.dc.nbItemsMax)) {
                 this.logger.info("removing {}", e.getKey());
                 this.dc.remove(e.getKey(), true);
+                totalItems -= 1;
             }
-            totalItems -= 1;
         }
         if (this.dc.sizeMaxMB == 0) {
             this.logger.info("finishing disk cache cleanup");
