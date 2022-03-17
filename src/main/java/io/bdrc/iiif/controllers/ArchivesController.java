@@ -120,7 +120,7 @@ public class ArchivesController {
                 ResourceAccessValidation accValidation = new ResourceAccessValidation(acc, inf);
                 AccessLevel al = accValidation.getAccessLevel(request);
                 if (serviceInfo.authEnabled() && al.equals(AccessLevel.NOACCESS) || al.equals(AccessLevel.MIXED)) {
-                    final HttpStatus st = (serviceInfo.authEnabled() && serviceInfo.hasValidProperties() && !acc.isUserLoggedIn()) ? HttpStatus.UNAUTHORIZED : HttpStatus.FORBIDDEN;
+                    final HttpStatus st = acc.isUserLoggedIn() ? HttpStatus.FORBIDDEN : HttpStatus.UNAUTHORIZED;
                     final String msg = st == HttpStatus.UNAUTHORIZED ? "Please log in to download archive files" : "Insufficient rights";
                     return new ResponseEntity<>(msg, st);
                 }
@@ -231,9 +231,10 @@ public class ArchivesController {
     }
 
     @RequestMapping(value = "/download/file/{type}/{name}", method = {RequestMethod.GET, RequestMethod.HEAD})
-    public ResponseEntity<StreamingResponseBody> downloadPdf(@PathVariable String name, @PathVariable String type,
+    public ResponseEntity<StreamingResponseBody> downloadPdf(@PathVariable final String origName, @PathVariable String type,
             HttpServletRequest request) throws Exception {
         boolean isFairUse = false;
+        String name = origName;
         if (name.contains("FAIR_USE")) {
             isFairUse = true;
             name = name.replace("FAIR_USE", "");
@@ -252,9 +253,15 @@ public class ArchivesController {
         log.info("downloadPdf building identifier for id {}", "v:" + name);
         log.info("downloadPdf building from page {} to {}", idf.getBPageNum(), idf.getEPageNum());
         IdentifierInfo inf = new IdentifierInfo(nameParts[0] + ":" + nameParts[1]);
-        ResourceAccessValidation accValidation = new ResourceAccessValidation((Access) request.getAttribute("access"),
-                inf);
-        String userfilename = getUserFilename(inf, idf, type, isFairUse);
+        final Access acc = (Access) request.getAttribute("access");
+        final ResourceAccessValidation accValidation = new ResourceAccessValidation(acc, inf);
+        final AccessLevel al = accValidation.getAccessLevel(request);
+        if (serviceInfo.authEnabled() && (al.equals(AccessLevel.NOACCESS) || al.equals(AccessLevel.MIXED) || (al.equals(AccessLevel.FAIR_USE) && !isFairUse))) {
+            final HttpStatus st = acc.isUserLoggedIn() ? HttpStatus.FORBIDDEN : HttpStatus.UNAUTHORIZED;
+            //final String msg = st == HttpStatus.UNAUTHORIZED ? "Please log in to download archive files" : "Insufficient rights";
+            return new ResponseEntity<>(null, st);
+        }
+        final String userfilename = getUserFilename(inf, idf, type, isFairUse);
         if (Application.isPdfSync()) {
             headers.setContentType(MediaType.parseMediaType("application/" + type));
             headers.setContentDispositionFormData("attachment", userfilename);
@@ -270,9 +277,9 @@ public class ArchivesController {
         }
         InputStream is = null;
         if (type.equals(ArchiveBuilder.PDF_TYPE)) {
-            is = EHServerCache.IIIF_PDF.getIs(name);
+            is = EHServerCache.IIIF_PDF.getIs(origName);
         } else {
-            is = EHServerCache.IIIF_ZIP.getIs(name);
+            is = EHServerCache.IIIF_ZIP.getIs(origName);
         }
         if (is == null) {
             headers.setContentType(MediaType.parseMediaType("text/plain"));
