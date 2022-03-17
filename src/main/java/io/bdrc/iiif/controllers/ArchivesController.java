@@ -231,10 +231,10 @@ public class ArchivesController {
     }
 
     @RequestMapping(value = "/download/file/{type}/{name}", method = {RequestMethod.GET, RequestMethod.HEAD})
-    public ResponseEntity<StreamingResponseBody> downloadPdf(@PathVariable final String origName, @PathVariable String type,
+    public ResponseEntity<StreamingResponseBody> downloadPdf(@PathVariable String name, @PathVariable String type,
             HttpServletRequest request) throws Exception {
         boolean isFairUse = false;
-        String name = origName;
+        final String origName = name;
         if (name.contains("FAIR_USE")) {
             isFairUse = true;
             name = name.replace("FAIR_USE", "");
