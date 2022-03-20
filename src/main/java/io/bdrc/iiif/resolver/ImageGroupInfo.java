@@ -12,6 +12,7 @@ import org.apache.jena.rdf.model.Property;
 import org.apache.jena.rdf.model.ResIterator;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.ResourceFactory;
+import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.rdf.model.StmtIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,6 +34,8 @@ public class ImageGroupInfo {
     public String statusUri;
     @JsonProperty("imageInstanceId")
     public String imageInstanceId;
+    @JsonProperty("nbVolumes")
+    public Integer nbVolumes = 1;
     @JsonProperty("pagesIntroTbrc")
     public Integer pagesIntroTbrc = 0;
     @JsonProperty("volumeNumber")
@@ -49,6 +52,7 @@ public class ImageGroupInfo {
     private static final Logger logger = LoggerFactory.getLogger(ImageGroupInfo.class);
 
     static final Property volumeOfP = ResourceFactory.createProperty(Models.BDO + "volumeOf");
+    static final Property nbVolumesP = ResourceFactory.createProperty(Models.BDO + "numberOfVolumes");
     static final Property adminAboutP = ResourceFactory.createProperty(Models.ADM + "adminAbout");
     static final Property accessP = ResourceFactory.createProperty(Models.ADM + "access");
     static final Property statusP = ResourceFactory.createProperty(Models.ADM + "status");
@@ -77,6 +81,10 @@ public class ImageGroupInfo {
             logger.error("can't find admin data in model");
             return;
         }
+        final Statement nbVolsS = ii.getProperty(nbVolumesP);
+        if (nbVolsS != null) {
+            this.nbVolumes = nbVolsS.getInt();
+        }
         final Resource iiAdm = admAboutiiIt.next();
         this.restrictedInChina = iiAdm.hasLiteral(restrictedInChinaP, true);
         final StmtIterator collectionIt = ii.listProperties(inCollectionP);
@@ -93,6 +101,8 @@ public class ImageGroupInfo {
         final StmtIterator volNumIt = ig.listProperties(volumeNumberP);
         if (volNumIt.hasNext()) {
             this.volumeNumber = volNumIt.next().getObject().asLiteral().getInt();
+            if (this.volumeNumber > this.nbVolumes)
+                this.nbVolumes = this.volumeNumber;
         }
         final StmtIterator pagesIntroTbrcIt = ig.listProperties(volumePagesTbrcIntroP);
         if (pagesIntroTbrcIt.hasNext()) {
