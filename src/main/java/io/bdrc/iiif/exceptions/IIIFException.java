@@ -13,9 +13,9 @@ public class IIIFException extends Exception {
     private static final long serialVersionUID = -5379981810772284216L;
     int status;
     int code;
-    String link;
-    String developerMessage;
-    String message;
+    String link = null;
+    String developerMessage = null;
+    String message = null;
 
     public IIIFException(Throwable cause) {
         super(cause);
@@ -47,7 +47,6 @@ public class IIIFException extends Exception {
         this.code = code;
         this.message = message;
         this.developerMessage = null;
-        this.link = null;
         if (status == 500) {
             logger.error("error status {}, code {}, message: {}", status, code, message);
         }
@@ -58,11 +57,14 @@ public class IIIFException extends Exception {
         this.status = status;
         this.code = code;
         this.message = e.getMessage();
-        StringWriter sw = new StringWriter();
-        PrintWriter pw = new PrintWriter(sw);
-        e.printStackTrace(pw);
-        this.developerMessage = sw.toString();
-        this.link = null;
+        if (e instanceof IIIFException && ((IIIFException) e).developerMessage != null) {
+            this.developerMessage = ((IIIFException) e).developerMessage;
+        } else {
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            e.printStackTrace(pw);
+            this.developerMessage = sw.toString();
+        }
         if (status == 500) {
             logger.error("error status {}, code {}", status, code, e);
         }
