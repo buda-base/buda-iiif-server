@@ -213,8 +213,14 @@ public class ArchivesController {
     // some tests: bdr:I00KG03511 (volume 1, 2 pages) bdr:I1CZ4768 (volume 2, 2 pages)
     public static String getUserFilename(final IdentifierInfo inf, final Identifier idf, final String type, final boolean isFairUse) {
         String userfilename = inf.igi.imageInstanceId.substring(AppConstants.BDR_len);
-        if (inf.igi.volumeNumber > 1)
-            userfilename += "-v"+inf.igi.volumeNumber;
+        if (inf.igi.nbVolumes > 1) {
+            String formatStr = "%d";
+            if (inf.igi.nbVolumes > 100)
+                formatStr = "%03d";
+            else if (inf.igi.nbVolumes > 10)
+                formatStr = "%02d";
+            userfilename += "-v"+String.format(formatStr, inf.igi.volumeNumber);
+        }
         boolean hasFirstPage = idf.getBPageNum() != null && idf.getBPageNum() > 2;
         boolean hasEndPage = true;
         try {
