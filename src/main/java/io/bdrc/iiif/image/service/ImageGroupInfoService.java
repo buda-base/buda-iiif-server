@@ -49,7 +49,7 @@ public class ImageGroupInfoService extends ConcurrentResourceService<ImageGroupI
             if (code != 200) {
                 response.close();
                 httpClient.close();
-                throw new IIIFException(500, 500, "LDS lookup returned an error", "request:\n" + request.toString() + "\nresponse:\n" + response.toString(), "");
+                throw new IIIFException(500, 500, "LDS lookup returned an error for "+volumeId, "request:\n" + request.toString() + "\nresponse:\n" + response.toString(), "");
             }
             body = response.getEntity().getContent();
             final Model m = ModelFactory.createDefaultModel();
