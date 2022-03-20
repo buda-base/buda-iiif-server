@@ -42,6 +42,7 @@ import io.bdrc.iiif.resolver.AppConstants;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 import io.bdrc.iiif.resolver.ImageInfo;
 import io.bdrc.libraries.Identifier;
+import io.bdrc.libraries.Models;
 
 @Controller
 public class ArchivesController {
@@ -54,9 +55,16 @@ public class ArchivesController {
 
     public final static Logger log = LoggerFactory.getLogger(ArchivesController.class.getName());
 
-    public static void checkPageRange(final IdentifierInfo inf, final int start, final int end, final Access acc) throws IIIFException {
+    public static void checkPageRange(final IdentifierInfo inf, final int start, final int end, final AccessLevel al, final Access acc) throws IIIFException {
         // exceptions should be thrown already
-        final List<ImageInfo> l = inf.getImageListInfo(acc, start, end);
+        try {
+            final List<ImageInfo> l = inf.getImageListInfo(al, start, end);
+        } catch (IIIFException e) {
+            int st = e.getStatus();
+            if (st == 403 && !acc.isUserLoggedIn())
+                st = 401;
+            throw new IIIFException(st, e.getCode(), e.getMessage());
+        }
     }
     
     @RequestMapping(value = "/download/{type}/{id}", method = {RequestMethod.GET, RequestMethod.HEAD})
@@ -84,10 +92,14 @@ public class ArchivesController {
             // Case work in item
             case Identifier.MANIFEST_ID_WORK_IN_ITEM :
                 PdfItemInfo item = PdfItemInfo.getPdfItemInfo(idf.getImageInstanceId());
-                if (serviceInfo.authEnabled() && !acc.hasResourceAccess(item.getItemAccess())) {
-                    final HttpStatus st = (serviceInfo.authEnabled() && serviceInfo.hasValidProperties() && !acc.isUserLoggedIn()) ? HttpStatus.UNAUTHORIZED : HttpStatus.FORBIDDEN;
-                    final String msg = st == HttpStatus.UNAUTHORIZED ? "Please log in to download archive files" : "Insufficient rights";
-                    return new ResponseEntity<>(msg, st);
+                if (serviceInfo.authEnabled()) {
+                    final String iiUri = Models.BDR+idf.getImageInstanceId().substring(4);
+                    final AccessLevel al = acc.hasResourceAccess(item.getAccessLName(), item.getStatusLName(), iiUri);
+                    if (al.equals(AccessLevel.NOACCESS) || al.equals(AccessLevel.MIXED)) {
+                        final HttpStatus st = acc.isUserLoggedIn() ? HttpStatus.FORBIDDEN : HttpStatus.UNAUTHORIZED ;
+                        final String msg = st == HttpStatus.UNAUTHORIZED ? "Please log in to download archive files" : "Insufficient rights";
+                        return new ResponseEntity<>(msg, st);
+                    }
                 }
                 if (json) {
                     jsonMap = getJsonVolumeLinks(item, type);
@@ -118,7 +130,7 @@ public class ArchivesController {
                 log.debug("Pdf requested numPage in identifierInfo {}", inf);
                 log.info("Pdf requested start page {} and end page {}", bPage.intValue(), ePage.intValue());
                 ResourceAccessValidation accValidation = new ResourceAccessValidation(acc, inf);
-                AccessLevel al = accValidation.getAccessLevel(request);
+                final AccessLevel al = accValidation.getAccessLevel(request);
                 if (serviceInfo.authEnabled() && al.equals(AccessLevel.NOACCESS) || al.equals(AccessLevel.MIXED)) {
                     final HttpStatus st = acc.isUserLoggedIn() ? HttpStatus.FORBIDDEN : HttpStatus.UNAUTHORIZED;
                     final String msg = st == HttpStatus.UNAUTHORIZED ? "Please log in to download archive files" : "Insufficient rights";
@@ -140,13 +152,13 @@ public class ArchivesController {
                         // before we start building the PDF, we make sure that the image range makes sense
                         // see https://github.com/buda-base/buda-iiif-server/issues/87
                         try {
-                            checkPageRange(inf, bPage, ePage, acc);
+                            checkPageRange(inf, bPage, ePage, al, acc);
                         } catch (IIIFException e) {
                             return new ResponseEntity<>(e.getMessage(), e.getHttpStatus());
                         }
                         // Start building pdf since the pdf file doesn't exist yet
                         if (!Application.isPdfSync()) {
-                            ArchiveBuilder.service.submit(new ArchiveProducer(accValidation.getAccess(), inf, idf, output,
+                            ArchiveBuilder.service.submit(new ArchiveProducer(al, inf, idf, output,
                                     (String) request.getAttribute("origin"), ArchiveProducer.PDF, EHServerCache.IIIF_PDF));
                             //ArchiveBuilder.buildPdf(accValidation.getAccess(), inf, idf, output,
                             //        (String) request.getAttribute("origin"));
@@ -159,13 +171,13 @@ public class ArchivesController {
                     log.debug("ZIP {} from IIIF_ZIP cached: {}, jobstarted: {}", id, cached, percentdone);
                     if (!cached &&  percentdone == null) {
                         try {
-                            checkPageRange(inf, bPage, ePage, acc);
+                            checkPageRange(inf, bPage, ePage, al, acc);
                         } catch (IIIFException e) {
                             return new ResponseEntity<>(e.getMessage(), e.getHttpStatus());
                         }
                         // Build zip since the zip file doesn't exist yet
                         if (!Application.isPdfSync()) {
-                            ArchiveBuilder.service.submit(new ArchiveProducer(accValidation.getAccess(), inf, idf, output,
+                            ArchiveBuilder.service.submit(new ArchiveProducer(al, inf, idf, output,
                                     (String) request.getAttribute("origin"), ArchiveProducer.ZIP, EHServerCache.IIIF_ZIP));
                         }
                     }
@@ -272,11 +284,11 @@ public class ArchivesController {
             headers.setContentType(MediaType.parseMediaType("application/" + type));
             headers.setContentDispositionFormData("attachment", userfilename);
             if (type.equals(ArchiveBuilder.PDF_TYPE)) {
-                final StreamingResponseBody s = ArchiveBuilder.getPDFStreamingResponseBody(accValidation.getAccess(), inf, idf, name,
+                final StreamingResponseBody s = ArchiveBuilder.getPDFStreamingResponseBody(al, inf, idf, name,
                         (String) request.getAttribute("origin"));
                 return ResponseEntity.ok().headers(headers).body(s);
             } else { //if (type.equals(ArchiveBuilder.ZIP_TYPE)) {
-                final StreamingResponseBody s = ArchiveBuilder.getZipStreamingResponseBody(accValidation.getAccess(), inf, idf, name,
+                final StreamingResponseBody s = ArchiveBuilder.getZipStreamingResponseBody(al, inf, idf, name,
                         (String) request.getAttribute("origin"));
                 return ResponseEntity.ok().headers(headers).body(s);
             }
@@ -383,7 +395,7 @@ public class ArchivesController {
     public String getVolumeDownLoadLinks(PdfItemInfo item, Identifier idf, String type)
             throws ClientProtocolException, IOException, IIIFException, ResourceNotFoundException {
         String links = "";
-        List<String> vlist = item.getItemVolumes();
+        List<String> vlist = item.getVolumes();
         // TODO: sort list by volume number
         for (int i = 0; i < vlist.size(); i++) {
             String s = vlist.get(i);
@@ -400,14 +412,14 @@ public class ArchivesController {
     public HashMap<String, HashMap<String, String>> getJsonVolumeLinks(PdfItemInfo item, String type)
             throws ClientProtocolException, IOException, IIIFException, ResourceNotFoundException {
         HashMap<String, HashMap<String, String>> map = new HashMap<>();
-        List<String> vlist = item.getItemVolumes();
+        List<String> vlist = item.getVolumes();
         for (int i = 0; i < vlist.size(); i++) {
             String s = vlist.get(i);
             String shortName = getShortName(s);
             HashMap<String, String> vol = new HashMap<>();
             vol.put("link", Application.getProperty("iiifserv_baseurl") + "download/" + type + "/v:" + "bdr:"
                     + shortName + "::1-");
-            vol.put("volnum", item.getItemVolumeNumber(shortName));
+            vol.put("volnum", item.getVolumeNumber(shortName));
             map.put("bdr:" + shortName, vol);
         }
         return map;

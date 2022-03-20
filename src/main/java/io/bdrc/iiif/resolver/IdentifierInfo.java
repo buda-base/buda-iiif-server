@@ -15,6 +15,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.digitalcollections.model.api.identifiable.resource.exceptions.ResourceNotFoundException;
 import io.bdrc.auth.Access;
+import io.bdrc.auth.Access.AccessLevel;
 import io.bdrc.auth.rdf.RdfConstants;
 import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.iiif.image.service.ImageGroupInfoService;
@@ -100,7 +101,7 @@ public class IdentifierInfo {
         return igi.access.equals(AccessType.FAIR_USE);
     }
 
-    public List<ImageInfo> getImageListInfo(Access acc, int start, int end) throws IIIFException {
+    public List<ImageInfo> getImageListInfo(AccessLevel al, int start, int end) throws IIIFException {
         // get the full list;
         List<ImageInfo> info = null;
         try {
@@ -113,17 +114,16 @@ public class IdentifierInfo {
         if (start < 1 || end > info.size())
             throw new IIIFException(404, 5001, "incorrect image range");
         // work is fair use but and user is not authorized to see it in full
-        if (isFairUse() && !acc.hasResourceAccess(RdfConstants.FAIR_USE)) {
-            log.info("USER DOES NOT HAVE FAIR USE RESOURCE ACCESS");
-            log.debug("START {}, END {}", start, end);
+        if (al.equals(AccessLevel.FAIR_USE)) {
+            log.debug("fair use mode, start: {}, end: {}", start, end);
             final List<ImageInfo> res = getFairUseImageList(info, start, end);
             if (res.size() == 0)
-                throw new IIIFException(acc.isUserLoggedIn() ? 403 : 401, 5001, "image range unaccessible");
+                throw new IIIFException(403, 5001, "image range unaccessible");
             return res;
         }
         return getImageListRange(info, start, end);
     }
-
+    
     public List<ImageInfo> getImageListRange(List<ImageInfo> src, int start, int end) {
         List<ImageInfo> info = new ArrayList<>();
         for (int x = start - 1; x < end; x++) {

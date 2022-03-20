@@ -31,6 +31,7 @@ import com.itextpdf.layout.Document;
 import com.itextpdf.layout.element.Image;
 
 import io.bdrc.auth.Access;
+import io.bdrc.auth.Access.AccessLevel;
 import io.bdrc.iiif.core.Application;
 import io.bdrc.iiif.core.EHServerCache;
 import io.bdrc.iiif.exceptions.IIIFException;
@@ -51,10 +52,10 @@ public class ArchiveBuilder {
     public static Map<String, Double> pdfjobs = new ConcurrentHashMap<>();
     public static Map<String, Double> zipjobs = new ConcurrentHashMap<>();
 
-    public static void buildPdfInCache(Access acc, IdentifierInfo inf, Identifier idf, String output, String origin)
+    public static void buildPdfInCache(AccessLevel al, IdentifierInfo inf, Identifier idf, String output, String origin)
             throws IIIFException {
         OutputStream os = EHServerCache.IIIF_PDF.getOs(output);
-        buildPdf(acc, inf, idf, output, origin, os, pdfjobs);
+        buildPdf(al, inf, idf, output, origin, os, pdfjobs);
         try {
             os.close();
         } catch (IOException e) {
@@ -64,12 +65,12 @@ public class ArchiveBuilder {
         EHServerCache.IIIF_PDF.outputDone(output);
     }
     
-    public static StreamingResponseBody getPDFStreamingResponseBody(Access acc, IdentifierInfo inf, Identifier idf, String output, String origin) {
+    public static StreamingResponseBody getPDFStreamingResponseBody(AccessLevel al, IdentifierInfo inf, Identifier idf, String output, String origin) {
         return new StreamingResponseBody() {
             @Override
             public void writeTo(final OutputStream os) throws IOException {
                 try {
-                    buildPdf(acc, inf, idf, output, origin, os, null);
+                    buildPdf(al, inf, idf, output, origin, os, null);
                 } catch (IIIFException e) {
                    log.error("problem writing PDF: ", e);
                 }
@@ -78,12 +79,12 @@ public class ArchiveBuilder {
     }
     
     
-    public static void writePdf(Access acc, IdentifierInfo inf, Identifier idf, String output, String origin, OutputStream os)
+    public static void writePdf(AccessLevel al, IdentifierInfo inf, Identifier idf, String output, String origin, OutputStream os)
             throws IIIFException {
-        buildPdf(acc, inf, idf, output, origin, os, null);
+        buildPdf(al, inf, idf, output, origin, os, null);
     }
     
-    public static void buildPdf(Access acc, IdentifierInfo inf, Identifier idf, String output, String origin, OutputStream os, Map<String, Double> jobs)
+    public static void buildPdf(AccessLevel al, IdentifierInfo inf, Identifier idf, String output, String origin, OutputStream os, Map<String, Double> jobs)
             throws IIIFException {
         long deb = System.currentTimeMillis();
         int limitsize = Integer.parseInt(Application.getProperty("imgSizeLimit"));
@@ -92,7 +93,7 @@ public class ArchiveBuilder {
                 jobs.put(output, 0.);
             log.error("generate PDF for {}", output);
             Application.logPerf("Starting building pdf {}", inf.volumeId);
-            List<ImageInfo> imgInfo = getImageInfos(idf, inf, acc);
+            List<ImageInfo> imgInfo = getImageInfos(idf, inf, al);
             final int totalImages = imgInfo.size();
             log.info("Setting output {} ", output);
             PdfWriter pdfWriter = new PdfWriter(os);
@@ -160,10 +161,10 @@ public class ArchiveBuilder {
     }
 
     
-    public static void buildZipInCache(Access acc, IdentifierInfo inf, Identifier idf, String output, String origin)
+    public static void buildZipInCache(AccessLevel al, IdentifierInfo inf, Identifier idf, String output, String origin)
             throws IIIFException {
         OutputStream os = EHServerCache.IIIF_ZIP.getOs(output);
-        buildZip(acc, inf, idf, output, origin, os, zipjobs);
+        buildZip(al, inf, idf, output, origin, os, zipjobs);
         try {
             os.close();
         } catch (IOException e) {
@@ -173,12 +174,12 @@ public class ArchiveBuilder {
         EHServerCache.IIIF_ZIP.outputDone(output);
     }
     
-    public static StreamingResponseBody getZipStreamingResponseBody(Access acc, IdentifierInfo inf, Identifier idf, String output, String origin) {
+    public static StreamingResponseBody getZipStreamingResponseBody(AccessLevel al, IdentifierInfo inf, Identifier idf, String output, String origin) {
         return new StreamingResponseBody() {
             @Override
             public void writeTo(final OutputStream os) throws IOException {
                 try {
-                    buildZip(acc, inf, idf, output, origin, os, null);
+                    buildZip(al, inf, idf, output, origin, os, null);
                 } catch (IIIFException e) {
                    log.error("problem writing Zip: ", e);
                 }
@@ -186,12 +187,12 @@ public class ArchiveBuilder {
         };
     }
     
-    public static void writeZip(Access acc, IdentifierInfo inf, Identifier idf, String output, String origin, OutputStream os)
+    public static void writeZip(AccessLevel al, IdentifierInfo inf, Identifier idf, String output, String origin, OutputStream os)
             throws IIIFException {
-        buildZip(acc, inf, idf, output, origin, os, null);
+        buildZip(al, inf, idf, output, origin, os, null);
     }
     
-    public static void buildZip(Access acc, IdentifierInfo inf, Identifier idf, String output, String origin, OutputStream os, Map<String, Double> jobs)
+    public static void buildZip(AccessLevel al, IdentifierInfo inf, Identifier idf, String output, String origin, OutputStream os, Map<String, Double> jobs)
             throws IIIFException {
         try {
             if (jobs != null)
@@ -200,7 +201,7 @@ public class ArchiveBuilder {
             Application.logPerf("Starting building zip {}", inf.volumeId);
             Application.logPerf("S3 client obtained in building pdf {} after {} ", inf.volumeId,
                     System.currentTimeMillis() - deb);
-            List<ImageInfo> imgInfo = getImageInfos(idf, inf, acc);
+            List<ImageInfo> imgInfo = getImageInfos(idf, inf, al);
             final int totalImages = imgInfo.size();
             ZipOutputStream zipOut = new ZipOutputStream(os);
             Application.logPerf("building zip stream opened {} after {}", inf.volumeId,
@@ -239,7 +240,7 @@ public class ArchiveBuilder {
         }
     }
 
-    private static List<ImageInfo> getImageInfos(Identifier idf, IdentifierInfo inf, Access acc) throws IIIFException {
+    private static List<ImageInfo> getImageInfos(Identifier idf, IdentifierInfo inf, AccessLevel al) throws IIIFException {
         Integer startPage = null;
         if (idf.getBPageNum() != null) {
             startPage = idf.getBPageNum();
@@ -252,7 +253,7 @@ public class ArchiveBuilder {
         } else {
             endPage = inf.getTotalPages();
         }
-        return inf.getImageListInfo(acc, startPage.intValue(), endPage.intValue());
+        return inf.getImageListInfo(al, startPage.intValue(), endPage.intValue());
     }
 
     public static InputStream toInputStream(BufferedImage img) throws IOException {

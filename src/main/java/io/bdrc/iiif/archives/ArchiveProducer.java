@@ -5,7 +5,7 @@ import java.util.concurrent.Callable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.bdrc.auth.Access;
+import io.bdrc.auth.Access.AccessLevel;
 import io.bdrc.iiif.core.DiskCache;
 import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.iiif.resolver.IdentifierInfo;
@@ -20,15 +20,15 @@ public class ArchiveProducer implements Callable<Void> {
 
     String cacheKey;
     String origin;
-    Access acc;
     IdentifierInfo inf;
     Identifier idf;
     int type;
     DiskCache dc;
+    AccessLevel al;
 
-    public ArchiveProducer(Access acc, IdentifierInfo inf, Identifier idf, String cacheKey, String origin, int type, DiskCache dc) throws IIIFException {
+    public ArchiveProducer(AccessLevel al, IdentifierInfo inf, Identifier idf, String cacheKey, String origin, int type, DiskCache dc) throws IIIFException {
         this.cacheKey = cacheKey;
-        this.acc = acc;
+        this.al = al;
         this.inf = inf;
         this.idf = idf;
         this.origin = origin;
@@ -42,13 +42,13 @@ public class ArchiveProducer implements Callable<Void> {
             if (dc.hasKey(this.cacheKey) || ArchiveBuilder.pdfjobs.containsKey(this.cacheKey)) {
                 return null;
             }
-            ArchiveBuilder.buildPdfInCache(this.acc, this.inf, this.idf, this.cacheKey, this.origin);
+            ArchiveBuilder.buildPdfInCache(this.al, this.inf, this.idf, this.cacheKey, this.origin);
             return null;
         } else {
             if (dc.hasKey(this.cacheKey) || ArchiveBuilder.zipjobs.containsKey(this.cacheKey)) {
                 return null;
             }
-            ArchiveBuilder.buildZipInCache(this.acc, this.inf, this.idf, this.cacheKey, this.origin);
+            ArchiveBuilder.buildZipInCache(this.al, this.inf, this.idf, this.cacheKey, this.origin);
             return null;
         }
     }
