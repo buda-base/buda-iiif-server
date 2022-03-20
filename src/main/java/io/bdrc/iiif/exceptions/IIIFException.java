@@ -37,8 +37,12 @@ public class IIIFException extends Exception {
         this.developerMessage = developerMessage;
         this.link = link;
         if (status == 500) {
-            logger.error("error status {}, code {}, message: {}", status, code, message);
+            logger.error("error status {}, code {}, message: {}, details {}", status, code, message, developerMessage);
+        } else {
+            logger.warn(message);
+            logger.warn(developerMessage);
         }
+        
     }
 
     public IIIFException(int status, int code, String message) {
