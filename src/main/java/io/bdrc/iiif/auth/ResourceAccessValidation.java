@@ -22,20 +22,23 @@ public class ResourceAccessValidation {
     String accessShort;
     String statusShort;
     String imageInstanceUri;
+    String copyrightStatusLname = null;
     String imageFileName = null;
     boolean isPDFRequest = false;
     ImageGroupInfo igi;
     boolean isRestrictedInChina;
+    Boolean isInChinaB = null;
 
     public ResourceAccessValidation(Access access, IdentifierInfo idInfo, String imageFileName) {
         super();
         this.access = access;
         final String accessUri = idInfo.igi.access.getUri();
         accessShort = accessUri.substring(accessUri.lastIndexOf('/') + 1);
+        copyrightStatusLname = idInfo.igi.copyrightStatusLname;
         final String statusUri = idInfo.igi.statusUri;
         statusShort = statusUri.substring(statusUri.lastIndexOf('/') + 1);
         this.isRestrictedInChina = idInfo.igi.restrictedInChina;
-        this.imageInstanceUri = idInfo.igi.imageInstanceId;
+        this.imageInstanceUri = idInfo.igi.imageInstanceUri;
         this.igi = idInfo.igi;
         this.imageFileName = imageFileName;
     }
@@ -46,10 +49,11 @@ public class ResourceAccessValidation {
         this.access = access;
         final String accessUri = idInfo.igi.access.getUri();
         accessShort = accessUri.substring(accessUri.lastIndexOf('/') + 1);
+        copyrightStatusLname = idInfo.igi.copyrightStatusLname;
         final String statusUri = idInfo.igi.statusUri;
         statusShort = statusUri.substring(statusUri.lastIndexOf('/') + 1);
         this.isRestrictedInChina = idInfo.igi.restrictedInChina;
-        this.imageInstanceUri = idInfo.igi.imageInstanceId;
+        this.imageInstanceUri = idInfo.igi.imageInstanceUri;
         this.igi = idInfo.igi;
     }
 
@@ -59,28 +63,36 @@ public class ResourceAccessValidation {
         }
         return access;
     }
+    
+    public boolean isInChina(HttpServletRequest request) {
+        if (isInChinaB != null)
+            return isInChinaB;
+        if (Application.isInChina()) {
+            this.isInChinaB = true;
+            return true;
+        }
+        final String test = GeoLocation.getCountryName(request.getHeader("X-Real-IP"));
+        if (test == null || CHINA.equalsIgnoreCase(test)) {
+            this.isInChinaB = true;
+            return true;
+        }
+        this.isInChinaB = false;
+        return false;
+    }
 
     public AccessLevel getAccessLevel(HttpServletRequest request) {
-        if (access == null)
-            access = new Access();
-        if (isRestrictedInChina) {
-            if (!Application.isInChina()) {
-                String test = GeoLocation.getCountryName(request.getHeader("X-Real-IP"));
-                log.info("TEST IP from X-Real-IP header: {} and country: {}", request.getHeader("X-Real-IP"), test);
-                if (test == null || CHINA.equalsIgnoreCase(test)) {
-                    // if Geolocation country name is null (i.e throws -for instance- an IP parsing
-                    // exception)
-                    // then access is denied
-                    return AccessLevel.NOACCESS;
-                }
-            } else {
+        if (this.access == null)
+            this.access = new Access();
+        if (isInChina(request) && this.isRestrictedInChina) 
                 return AccessLevel.NOACCESS;
-            }
-        }
         log.info("Getting access level for accessShort= {} and statusShort={} and imageUri '}", accessShort, statusShort, imageInstanceUri);
         if (this.isPDFRequest) {
-            return access.hasResourcePDFAccess(accessShort, statusShort, imageInstanceUri, request.getHeader("X-Real-IP"), this.igi.inCollectionsLnames);
+            AccessLevel res = access.hasResourcePDFAccess(accessShort, statusShort, imageInstanceUri, request.getHeader("X-Real-IP"), this.igi.inCollectionsLnames);
+            if (res == AccessLevel.FAIR_USE && isInChina(request) && ("CopyrightInCopyright".equals(this.copyrightStatusLname) || "CopyrightClaimed".equals(this.copyrightStatusLname)))
+                return AccessLevel.NOACCESS;
+            return res;
         }
+        // if ("CopyrightInCopyright".equals(this.copyrightStatusLname) || "CopyrightClaimed".equals(this.copyrightStatusLname))
         return access.hasResourceAccess(accessShort, statusShort, imageInstanceUri);
     }
 

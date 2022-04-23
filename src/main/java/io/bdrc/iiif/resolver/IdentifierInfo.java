@@ -70,7 +70,7 @@ public class IdentifierInfo {
         try {
             log.info("get image list for {}", this.volumeId);
             this.ili = ImageInfoListService.Instance
-                    .getAsync(igi.imageInstanceId.substring(AppConstants.BDR_len), igi.imageGroup).get();
+                    .getAsync(igi.imageInstanceUri.substring(AppConstants.BDR_len), igi.imageGroup).get();
         } catch (InterruptedException | ExecutionException | IIIFException e) {
             throw new IIIFException(404, 5000, e);
         }
@@ -107,7 +107,7 @@ public class IdentifierInfo {
         try {
             log.info("get image list for {}", this.identifier);
             info = ImageInfoListService.Instance
-                    .getAsync(this.igi.imageInstanceId.substring(AppConstants.BDR_len), this.igi.imageGroup).get();
+                    .getAsync(this.igi.imageInstanceUri.substring(AppConstants.BDR_len), this.igi.imageGroup).get();
         } catch (InterruptedException | ExecutionException e) {
             throw new IIIFException(e);
         }

@@ -32,8 +32,8 @@ public class ImageGroupInfo {
     public Boolean restrictedInChina = false;
     @JsonProperty("status")
     public String statusUri;
-    @JsonProperty("imageInstanceId")
-    public String imageInstanceId;
+    @JsonProperty("imageInstanceUri")
+    public String imageInstanceUri;
     @JsonProperty("nbVolumes")
     public Integer nbVolumes = 1;
     @JsonProperty("pagesIntroTbrc")
@@ -46,6 +46,10 @@ public class ImageGroupInfo {
     public URI iiifManifest = null;
     @JsonProperty("inCollections")
     public List<String> inCollectionsLnames = null;
+    @JsonProperty("thumbnailFname")
+    public String thumbnailFname = null;
+    @JsonProperty("copyrightStatus")
+    public String copyrightStatusLname = null;
     @JsonProperty("accessibleInFairUseList")
     public Map<String, Boolean> accessibleInFairUseList = null;
 
@@ -61,6 +65,8 @@ public class ImageGroupInfo {
     static final Property volumeNumberP = ResourceFactory.createProperty(Models.BDO + "volumeNumber");
     static final Property volumePagesTbrcIntroP = ResourceFactory.createProperty(Models.BDO + "volumePagesTbrcIntro");
     static final Property hasIIIFManifestP = ResourceFactory.createProperty(Models.BDO + "hasIIIFManifest");
+    static final Property copyrightStatus = ResourceFactory.createProperty(Models.BDO + "copyrightStatus");
+    static final Property tmpThumbnail = ResourceFactory.createProperty("http://purl.bdrc.io/ontology/tmp/thumbnailIIIFService");
     
     // result of volumeInfo query
     public ImageGroupInfo(final Model m, final String volumeId) {
@@ -82,9 +88,18 @@ public class ImageGroupInfo {
             return;
         }
         final Statement nbVolsS = ii.getProperty(nbVolumesP);
-        if (nbVolsS != null) {
+        if (nbVolsS != null)
             this.nbVolumes = nbVolsS.getInt();
+        final Statement thumbnailS = ii.getProperty(tmpThumbnail);
+        if (thumbnailS != null) {
+            final String thUri = thumbnailS.getResource().getURI();
+            final int idx = thUri.lastIndexOf(this.imageGroup+"::");
+            if (idx > 1)
+                this.thumbnailFname = thUri.substring(idx+this.imageGroup.length()+2);
         }
+        final Statement copyrightS = ii.getProperty(copyrightStatus);
+        if (copyrightS != null)
+            this.copyrightStatusLname = copyrightS.getResource().getLocalName();
         final Resource iiAdm = admAboutiiIt.next();
         this.restrictedInChina = iiAdm.hasLiteral(restrictedInChinaP, true);
         final StmtIterator collectionIt = ii.listProperties(inCollectionP);
@@ -97,7 +112,7 @@ public class ImageGroupInfo {
         }
         this.access = AccessType.fromString(iiAdm.getPropertyResourceValue(accessP).getURI());
         this.statusUri = iiAdm.getPropertyResourceValue(statusP).getURI();
-        this.imageInstanceId = ii.getURI();
+        this.imageInstanceUri = ii.getURI();
         final StmtIterator volNumIt = ig.listProperties(volumeNumberP);
         if (volNumIt.hasNext()) {
             this.volumeNumber = volNumIt.next().getObject().asLiteral().getInt();

@@ -224,7 +224,7 @@ public class ArchivesController {
     
     // some tests: bdr:I00KG03511 (volume 1, 2 pages) bdr:I1CZ4768 (volume 2, 2 pages)
     public static String getUserFilename(final IdentifierInfo inf, final Identifier idf, final String type, final boolean isFairUse) {
-        String userfilename = inf.igi.imageInstanceId.substring(AppConstants.BDR_len);
+        String userfilename = inf.igi.imageInstanceUri.substring(AppConstants.BDR_len);
         if (inf.igi.nbVolumes > 1) {
             String formatStr = "%d";
             if (inf.igi.nbVolumes > 100)

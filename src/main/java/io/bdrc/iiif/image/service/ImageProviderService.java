@@ -62,7 +62,7 @@ public class ImageProviderService extends ConcurrentCacheAccessService {
     }
 
     public static String getKeyPrefix(final IdentifierInfo idf) {
-        String w_id = idf.igi.imageInstanceId;
+        String w_id = idf.igi.imageInstanceUri;
         if (w_id.lastIndexOf('/') != -1) {
             w_id = w_id.substring(w_id.lastIndexOf('/') + 1);
         }
