@@ -83,17 +83,20 @@ public class ResourceAccessValidation {
     public AccessLevel getAccessLevel(HttpServletRequest request) {
         if (this.access == null)
             this.access = new Access();
-        if (isInChina(request) && this.isRestrictedInChina) 
+        final boolean inChina = isInChina(request); 
+        if (inChina && this.isRestrictedInChina) 
                 return AccessLevel.NOACCESS;
         log.info("Getting access level for accessShort= {} and statusShort={} and imageUri '}", accessShort, statusShort, imageInstanceUri);
         if (this.isPDFRequest) {
-            AccessLevel res = access.hasResourcePDFAccess(accessShort, statusShort, imageInstanceUri, request.getHeader("X-Real-IP"), this.igi.inCollectionsLnames);
-            if (res == AccessLevel.FAIR_USE && isInChina(request) && ("CopyrightInCopyright".equals(this.copyrightStatusLname) || "CopyrightClaimed".equals(this.copyrightStatusLname)))
+            final AccessLevel res = access.hasResourcePDFAccess(accessShort, statusShort, imageInstanceUri, request.getHeader("X-Real-IP"), this.igi.inCollectionsLnames);
+            if (inChina && (res == AccessLevel.FAIR_USE || "CopyrightInCopyright".equals(this.copyrightStatusLname) || "CopyrightClaimed".equals(this.copyrightStatusLname)))
                 return AccessLevel.NOACCESS;
             return res;
         }
-        // if ("CopyrightInCopyright".equals(this.copyrightStatusLname) || "CopyrightClaimed".equals(this.copyrightStatusLname))
-        return access.hasResourceAccess(accessShort, statusShort, imageInstanceUri);
+        final AccessLevel res = access.hasResourceAccess(accessShort, statusShort, imageInstanceUri);
+        if (inChina && (res == AccessLevel.FAIR_USE || "CopyrightInCopyright".equals(this.copyrightStatusLname) || "CopyrightClaimed".equals(this.copyrightStatusLname)))
+            return AccessLevel.THUMBNAIL;
+        return res;
     }
 
     public boolean isAccessible(HttpServletRequest request) {
@@ -102,19 +105,31 @@ public class ResourceAccessValidation {
         if (al.equals(AccessLevel.OPEN))
             return true;
         if (al.equals(AccessLevel.FAIR_USE)) {
-            log.info("Matches Res Permissions is {}  for {} and Access {}", access.matchResourcePermissions(accessShort), access);
-            if (access.matchResourcePermissions(accessShort)) {
+            final boolean accessMatchesPermission = access.matchResourcePermissions(accessShort);
+            log.info("Matches Res Permissions is {}  for {} and Access {}", accessMatchesPermission, access);
+            if (accessMatchesPermission) {
                 return true;
             }
             try {
                 // This alone do not check against the user profile as the list
                 // is built through identifierInfo regardless that user profile
-                log.info("Does not match Res Permissions so returning new test from igi: {} ", this.igi.isAccessibleInFairUse(imageFileName));
-                return this.igi.isAccessibleInFairUse(imageFileName);
+                final boolean isAccessibleInFairUse = this.igi.isAccessibleInFairUse(imageFileName);
+                log.info("Does not match Res Permissions so returning new test from igi (fairUse mode): {} ", isAccessibleInFairUse);
+                return isAccessibleInFairUse;
             } catch (Exception e) {
                 log.error("error when looking at fair use case: ", e);
                 return false;
             }
+        }
+        if (al.equals(AccessLevel.THUMBNAIL)) {
+            final boolean accessMatchesPermission = access.matchResourcePermissions(accessShort);
+            log.info("Matches Res Permissions is {}  for {} and Access {}", accessMatchesPermission, access);
+            if (accessMatchesPermission) {
+                return true;
+            }
+            final boolean isTh = imageFileName.equals(this.igi.thumbnailFname);
+            log.info("Does not match Res Permissions so returning new test from igi (thumbnail mode): {} ", isTh);
+            return isTh;    
         }
         return false;
     }
