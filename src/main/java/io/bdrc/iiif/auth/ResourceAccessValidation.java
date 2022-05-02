@@ -105,6 +105,7 @@ public class ResourceAccessValidation {
         if (al.equals(AccessLevel.OPEN))
             return true;
         if (al.equals(AccessLevel.FAIR_USE)) {
+            // this part is potentially dangerous...
             final boolean accessMatchesPermission = access.matchResourcePermissions(accessShort);
             log.info("Matches Res Permissions is {}  for {} and Access {}", accessMatchesPermission, access);
             if (accessMatchesPermission) {
@@ -122,13 +123,8 @@ public class ResourceAccessValidation {
             }
         }
         if (al.equals(AccessLevel.THUMBNAIL)) {
-            final boolean accessMatchesPermission = access.matchResourcePermissions(accessShort);
-            log.info("Matches Res Permissions is {}  for {} and Access {}", accessMatchesPermission, access);
-            if (accessMatchesPermission) {
-                return true;
-            }
             final boolean isTh = imageFileName.equals(this.igi.thumbnailFname);
-            log.info("Does not match Res Permissions so returning new test from igi (thumbnail mode): {} ", isTh);
+            log.info("Does not match Res Permissions so returning new test from igi (thumbnail mode): {}, {} != {}", isTh, imageFileName, this.igi.thumbnailFname);
             return isTh;    
         }
         return false;
