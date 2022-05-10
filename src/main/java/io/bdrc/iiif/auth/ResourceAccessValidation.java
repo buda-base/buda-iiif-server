@@ -15,7 +15,6 @@ import io.bdrc.iiif.resolver.ImageGroupInfo;
 
 public class ResourceAccessValidation {
 
-    private static final String CHINA = "China";
     private static final Logger log = LoggerFactory.getLogger(ResourceAccessValidation.class);
 
     Access access;
@@ -71,8 +70,8 @@ public class ResourceAccessValidation {
             this.isInChinaB = true;
             return true;
         }
-        final String test = GeoLocation.getCountryName(request.getHeader("X-Real-IP"));
-        if (test == null || CHINA.equalsIgnoreCase(test)) {
+        final String test = GeoLocation.getCountryCode(request.getHeader(GeoLocation.HEADER_NAME));
+        if (test == null || "CN".equalsIgnoreCase(test)) {
             this.isInChinaB = true;
             return true;
         }

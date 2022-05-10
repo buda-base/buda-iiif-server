@@ -31,11 +31,11 @@ public class GeoLocation {
         }
     }
 
-    public static String getCountryName(String ip) {
+    public static String getCountryCode(String ip) {
         try {
             final InetAddress ipAddress = InetAddress.getByName(ip);
             final CountryResponse response = dbReader.country(ipAddress);
-            return response.getCountry().getName();
+            return response.getCountry().getIsoCode();
         } catch (IOException | GeoIp2Exception e) {
             log.error("getCountryName() failed to find a country for the following IP¨:" + ip);
             return null;
