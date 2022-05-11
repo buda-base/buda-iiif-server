@@ -28,6 +28,7 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import io.bdrc.auth.AuthProps;
 import io.bdrc.auth.rdf.RdfAuthModel;
 import io.bdrc.auth.rdf.Subscribers;
+import io.bdrc.iiif.auth.AuthFilter;
 import io.bdrc.iiif.metrics.ImageMetrics;
 import io.bdrc.iiif.metrics.MetricsTask;
 
@@ -93,6 +94,7 @@ public class Application extends SpringBootServletInitializer {
         EHServerCache.init();
         new Timer(true).schedule(new MetricsTask(), 0, 60000);
         app.run(args);
+        AuthFilter.init(props);
         if ("true".equals(props.getProperty("authEnabled")) && !isInChina()) {
             RdfAuthModel.init();
             Subscribers.init();

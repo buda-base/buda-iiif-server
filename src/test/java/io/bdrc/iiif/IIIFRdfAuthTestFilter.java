@@ -21,7 +21,7 @@ import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
 
-import io.bdrc.auth.Access;
+import io.bdrc.auth.AccessInfoAuthImpl;
 import io.bdrc.auth.AuthProps;
 import io.bdrc.auth.UserProfile;
 import io.bdrc.auth.model.Endpoint;
@@ -66,9 +66,9 @@ public class IIIFRdfAuthTestFilter implements Filter{
             JWTVerifier verifier = JWT.require(Algorithm.HMAC256("secret")).build();
             DecodedJWT jwt=verifier.verify(token);
             prof=new UserProfile(jwt);
-            req.setAttribute("access", new Access(prof,new Endpoint()));
+            req.setAttribute("access", new AccessInfoAuthImpl(prof,new Endpoint()));
         }else {
-            req.setAttribute("access", new Access());
+            req.setAttribute("access", new AccessInfoAuthImpl());
         }
         chain.doFilter(req, res);
     }

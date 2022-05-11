@@ -43,7 +43,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.digitalcollections.iiif.model.PropertyValue;
 import de.digitalcollections.model.api.identifiable.resource.exceptions.ResourceNotFoundException;
-import io.bdrc.auth.Access;
+import io.bdrc.auth.AccessInfo;
 import io.bdrc.auth.AuthProps;
 import io.bdrc.auth.TokenValidation;
 import io.bdrc.auth.rdf.RdfAuthModel;
@@ -173,14 +173,14 @@ public class IIIFImageApiController {
         IdentifierInfo idi = null;
         if (!staticImg) {
             idi = new IdentifierInfo(decodedIdentifier);
-            final Access acc = (Access) request.getAttribute("access");
+            final AccessInfo acc = (AccessInfo) request.getAttribute("access");
             accValidation = new ResourceAccessValidation(acc, idi, img);
             log.info("Access Validation is {} and is Accessible={}", accValidation,
                     accValidation.isAccessible(request));
             if (!accValidation.isAccessible(request)) {
                 HttpHeaders headers1 = new HttpHeaders();
                 headers1.setCacheControl(CacheControl.noCache());
-                if (serviceInfo.authEnabled() && serviceInfo.hasValidProperties() && !acc.isUserLoggedIn()) {
+                if (serviceInfo.authEnabled() && serviceInfo.hasValidProperties() && !acc.isLogged()) {
                     return new ResponseEntity<StreamingResponseBody>(streamingResponseFrom("You must be authenticated before accessing this resource"),
                             headers1, HttpStatus.UNAUTHORIZED);
                 } else {
@@ -317,7 +317,7 @@ public class IIIFImageApiController {
         updateInfo(imgInf, info);
         if (!staticImg) {
             ResourceAccessValidation accValidation = null;
-            accValidation = new ResourceAccessValidation((Access) req.getAttribute("access"), idi, img);
+            accValidation = new ResourceAccessValidation((AccessInfo) req.getAttribute("access"), idi, img);
             unAuthorized = !accValidation.isAccessible(req);
         }
         if (unAuthorized && serviceInfo.authEnabled() && serviceInfo.hasValidProperties()) {

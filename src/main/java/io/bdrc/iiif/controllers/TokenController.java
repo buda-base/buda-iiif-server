@@ -24,14 +24,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import io.bdrc.auth.Access;
+import io.bdrc.auth.AccessInfo;
+import io.bdrc.auth.AccessInfoAuthImpl;
 import io.bdrc.auth.AuthProps;
 import io.bdrc.auth.TokenValidation;
 import io.bdrc.auth.model.Endpoint;
 import io.bdrc.auth.rdf.RdfAuthModel;
 import io.bdrc.auth.rdf.RdfConstants;
 import io.bdrc.auth.rdf.Subscribers;
-import io.bdrc.iiif.auth.IIIFRdfAuthFilter;
+import io.bdrc.iiif.auth.AuthFilter;
 import io.bdrc.iiif.core.GeoLocation;
 import io.bdrc.iiif.exceptions.IIIFException;
 
@@ -63,12 +64,11 @@ public class TokenController {
         headers.add("Content-Type", "application/json");
         final ObjectNode rootNode = mapper.createObjectNode();
         
-        Access acc = null;
+        AccessInfo acc = null;
         
         if (!token.isPresent()) {
             // debugging the token of the request
-        
-            String mytoken = IIIFRdfAuthFilter.getToken(((HttpServletRequest) request).getHeader("Authorization"));
+            String mytoken = AuthFilter.getToken(((HttpServletRequest) request).getHeader("Authorization"));
             if (mytoken == null) {
                 Cookie[] cookies = ((HttpServletRequest) request).getCookies();
                 if (cookies != null) {
@@ -81,37 +81,32 @@ public class TokenController {
                 }
             }
             rootNode.put("token", mytoken);
-            acc = (Access) request.getAttribute("access");
-            if (acc == null || !acc.isUserLoggedIn())
+            acc = (AccessInfo) request.getAttribute("access");
+            if (acc == null || !acc.isLogged())
                 return new ResponseEntity<StreamingResponseBody>(IIIFImageApiController.streamingResponseFrom("\"You must be authenticated to access this service\""),
-                        headers, HttpStatus.UNAUTHORIZED);
-            
-
-            
+                        headers, HttpStatus.UNAUTHORIZED); 
         } else {
             // debugging a token passed as argument
             rootNode.put("token", token.get());
             TokenValidation validation = new TokenValidation(token.get());
             rootNode.put("tokenvalid", validation.isValid());
-            acc = new Access(validation.getUser(), new Endpoint());
-            if (acc == null || !acc.isUserLoggedIn())
+            acc = new AccessInfoAuthImpl(validation.getUser(), new Endpoint());
+            if (acc == null || !acc.isLogged())
                 return new ResponseEntity<StreamingResponseBody>(IIIFImageApiController.streamingResponseFrom("\"a valid access cannot be built from this token\""),
                         headers, HttpStatus.UNAUTHORIZED);
-            
         }
-        
-        rootNode.put("userprofile", acc.getUserProfile().toString());
-        rootNode.put("user", acc.getUser().toString());
-        List<String> personalAccessL = RdfAuthModel.getPersonalAccess(RdfConstants.AUTH_RESOURCE_BASE + acc.getUser().getUserId());
-        ArrayNode an = mapper.valueToTree(personalAccessL);
-        rootNode.putArray("personalAccess").addAll(an);
+        rootNode.put("access", acc.toString());
+        if (acc instanceof AccessInfoAuthImpl) {
+            List<String> personalAccessL = RdfAuthModel.getPersonalAccess(RdfConstants.AUTH_RESOURCE_BASE + ((AccessInfoAuthImpl) acc).getUser().getUserId());
+            ArrayNode an = mapper.valueToTree(personalAccessL);
+            rootNode.putArray("personalAccess").addAll(an);
+        }
         final String ipAddress = request.getHeader(GeoLocation.HEADER_NAME);
         rootNode.put("ip", ipAddress);
         rootNode.put("subscriber", Subscribers.getCachedSubscriber(ipAddress));
         String test = GeoLocation.getCountryCode(ipAddress);
         rootNode.put("inChina", test == null || "CN".equalsIgnoreCase(test));
-        rootNode.put("isAdmin", acc.getUserProfile().isAdmin());
-        
+        rootNode.put("isAdmin", acc.isAdmin());
         return new ResponseEntity<StreamingResponseBody>(IIIFImageApiController.streamingResponseFrom(mapper.writeValueAsString(rootNode)),
                 headers, HttpStatus.OK);
         

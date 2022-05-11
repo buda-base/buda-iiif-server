@@ -23,7 +23,7 @@ import org.springframework.web.context.request.WebRequest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.bdrc.auth.Access;
+import io.bdrc.auth.AccessInfo;
 import io.bdrc.auth.TokenValidation;
 import io.bdrc.iiif.auth.AuthServiceInfo;
 import io.bdrc.iiif.auth.ResourceAccessValidation;
@@ -90,7 +90,7 @@ public class IIIFImageTestApiController {
         igi.statusUri = "http://purl.bdrc.io/admindata/StatusReleased";
         IdentifierInfo idf = new IdentifierInfo(identifier, igi);
         System.out.println("PATH >>>>> " + pth);
-        ResourceAccessValidation accValidation = new ResourceAccessValidation((Access) request.getAttribute("access"), idf);
+        ResourceAccessValidation accValidation = new ResourceAccessValidation((AccessInfo) request.getAttribute("access"), idf);
         identifier = URLDecoder.decode(identifier, "UTF-8");
         if (!accValidation.isAccessible(request)) {
             HttpHeaders headers1 = new HttpHeaders();
@@ -118,7 +118,7 @@ public class IIIFImageTestApiController {
         igi.restrictedInChina = false;
         igi.statusUri = "http://purl.bdrc.io/admindata/StatusReleased";
         IdentifierInfo idf = new IdentifierInfo(identifier, igi);
-        ResourceAccessValidation accValidation = new ResourceAccessValidation((Access) req.getAttribute("access"), idf);
+        ResourceAccessValidation accValidation = new ResourceAccessValidation((AccessInfo) req.getAttribute("access"), idf);
         boolean unAuthorized = !accValidation.isAccessible(req);
         long modified = getImageModificationDate(identifier).toEpochMilli();
         webRequest.checkNotModified(modified);

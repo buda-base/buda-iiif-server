@@ -30,8 +30,7 @@ import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.layout.Document;
 import com.itextpdf.layout.element.Image;
 
-import io.bdrc.auth.Access;
-import io.bdrc.auth.Access.AccessLevel;
+import io.bdrc.auth.AccessInfo.AccessLevel;
 import io.bdrc.iiif.core.Application;
 import io.bdrc.iiif.core.EHServerCache;
 import io.bdrc.iiif.exceptions.IIIFException;

@@ -15,7 +15,7 @@ import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Primary;
 
 import io.bdrc.auth.rdf.RdfAuthModel;
-import io.bdrc.iiif.auth.IIIFRdfAuthFilter;
+import io.bdrc.iiif.auth.AuthFilter;
 
 
 @SpringBootApplication
@@ -33,7 +33,7 @@ import io.bdrc.iiif.auth.IIIFRdfAuthFilter;
         }
 ,
         excludeFilters = @ComponentScan.Filter(
-               type = FilterType.ASSIGNABLE_TYPE, value = {IIIFRdfAuthFilter.class}))
+               type = FilterType.ASSIGNABLE_TYPE, value = {AuthFilter.class}))
 public class TestApplication extends SpringBootServletInitializer{
 
     static final String configPath= System.getProperty("iiifserv.configpath");

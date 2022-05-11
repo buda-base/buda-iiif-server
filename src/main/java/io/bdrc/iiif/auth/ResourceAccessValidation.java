@@ -6,8 +6,9 @@ import javax.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.bdrc.auth.Access;
-import io.bdrc.auth.Access.AccessLevel;
+import io.bdrc.auth.AccessInfo;
+import io.bdrc.auth.AccessInfoAuthImpl;
+import io.bdrc.auth.AccessInfo.AccessLevel;
 import io.bdrc.iiif.core.Application;
 import io.bdrc.iiif.core.GeoLocation;
 import io.bdrc.iiif.resolver.IdentifierInfo;
@@ -17,7 +18,7 @@ public class ResourceAccessValidation {
 
     private static final Logger log = LoggerFactory.getLogger(ResourceAccessValidation.class);
 
-    Access access;
+    AccessInfo access;
     String accessShort;
     String statusShort;
     String imageInstanceUri;
@@ -28,7 +29,7 @@ public class ResourceAccessValidation {
     boolean isRestrictedInChina;
     Boolean isInChinaB = null;
 
-    public ResourceAccessValidation(Access access, IdentifierInfo idInfo, String imageFileName) {
+    public ResourceAccessValidation(AccessInfo access, IdentifierInfo idInfo, String imageFileName) {
         super();
         this.access = access;
         final String accessUri = idInfo.igi.access.getUri();
@@ -42,7 +43,7 @@ public class ResourceAccessValidation {
         this.imageFileName = imageFileName;
     }
 
-    public ResourceAccessValidation(Access access, IdentifierInfo idInfo) {
+    public ResourceAccessValidation(AccessInfo access, IdentifierInfo idInfo) {
         super();
         this.isPDFRequest = true;
         this.access = access;
@@ -56,9 +57,9 @@ public class ResourceAccessValidation {
         this.igi = idInfo.igi;
     }
 
-    public Access getAccess() {
+    public AccessInfo getAccess() {
         if (access == null) {
-            return new Access();
+            return new AccessInfoAuthImpl();
         }
         return access;
     }
@@ -81,7 +82,7 @@ public class ResourceAccessValidation {
 
     public AccessLevel getAccessLevel(HttpServletRequest request) {
         if (this.access == null)
-            this.access = new Access();
+            this.access = new AccessInfoAuthImpl();
         final boolean inChina = isInChina(request); 
         if (inChina && this.isRestrictedInChina) 
                 return AccessLevel.NOACCESS;
@@ -104,14 +105,8 @@ public class ResourceAccessValidation {
         if (al.equals(AccessLevel.OPEN))
             return true;
         if (al.equals(AccessLevel.FAIR_USE)) {
-            // this part is potentially dangerous...
-            final boolean accessMatchesPermission = access.matchResourcePermissions(accessShort);
-            log.info("Matches Res Permissions is {}  for {} and Access {}", accessMatchesPermission, access);
-            if (accessMatchesPermission) {
-                return true;
-            }
             try {
-                // This alone do not check against the user profile as the list
+                // This alone does not check against the user profile as the list
                 // is built through identifierInfo regardless that user profile
                 final boolean isAccessibleInFairUse = this.igi.isAccessibleInFairUse(imageFileName);
                 log.info("Does not match Res Permissions so returning new test from igi (fairUse mode): {} ", isAccessibleInFairUse);

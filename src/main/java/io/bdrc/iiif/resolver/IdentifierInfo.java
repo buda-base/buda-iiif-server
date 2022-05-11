@@ -14,9 +14,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.digitalcollections.model.api.identifiable.resource.exceptions.ResourceNotFoundException;
-import io.bdrc.auth.Access;
-import io.bdrc.auth.Access.AccessLevel;
-import io.bdrc.auth.rdf.RdfConstants;
+import io.bdrc.auth.AccessInfo.AccessLevel;
 import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.iiif.image.service.ImageGroupInfoService;
 import io.bdrc.iiif.image.service.ImageInfoListService;

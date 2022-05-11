@@ -28,8 +28,8 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.digitalcollections.model.api.identifiable.resource.exceptions.ResourceNotFoundException;
-import io.bdrc.auth.Access;
-import io.bdrc.auth.Access.AccessLevel;
+import io.bdrc.auth.AccessInfo;
+import io.bdrc.auth.AccessInfo.AccessLevel;
 import io.bdrc.iiif.archives.ArchiveBuilder;
 import io.bdrc.iiif.archives.ArchiveProducer;
 import io.bdrc.iiif.archives.PdfItemInfo;
@@ -55,13 +55,13 @@ public class ArchivesController {
 
     public final static Logger log = LoggerFactory.getLogger(ArchivesController.class.getName());
 
-    public static void checkPageRange(final IdentifierInfo inf, final int start, final int end, final AccessLevel al, final Access acc) throws IIIFException {
+    public static void checkPageRange(final IdentifierInfo inf, final int start, final int end, final AccessLevel al, final AccessInfo acc) throws IIIFException {
         // exceptions should be thrown already
         try {
             final List<ImageInfo> l = inf.getImageListInfo(al, start, end);
         } catch (IIIFException e) {
             int st = e.getStatus();
-            if (st == 403 && !acc.isUserLoggedIn())
+            if (st == 403 && !acc.isLogged())
                 st = 401;
             throw new IIIFException(st, e.getCode(), e.getMessage());
         }
@@ -71,10 +71,7 @@ public class ArchivesController {
     public ResponseEntity<String> getPdfLink(@PathVariable String id, @PathVariable String type,
             HttpServletRequest request) throws Exception {
         log.info("getPdfLink(id {}, type{})", id, type);
-        Access acc = (Access) request.getAttribute("access");
-        if (acc == null) {
-            acc = new Access();
-        }
+        AccessInfo acc = (AccessInfo) request.getAttribute("access");
         String format = request.getHeader("Accept");
         boolean json = format.contains("application/json");
         String output = null;
@@ -96,7 +93,7 @@ public class ArchivesController {
                     final String iiUri = Models.BDR+idf.getImageInstanceId().substring(4);
                     final AccessLevel al = acc.hasResourceAccess(item.getAccessLName(), item.getStatusLName(), iiUri);
                     if (al.equals(AccessLevel.NOACCESS) || al.equals(AccessLevel.MIXED)) {
-                        final HttpStatus st = acc.isUserLoggedIn() ? HttpStatus.FORBIDDEN : HttpStatus.UNAUTHORIZED ;
+                        final HttpStatus st = acc.isLogged() ? HttpStatus.FORBIDDEN : HttpStatus.UNAUTHORIZED ;
                         final String msg = st == HttpStatus.UNAUTHORIZED ? "Please log in to download archive files" : "Insufficient rights";
                         return new ResponseEntity<>(msg, st);
                     }
@@ -132,7 +129,7 @@ public class ArchivesController {
                 ResourceAccessValidation accValidation = new ResourceAccessValidation(acc, inf);
                 final AccessLevel al = accValidation.getAccessLevel(request);
                 if (serviceInfo.authEnabled() && al.equals(AccessLevel.NOACCESS) || al.equals(AccessLevel.MIXED)) {
-                    final HttpStatus st = acc.isUserLoggedIn() ? HttpStatus.FORBIDDEN : HttpStatus.UNAUTHORIZED;
+                    final HttpStatus st = acc.isLogged() ? HttpStatus.FORBIDDEN : HttpStatus.UNAUTHORIZED;
                     final String msg = st == HttpStatus.UNAUTHORIZED ? "Please log in to download archive files" : "Insufficient rights";
                     return new ResponseEntity<>(msg, st);
                 }
@@ -271,11 +268,11 @@ public class ArchivesController {
         log.info("downloadPdf building identifier for id {}", "v:" + name);
         log.info("downloadPdf building from page {} to {}", idf.getBPageNum(), idf.getEPageNum());
         IdentifierInfo inf = new IdentifierInfo(nameParts[0] + ":" + nameParts[1]);
-        final Access acc = (Access) request.getAttribute("access");
+        final AccessInfo acc = (AccessInfo) request.getAttribute("access");
         final ResourceAccessValidation accValidation = new ResourceAccessValidation(acc, inf);
         final AccessLevel al = accValidation.getAccessLevel(request);
         if (serviceInfo.authEnabled() && (al.equals(AccessLevel.NOACCESS) || al.equals(AccessLevel.MIXED) || (al.equals(AccessLevel.FAIR_USE) && !isFairUse))) {
-            final HttpStatus st = acc.isUserLoggedIn() ? HttpStatus.FORBIDDEN : HttpStatus.UNAUTHORIZED;
+            final HttpStatus st = acc.isLogged() ? HttpStatus.FORBIDDEN : HttpStatus.UNAUTHORIZED;
             //final String msg = st == HttpStatus.UNAUTHORIZED ? "Please log in to download archive files" : "Insufficient rights";
             return new ResponseEntity<>(null, st);
         }
@@ -330,7 +327,7 @@ public class ArchivesController {
         Boolean cached = false;
         Double percentdone = null;
         ResourceAccessValidation accValidation = new ResourceAccessValidation(
-                (Access) request.getAttribute("access"), inf);
+                (AccessInfo) request.getAttribute("access"), inf);
         AccessLevel al = accValidation.getAccessLevel(request);
         final String output;
         if (al.equals(AccessLevel.FAIR_USE)) {
