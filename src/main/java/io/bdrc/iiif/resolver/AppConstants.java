@@ -24,6 +24,7 @@ public class AppConstants {
     public static final String CACHEPREFIX_II = "ii:";
     public static final String CACHEPREFIX_IIL = "il:";
     public static final String CACHEPREFIX_VI = "vi:";
+    public static final String CACHEPREFIX_BVM = "bvm:";
 
     public static final String LDS_QUERYPREFIX = AuthProps.getProperty("dataserver");
     public static final String LDS_IMAGEINSTANCEGRAPH_QUERY = LDS_QUERYPREFIX + "query/graph/IIIFServ_imageInstanceGraph";

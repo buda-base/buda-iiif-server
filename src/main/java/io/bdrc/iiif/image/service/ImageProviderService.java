@@ -72,6 +72,12 @@ public class ImageProviderService extends ConcurrentCacheAccessService {
         return "Works/" + md5firsttwo + "/" + w_id + "/images/" + w_id + "-" + imageGroupId + "/";
     }
     
+    public static String getSourcesPrefix(final String w_lname) {
+        String md5firsttwo = "";
+        md5firsttwo = GlobalHelpers.getTwoLettersBucket(w_lname);
+        return "Works/" + md5firsttwo + "/" + w_lname + "/sources/";
+    }
+    
     public boolean isInCache(final String s3key) {
         if (!isS3)
             return true;
