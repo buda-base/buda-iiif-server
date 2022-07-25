@@ -53,7 +53,7 @@ public class SimpleBVMService extends ConcurrentResourceService<SimpleBVM> {
         String filename = AuthProps.getProperty("bvmgitpath") + firstTwo + "/" + imageGroupLocalName + ".json";
         File f = new File(filename);
         if (!f.exists()) {
-            logger.debug("bvm file doesn't exist: {}", filename);
+            logger.error("bvm file doesn't exist: {}", filename);
             throw new IIIFException(404, 5000, "no BVM file for " + imageGroupLocalName);
         }
         logger.debug("Git filename is {}", filename);
