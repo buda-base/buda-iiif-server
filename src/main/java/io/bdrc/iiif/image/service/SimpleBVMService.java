@@ -50,7 +50,7 @@ public class SimpleBVMService extends ConcurrentResourceService<SimpleBVM> {
     @Override
     public final SimpleBVM getFromApi(final String imageGroupLocalName) throws IIIFException {
         final String firstTwo = GlobalHelpers.getTwoLettersBucket(imageGroupLocalName);
-        String filename = System.getProperty("user.dir") + "/gitData/buda-volume-manifests/" + firstTwo + "/" + imageGroupLocalName + ".json";
+        String filename = AuthProps.getProperty("bvmgitpath") + firstTwo + "/" + imageGroupLocalName + ".json";
         File f = new File(filename);
         if (!f.exists()) {
             logger.debug("bvm file doesn't exist: {}", filename);

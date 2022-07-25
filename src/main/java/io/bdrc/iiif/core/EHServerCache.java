@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import io.bdrc.iiif.archives.PdfItemInfo;
 import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.iiif.metrics.CacheMetrics;
+import io.bdrc.iiif.model.SimpleBVM;
 import io.bdrc.iiif.resolver.ImageGroupInfo;
 
 @SuppressWarnings({ "rawtypes", "unchecked" })
@@ -36,6 +37,7 @@ public class EHServerCache {
     public static Cache<String, PdfItemInfo> PDF_ITEM_INFO;
     public static Cache<String, ImageGroupInfo> IMAGE_GROUP_INFO;
     public static Cache<String, List> IMAGE_LIST_INFO;
+    public static Cache<String, SimpleBVM> BVM;
     private static HashMap<String, CacheWrapper> MAP;
     private static HashMap<String, CacheWrapper> MAP_DISK;
     private static HashMap<String, CacheWrapper> MAP_MEM;
@@ -94,6 +96,12 @@ public class EHServerCache {
         MAP.put("imageListInfo", new CacheWrapper(IMAGE_LIST_INFO, "imageListInfo"));
         MAP_MEM.put("imageListInfo", new CacheWrapper(IMAGE_LIST_INFO, "imageListInfo"));
         CACHE_STATS.put("imageListInfo", statsService.getCacheStatistics("imageListInfo"));
+        
+        BVM = cacheManager.createCache("bvm", CacheConfigurationBuilder.newCacheConfigurationBuilder(String.class, SimpleBVM.class,
+                ResourcePoolsBuilder.newResourcePoolsBuilder().heap(100, EntryUnit.ENTRIES)));
+        MAP.put("bvm", new CacheWrapper(BVM, "bvm"));
+        MAP_MEM.put("bvm", new CacheWrapper(BVM, "bvm"));
+        CACHE_STATS.put("bvm", statsService.getCacheStatistics("bvm"));
         
         //cacheManager.close();
 
