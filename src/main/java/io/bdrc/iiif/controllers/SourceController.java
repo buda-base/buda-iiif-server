@@ -78,6 +78,8 @@ public class SourceController {
         final InputStream is = service.getNoCache(s3key);
         final HttpHeaders headers = new HttpHeaders();
         headers.add("Content-Type", mimeType);
+        final String userfilename = sourcePath.substring(sourcePath.lastIndexOf('/')+1);
+        headers.setContentDispositionFormData("attachment", userfilename);
         return ResponseEntity.ok().headers(headers).body(IIIFImageApiController.streamingResponseFrom(is));
     }
 }
