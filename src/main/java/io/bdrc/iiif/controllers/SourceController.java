@@ -54,7 +54,7 @@ public class SourceController {
         log.info("Entering endpoint getInfo for {}", identifier);
         IdentifierInfo idi = new IdentifierInfo(identifier);
         final AccessInfo acc = (AccessInfo) req.getAttribute("access");
-        final ResourceAccessValidation accValidation = new ResourceAccessValidation(acc, idi, img);
+        final ResourceAccessValidation accValidation = new ResourceAccessValidation(acc, idi);
         final AccessLevel al = accValidation.getAccessLevel(req);
         if (serviceInfo.authEnabled() && (al.equals(AccessLevel.NOACCESS) || al.equals(AccessLevel.MIXED) || al.equals(AccessLevel.FAIR_USE))) {
             final HttpStatus st = acc.isLogged() ? HttpStatus.FORBIDDEN : HttpStatus.UNAUTHORIZED;
