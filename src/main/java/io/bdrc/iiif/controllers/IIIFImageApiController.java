@@ -42,7 +42,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.digitalcollections.iiif.model.PropertyValue;
-import de.digitalcollections.model.api.identifiable.resource.exceptions.ResourceNotFoundException;
 import io.bdrc.auth.AccessInfo;
 import io.bdrc.auth.AuthProps;
 import io.bdrc.auth.TokenValidation;
@@ -71,7 +70,6 @@ import io.bdrc.iiif.model.RegionRequest;
 import io.bdrc.iiif.model.SizeRequest;
 import io.bdrc.iiif.model.TileInfo;
 import io.bdrc.iiif.resolver.AccessType;
-import io.bdrc.iiif.resolver.AppConstants;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 import io.bdrc.iiif.resolver.ImageInfo;
 
@@ -148,7 +146,7 @@ public class IIIFImageApiController {
             @PathVariable String format, HttpServletRequest request, HttpServletResponse response,
             WebRequest webRequest)
             throws ClientProtocolException, IOException, IIIFException, InvalidParametersException,
-            UnsupportedOperationException, UnsupportedFormatException, ResourceNotFoundException, ImageReadException {
+            UnsupportedOperationException, UnsupportedFormatException, ImageReadException {
         log.info("main endpoint getImageRepresentation() for id {}", identifier);
         long maxAge = Long.parseLong(Application.getProperty("maxage"));
         boolean staticImg = false;

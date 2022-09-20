@@ -13,7 +13,6 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import de.digitalcollections.model.api.identifiable.resource.exceptions.ResourceNotFoundException;
 import io.bdrc.auth.AccessInfo.AccessLevel;
 import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.iiif.image.service.ImageGroupInfoService;
@@ -175,7 +174,7 @@ public class IdentifierInfo {
         return ili.size();
     }
 
-    public String getCanonical() throws ClientProtocolException, IOException, IIIFException, ResourceNotFoundException {
+    public String getCanonical() throws ClientProtocolException, IOException, IIIFException {
         String in = imageName == null ? computedImageName : imageName;
         return AppConstants.IGFN + ":" + volumeId + ":" + in;
     }

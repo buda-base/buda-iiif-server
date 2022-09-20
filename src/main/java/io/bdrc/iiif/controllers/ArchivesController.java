@@ -27,7 +27,6 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import de.digitalcollections.model.api.identifiable.resource.exceptions.ResourceNotFoundException;
 import io.bdrc.auth.AccessInfo;
 import io.bdrc.auth.AccessInfo.AccessLevel;
 import io.bdrc.iiif.archives.ArchiveBuilder;
@@ -390,7 +389,7 @@ public class ArchivesController {
     }
 
     public String getVolumeDownLoadLinks(PdfItemInfo item, Identifier idf, String type)
-            throws ClientProtocolException, IOException, IIIFException, ResourceNotFoundException {
+            throws ClientProtocolException, IOException, IIIFException {
         String links = "";
         List<String> vlist = item.getVolumes();
         // TODO: sort list by volume number
@@ -407,7 +406,7 @@ public class ArchivesController {
     }
 
     public HashMap<String, HashMap<String, String>> getJsonVolumeLinks(PdfItemInfo item, String type)
-            throws ClientProtocolException, IOException, IIIFException, ResourceNotFoundException {
+            throws ClientProtocolException, IOException, IIIFException {
         HashMap<String, HashMap<String, String>> map = new HashMap<>();
         List<String> vlist = item.getVolumes();
         for (int i = 0; i < vlist.size(); i++) {

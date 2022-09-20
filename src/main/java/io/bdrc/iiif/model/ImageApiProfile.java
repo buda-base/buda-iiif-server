@@ -15,7 +15,7 @@ import com.google.common.base.CaseFormat;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 
-import de.digitalcollections.model.api.identifiable.resource.MimeType;
+import de.digitalcollections.iiif.model.MimeType;
 
 /**
  * An Image API profile.
