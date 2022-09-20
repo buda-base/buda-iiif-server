@@ -90,14 +90,14 @@ public class ArchiveBuilder {
         try {
             if (jobs != null)
                 jobs.put(output, 0.);
-            log.error("generate PDF for {}", output);
+            log.info("generate PDF for {}", output);
             Application.logPerf("Starting building pdf {}", inf.volumeId);
             List<ImageInfo> imgInfo = getImageInfos(idf, inf, al);
             final int totalImages = imgInfo.size();
             log.info("Setting output {} ", output);
             PdfWriter pdfWriter = new PdfWriter(os);
             PdfDocument doc = new PdfDocument(pdfWriter);
-            Document d = new Document(doc, PageSize.Default, true);
+            Document d = new Document(doc, PageSize.DEFAULT, true);
             // TODO: wire the metadata from Fuseki, in the ArchiveInfo class
             PdfDocumentInfo info = doc.getDocumentInfo();
             info.addCreationDate();

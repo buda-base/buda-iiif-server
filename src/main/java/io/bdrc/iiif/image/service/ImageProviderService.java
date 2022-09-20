@@ -26,8 +26,8 @@ import io.bdrc.libraries.GlobalHelpers;
 
 public class ImageProviderService extends ConcurrentCacheAccessService {
 
-    private static final ClientConfiguration config = new ClientConfiguration().withConnectionTimeout(3000).withMaxConnections(50)
-            .withMaxErrorRetry(5).withSocketTimeout(3000);
+    private static final ClientConfiguration config = new ClientConfiguration().withConnectionTimeout(5000).withMaxConnections(50)
+            .withMaxErrorRetry(5).withSocketTimeout(5000);
     // TODO: get from config
     final static String bucketNameArchive = "archive.tbrc.org";
     final static String bucketNameStatic = "static-images.bdrc.io";
