@@ -102,10 +102,10 @@ public class AuthFilter implements Filter {
                 final String apiKey = getApiKey(((HttpServletRequest) req).getHeader("Authorization"));
                 if (apiKey != null && apiKeys.containsKey(apiKey)) {
                     final AccessInfo ai = apiKeys.get(apiKey);
-                    log.error("found api key, access is {}", ai.getClass());
+                    log.info("found api key, access is {}", ai.getClass());
                     req.setAttribute("access", ai);
                 } else {
-                    log.error("no token, no api key or invalid api key, default access");
+                    log.info("no token, no api key or invalid api key, default access");
                     req.setAttribute("access", new AccessInfoAuthImpl());
                 }
             }
