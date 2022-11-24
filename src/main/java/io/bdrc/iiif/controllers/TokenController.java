@@ -50,6 +50,22 @@ public class TokenController {
         return debugToken(request, response, webRequest, Optional.of(token));
     }
     
+    @RequestMapping(value = "/personalAccess/{userqname}", method = {RequestMethod.GET, RequestMethod.HEAD})
+    public ResponseEntity<String> debugPersonalAccess(@PathVariable("userqname") String userqname, HttpServletRequest request, HttpServletResponse response,
+            WebRequest webRequest)
+            throws ClientProtocolException, IOException {
+        final String userUri = "http://purl.bdrc.io/resource-nc/auth/"+userqname.substring(4);
+        final List<String> res = RdfAuthModel.getPersonalAccess(userUri);
+        final HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Type", "application/json");
+        if (res == null || res.isEmpty()) {
+            return new ResponseEntity<String>("\"\"",
+                    headers, HttpStatus.OK);
+        }
+        return new ResponseEntity<String>(mapper.writeValueAsString(res),
+                headers, HttpStatus.OK);
+    }
+    
     @RequestMapping(value = "/debugToken", method = {RequestMethod.GET, RequestMethod.HEAD})
     public ResponseEntity<StreamingResponseBody> debugSelfToken(HttpServletRequest request, HttpServletResponse response,
             WebRequest webRequest)
