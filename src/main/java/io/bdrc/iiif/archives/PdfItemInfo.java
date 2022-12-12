@@ -46,7 +46,7 @@ public class PdfItemInfo {
         this.model = ModelFactory.createDefaultModel();
         if (iinstanceQname != null) {
             this.iinstanceQname = iinstanceQname;
-            log.error("PDF Info Url {}", ITEM_URL_ROOT + iinstanceQname + "&format=ttl");
+            log.info("PDF Info Url {}", ITEM_URL_ROOT + iinstanceQname + "&format=ttl");
             model.read(ITEM_URL_ROOT + iinstanceQname + "&format=ttl", "TURTLE");
         }
     }
