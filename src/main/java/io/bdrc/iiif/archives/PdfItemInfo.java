@@ -29,7 +29,7 @@ public class PdfItemInfo {
     public String access;
     public String status;
 
-    public static String ITEM_URL_ROOT = Application.getProperty("dataserver") + "/query/graph/IIIFPres_imageInstanceGraph?R_RES=";
+    public static String ITEM_URL_ROOT = Application.getProperty("dataserver") + "query/graph/IIIFPres_imageInstanceGraph?R_RES=";
     private Model model;
 
     public static PdfItemInfo getPdfItemInfo(String iinstanceQname) throws IIIFException {
