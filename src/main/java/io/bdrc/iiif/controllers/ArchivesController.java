@@ -86,8 +86,15 @@ public class ArchivesController {
         int subType = idf.getSubType();
         switch (subType) {
             // Case work in item
-            case Identifier.MANIFEST_ID_WORK_IN_ITEM :
-                PdfItemInfo item = PdfItemInfo.getPdfItemInfo(idf.getImageInstanceId());
+            case Identifier.MANIFEST_ID_WORK_IN_ITEM:
+            case Identifier.MANIFEST_ID_ITEM:
+                String iiQname = idf.getImageInstanceId();
+                String iQname = idf.getInstanceId();
+                if (iiQname == null && iQname != null) {
+                    if (iQname.startsWith("bdr:W"))
+                        iiQname = iQname;
+                }
+                final PdfItemInfo item = PdfItemInfo.getPdfItemInfo(iiQname);
                 if (serviceInfo.authEnabled()) {
                     final String iiUri = Models.BDR+idf.getImageInstanceId().substring(4);
                     final AccessLevel al = acc.hasResourceAccess(item.getAccessLName(), item.getStatusLName(), iiUri);
