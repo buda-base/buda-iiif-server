@@ -144,8 +144,8 @@ public class IIIFImageApiController {
     }
     
     @RequestMapping(value = "/{identifier}/{region}/{size}/{rotation}/{quality}.{format}")
-    public ResponseEntity<StreamingResponseBody> getImageRepresentation(@PathVariable String identifier, @PathVariable String region,
-            @PathVariable String size, @PathVariable String rotation, @PathVariable String quality,
+    public ResponseEntity<StreamingResponseBody> getImageRepresentation(@PathVariable String identifier, @PathVariable final String region,
+            @PathVariable final String size, @PathVariable final String rotation, @PathVariable final String quality,
             @PathVariable String format, HttpServletRequest request, HttpServletResponse response,
             WebRequest webRequest)
             throws ClientProtocolException, IOException, IIIFException, InvalidParametersException,
@@ -153,14 +153,12 @@ public class IIIFImageApiController {
         log.info("main endpoint getImageRepresentation() for id {}", identifier);
         long maxAge = Long.parseLong(Application.getProperty("maxage"));
         boolean staticImg = false;
-        boolean thumbnail = false;
         String path = request.getServletPath();
         if (request.getPathInfo() != null) {
             path = request.getPathInfo();
         }
         String img = "";
-        HttpHeaders headers = new HttpHeaders();
-        ImageApiSelector selector = getImageApiSelector(identifier, region, size, rotation, quality, format);
+        final HttpHeaders headers = new HttpHeaders();
         final ImageApiProfile profile = ImageApiProfile.LEVEL_TWO;
         String decodedIdentifier = URLDecoder.decode(identifier, "UTF-8");
         String[] doubleColonParts = decodedIdentifier.split("::");
@@ -183,7 +181,14 @@ public class IIIFImageApiController {
             img = doubleColonParts[1];
             staticImg = doubleColonParts[0].trim().equals("static");
         }
+        if ("dflt".equals(format)) {
+            if (img.endsWith("tif") || img.endsWith("tiff"))
+                format = "png";
+            else
+                format = "jpg";
+        }
         final String finalDecodedIdentifier = decodedIdentifier;
+        final ImageApiSelector selector = getImageApiSelector(identifier, region, size, rotation, quality, format);
         headers.setContentType(MediaType.parseMediaType(selector.getFormat().getMimeType().getTypeName()));
         headers.set("Content-Disposition",
                 "inline; filename=" + path.replaceFirst("/image/", "").replace('/', '_').replace(',', '_'));
