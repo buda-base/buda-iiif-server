@@ -169,6 +169,12 @@ public class IIIFImageApiController {
                 final String iiifprefix = Application.getProperty("iiifprefix");
                 if (thumbnailUri == null)
                     throw new IIIFException(404, 5000, "could not find thumbnail for "+w_qname);
+                if ("dflt".equals(format)) {
+                    if (img.endsWith("tif") || img.endsWith("tiff"))
+                        format = "png";
+                    else
+                        format = "jpg";
+                }
                 if (thumbnailUri.startsWith(iiifprefix)) {
                     decodedIdentifier = URLDecoder.decode(thumbnailUri.substring(iiifprefix.length()), "UTF-8");
                     doubleColonParts = decodedIdentifier.split("::");
