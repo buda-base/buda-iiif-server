@@ -34,6 +34,7 @@ public class EHServerCache {
     public static DiskCache IIIF_IMG;
     public static DiskCache IIIF_ZIP;
     public static DiskCache IIIF_PDF;
+    public static Cache<String, String> THUMBNAIL;
     public static Cache<String, PdfItemInfo> PDF_ITEM_INFO;
     public static Cache<String, ImageGroupInfo> IMAGE_GROUP_INFO;
     public static Cache<String, List> IMAGE_LIST_INFO;
@@ -96,6 +97,12 @@ public class EHServerCache {
         MAP.put("imageListInfo", new CacheWrapper(IMAGE_LIST_INFO, "imageListInfo"));
         MAP_MEM.put("imageListInfo", new CacheWrapper(IMAGE_LIST_INFO, "imageListInfo"));
         CACHE_STATS.put("imageListInfo", statsService.getCacheStatistics("imageListInfo"));
+        
+        THUMBNAIL = cacheManager.createCache("thumbnail", CacheConfigurationBuilder.newCacheConfigurationBuilder(String.class, String.class,
+                ResourcePoolsBuilder.newResourcePoolsBuilder().heap(500, EntryUnit.ENTRIES)));
+        MAP.put("thumbnail", new CacheWrapper(THUMBNAIL, "thumbnail"));
+        MAP_MEM.put("thumbnail", new CacheWrapper(THUMBNAIL, "thumbnail"));
+        CACHE_STATS.put("thumbnail", statsService.getCacheStatistics("thumbnail"));
         
         BVM = cacheManager.createCache("bvm", CacheConfigurationBuilder.newCacheConfigurationBuilder(String.class, SimpleBVM.class,
                 ResourcePoolsBuilder.newResourcePoolsBuilder().heap(100, EntryUnit.ENTRIES)));

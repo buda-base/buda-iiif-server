@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.time.Instant;
@@ -57,6 +59,7 @@ import io.bdrc.iiif.image.service.ImageInfoListService;
 import io.bdrc.iiif.image.service.ImageProviderService;
 import io.bdrc.iiif.image.service.ImageService;
 import io.bdrc.iiif.image.service.ReadImageProcess;
+import io.bdrc.iiif.image.service.ThumbnailService;
 import io.bdrc.iiif.image.service.WriteImageProcess;
 import io.bdrc.iiif.metrics.ImageMetrics;
 import io.bdrc.iiif.metrics.JVMMetrics;
@@ -146,10 +149,11 @@ public class IIIFImageApiController {
             @PathVariable String format, HttpServletRequest request, HttpServletResponse response,
             WebRequest webRequest)
             throws ClientProtocolException, IOException, IIIFException, InvalidParametersException,
-            UnsupportedOperationException, UnsupportedFormatException, ImageReadException {
+            UnsupportedOperationException, UnsupportedFormatException, ImageReadException, InterruptedException, ExecutionException, URISyntaxException {
         log.info("main endpoint getImageRepresentation() for id {}", identifier);
         long maxAge = Long.parseLong(Application.getProperty("maxage"));
         boolean staticImg = false;
+        boolean thumbnail = false;
         String path = request.getServletPath();
         if (request.getPathInfo() != null) {
             path = request.getPathInfo();
@@ -158,15 +162,32 @@ public class IIIFImageApiController {
         HttpHeaders headers = new HttpHeaders();
         ImageApiSelector selector = getImageApiSelector(identifier, region, size, rotation, quality, format);
         final ImageApiProfile profile = ImageApiProfile.LEVEL_TWO;
-        final String decodedIdentifier = URLDecoder.decode(identifier, "UTF-8");
+        String decodedIdentifier = URLDecoder.decode(identifier, "UTF-8");
+        String[] doubleColonParts = decodedIdentifier.split("::");
+        if (doubleColonParts.length > 1) {
+            if (doubleColonParts[1].equals("thumbnail")) {
+                final String w_qname = doubleColonParts[0];
+                final String thumbnailUri = ThumbnailService.Instance.getAsync(w_qname).get();
+                final String iiifprefix = Application.getProperty("iiifprefix");
+                if (thumbnailUri == null)
+                    throw new IIIFException(404, 5000, "could not find thumbnail for "+w_qname);
+                if (thumbnailUri.startsWith(iiifprefix)) {
+                    decodedIdentifier = URLDecoder.decode(thumbnailUri.substring(iiifprefix.length()), "UTF-8");
+                    doubleColonParts = decodedIdentifier.split("::");
+                    headers.add("Link", "<"+thumbnailUri+"/"+region+"/"+size+"/"+rotation+"/"+quality+"."+format+">; rel=\"canonical\"");
+                } else {
+                    headers.setLocation(new URI(thumbnailUri+"/"+region+"/"+size+"/"+rotation+"/"+quality+"."+format));
+                    return ResponseEntity.status(301).headers(headers).body(null);
+                }
+            }
+            img = doubleColonParts[1];
+            staticImg = doubleColonParts[0].trim().equals("static");
+        }
+        final String finalDecodedIdentifier = decodedIdentifier;
         headers.setContentType(MediaType.parseMediaType(selector.getFormat().getMimeType().getTypeName()));
         headers.set("Content-Disposition",
                 "inline; filename=" + path.replaceFirst("/image/", "").replace('/', '_').replace(',', '_'));
         headers.add("Link", String.format("<%s>;rel=\"profile\"", profile.getIdentifier().toString()));
-        if (decodedIdentifier.split("::").length > 1) {
-            img = decodedIdentifier.split("::")[1];
-            staticImg = decodedIdentifier.split("::")[0].trim().equals("static");
-        }
         ResourceAccessValidation accValidation = null;
         IdentifierInfo idi = null;
         if (!staticImg) {
@@ -237,16 +258,16 @@ public class IIIFImageApiController {
             public void writeTo(final OutputStream os) throws IOException {
                 Object[] obj;
                 try {
-                    Application.logPerf("processing image output stream for {}", decodedIdentifier);
-                    obj = ReadImageProcess.readImage(decodedIdentifier, selector, profile, false);
-                    WriteImageProcess.processImage((DecodedImage) obj[0], decodedIdentifier, selector, profile, os, (ImageReader_ICC) obj[1]);
+                    Application.logPerf("processing image output stream for {}", finalDecodedIdentifier);
+                    obj = ReadImageProcess.readImage(finalDecodedIdentifier, selector, profile, false);
+                    WriteImageProcess.processImage((DecodedImage) obj[0], finalDecodedIdentifier, selector, profile, os, (ImageReader_ICC) obj[1]);
                     ((ImageReader_ICC) obj[1]).closeAndDispose();
                 } catch (Exception e) {
-                    log.error("Resource was not found for identifier " + decodedIdentifier + " Message: " + e.getMessage()
+                    log.error("Resource was not found for identifier " + finalDecodedIdentifier + " Message: " + e.getMessage()
                             + " Trying failover method");
                     try {
-                        obj = ReadImageProcess.readImage(decodedIdentifier, selector, profile, true);
-                        WriteImageProcess.processImage((DecodedImage) obj[0], decodedIdentifier, selector, profile, os, (ImageReader_ICC) obj[1]);
+                        obj = ReadImageProcess.readImage(finalDecodedIdentifier, selector, profile, true);
+                        WriteImageProcess.processImage((DecodedImage) obj[0], finalDecodedIdentifier, selector, profile, os, (ImageReader_ICC) obj[1]);
                         ((ImageReader_ICC) obj[1]).closeAndDispose();
                     } catch (Exception ex) {
                         log.error("Somethng WENT WRONG ", ex);

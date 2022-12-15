@@ -23,6 +23,8 @@ public class IdentifierInfo {
     public String identifier;
     public String imageId = "";
     public String volumeId;
+    public boolean isStatic = false;
+    public boolean isThumbnail = true;
     public String prefix = null;
     public String imageName = null;
     public int totalPages = 0;
