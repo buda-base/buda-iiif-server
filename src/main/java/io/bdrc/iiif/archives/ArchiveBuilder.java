@@ -101,7 +101,7 @@ public class ArchiveBuilder {
             // TODO: wire the metadata from Fuseki, in the ArchiveInfo class
             PdfDocumentInfo info = doc.getDocumentInfo();
             info.addCreationDate();
-            info.setCreator("Buddist Digital Resource Center");
+            info.setCreator("Buddhist Digital Resource Center (BDRC)");
             Application.logPerf("building pdf writer and document opened {} after {}", inf.volumeId,
                     System.currentTimeMillis() - deb);
             int nbImagesTried = 1;
