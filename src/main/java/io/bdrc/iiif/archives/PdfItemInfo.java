@@ -9,8 +9,10 @@ import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.NodeIterator;
 import org.apache.jena.rdf.model.Property;
-import org.apache.jena.rdf.model.Resource;
+import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.ResourceFactory;
+import org.apache.jena.rdf.model.Statement;
+import org.apache.jena.rdf.model.StmtIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,7 +27,7 @@ public class PdfItemInfo {
 
     public String iinstanceQname;
     public List<String> volumes;
-    public HashMap<String, String> volNumbers;
+    public HashMap<String, Integer> volNumbers;
     public String access;
     public String status;
 
@@ -69,34 +71,34 @@ public class PdfItemInfo {
         return status;
     }
 
+    static final Property volumerNumberP = ResourceFactory.createProperty(Models.BDO + "volumeNumber"); 
     public List<String> getVolumes() {
-        List<Resource> nodes;
-        if (volumes == null) {
-            volumes = new ArrayList<>();
-            nodes = model.listSubjectsWithProperty(ResourceFactory.createProperty(Models.BDO + "volumeNumber")).toList();
-            for (Resource nd : nodes) {
-                volumes.add(nd.asResource().getURI());
+        if (this.volumes == null) {
+            if (this.volNumbers == null)
+                this.volNumbers = new HashMap<>();
+            this.volumes = new ArrayList<>();
+            final StmtIterator stmti = model.listStatements(null, volumerNumberP, (RDFNode) null);
+            while (stmti.hasNext()) {
+                final Statement st = stmti.next();
+                final String uri = st.getSubject().getURI();
+                this.volumes.add(uri);
+                final int volnum = st.getInt();
+                this.volNumbers.put(uri, volnum);
             }
+            this.volumes.sort(
+                    (final String volUri1, final String volUri2) -> this.volNumbers.get(volUri1).compareTo(this.volNumbers.get(volUri2)));
         }
-        return volumes;
+        return this.volumes;
     }
 
-    public HashMap<String, String> getVolumeNumbers() {
-        if (volNumbers == null) {
-            volNumbers = new HashMap<>();
-            List<String> itemVols = getVolumes();
-            for (String vol : itemVols) {
-                String shortName = vol.substring(vol.lastIndexOf('/') + 1);
-                String num = model
-                        .listObjectsOfProperty(ResourceFactory.createResource(vol), ResourceFactory.createProperty(Models.BDO + "volumeNumber")).next()
-                        .asLiteral().getString();
-                volNumbers.put(shortName, num);
-            }
+    public HashMap<String, Integer> getVolumeNumbers() {
+        if (this.volNumbers == null) {
+            getVolumes();
         }
-        return volNumbers;
+        return this.volNumbers;
     }
 
-    public String getVolumeNumber(String volumeId) {
+    public Integer getVolumeNumber(String volumeId) {
         return getVolumeNumbers().get(volumeId);
     }
 

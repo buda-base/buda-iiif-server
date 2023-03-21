@@ -37,6 +37,8 @@ import io.bdrc.iiif.auth.ResourceAccessValidation;
 import io.bdrc.iiif.core.Application;
 import io.bdrc.iiif.core.EHServerCache;
 import io.bdrc.iiif.exceptions.IIIFException;
+import io.bdrc.iiif.image.service.ContentLocationService;
+import io.bdrc.iiif.model.ContentLocation;
 import io.bdrc.iiif.resolver.AppConstants;
 import io.bdrc.iiif.resolver.IdentifierInfo;
 import io.bdrc.iiif.resolver.ImageInfo;
@@ -84,15 +86,24 @@ public class ArchivesController {
         StringSubstitutor s = null;
         String html = "";
         int subType = idf.getSubType();
+        List<ContentLocation> cll = null;
         switch (subType) {
             // Case work in item
             case Identifier.MANIFEST_ID_WORK_IN_ITEM:
             case Identifier.MANIFEST_ID_ITEM:
                 String iiQname = idf.getImageInstanceId();
                 String iQname = idf.getInstanceId();
-                if (iiQname == null && iQname != null) {
-                    if (iQname.startsWith("bdr:W"))
-                        iiQname = iQname;
+                if (iiQname != null && iQname == null && iiQname.startsWith("bdr:MW"))
+                    iQname = iiQname;
+                if (iiQname == null && iQname != null && iQname.startsWith("bdr:W"))
+                    iiQname = iQname;
+                if (iQname != null) {
+                    cll = ContentLocationService.Instance.getAsync(iQname).get();
+                    if (cll != null && cll.size() > 0) {
+                        iiQname = cll.get(0).iiQname;
+                    } else {
+                        cll = null;
+                    }
                 }
                 final PdfItemInfo item = PdfItemInfo.getPdfItemInfo(iiQname);
                 if (serviceInfo.authEnabled()) {
@@ -105,11 +116,11 @@ public class ArchivesController {
                     }
                 }
                 if (json) {
-                    jsonMap = getJsonVolumeLinks(item, type);
+                    jsonMap = getJsonVolumeLinks(item, type, cll);
                     ObjectMapper mapper = new ObjectMapper();
                     html = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonMap);
                 } else {
-                    map.put("links", getVolumeDownLoadLinks(item, idf, type));
+                    map.put("links", getVolumeDownLoadLinks(item, idf, type, cll));
                     html = getTemplate("volumes.tpl");
                     s = new StringSubstitutor(map);
                     html = s.replace(html);
@@ -395,35 +406,69 @@ public class ArchivesController {
         return res;
     }
 
-    public String getVolumeDownLoadLinks(PdfItemInfo item, Identifier idf, String type)
+    public String getVolumeDownLoadLinks(final PdfItemInfo item, final Identifier idf, final String type, final List<ContentLocation> cll)
             throws ClientProtocolException, IOException, IIIFException {
         String links = "";
-        List<String> vlist = item.getVolumes();
-        // TODO: sort list by volume number
-        for (int i = 0; i < vlist.size(); i++) {
-            String s = vlist.get(i);
-            String shortName = getShortName(s);
-            IdentifierInfo vi = new IdentifierInfo("bdr:" + shortName);
-            links = links + "<a type=\"application/" + type + "\" href=\"" + Application.getProperty("iiifserv_baseurl")
-                    + "download/" + type + "/v:" + "bdr:" + shortName + "::1-" + vi.getTotalPages() + "\">Vol."
-                    + vi.igi.volumeNumber + " (" + vi.getTotalPages() + " pages) - " + "bdr:" + shortName + "." + type
-                    + "</a><br/>";
+        final List<String> vlist = item.getVolumes();
+        if (cll == null) {
+            for (final String volUri : vlist) {
+                final String shortName = getShortName(volUri);
+                final IdentifierInfo vi = new IdentifierInfo("bdr:" + shortName);
+                links = links + "<a type=\"application/" + type + "\" href=\"" + Application.getProperty("iiifserv_baseurl")
+                        + "download/" + type + "/v:" + "bdr:" + shortName + "::1-" + vi.getTotalPages() + "\">Vol."
+                        + vi.igi.volumeNumber + " (" + vi.getTotalPages() + " pages) - " + "bdr:" + shortName + "." + type
+                        + "</a><br/>";
+            }
+        } else {
+            for (final ContentLocation cl : cll) {
+                for (final String volUri : vlist) {
+                    final Integer volNum = item.getVolumeNumber(volUri);
+                    if (volNum < cl.vol_start || volNum > cl.vol_end)
+                        continue;
+                    final Integer volPageStart = volNum == cl.vol_start ? cl.page_start : 1;
+                    final String shortName = getShortName(volUri);
+                    final IdentifierInfo vi = new IdentifierInfo("bdr:" + shortName);
+                    final Integer volPageEnd = volNum == cl.vol_end ? cl.page_end : vi.getTotalPages();
+                    links = links + "<a type=\"application/" + type + "\" href=\"" + Application.getProperty("iiifserv_baseurl")
+                        + "download/" + type + "/v:" + "bdr:" + shortName + "::" + volPageStart + "-" + volPageEnd + "\">Vol."
+                        + volNum + " (" + (1 + volPageEnd - volPageStart) + " pages) - " + "bdr:" + shortName + "." + type
+                        + "</a><br/>";
+                }
+            }
         }
         return links;
     }
 
-    public HashMap<String, HashMap<String, String>> getJsonVolumeLinks(PdfItemInfo item, String type)
+    public HashMap<String, HashMap<String, String>> getJsonVolumeLinks(PdfItemInfo item, String type, List<ContentLocation> cll)
             throws ClientProtocolException, IOException, IIIFException {
-        HashMap<String, HashMap<String, String>> map = new HashMap<>();
-        List<String> vlist = item.getVolumes();
-        for (int i = 0; i < vlist.size(); i++) {
-            String s = vlist.get(i);
-            String shortName = getShortName(s);
-            HashMap<String, String> vol = new HashMap<>();
-            vol.put("link", Application.getProperty("iiifserv_baseurl") + "download/" + type + "/v:" + "bdr:"
-                    + shortName + "::1-");
-            vol.put("volnum", item.getVolumeNumber(shortName));
-            map.put("bdr:" + shortName, vol);
+        final HashMap<String, HashMap<String, String>> map = new HashMap<>();
+        final List<String> vlist = item.getVolumes();
+        if (cll == null) {
+            for (int i = 0; i < vlist.size(); i++) {
+                final String s = vlist.get(i);
+                final String shortName = getShortName(s);
+                final HashMap<String, String> vol = new HashMap<>();
+                vol.put("link", Application.getProperty("iiifserv_baseurl") + "download/" + type + "/v:" + "bdr:"
+                        + shortName + "::1-");
+                vol.put("volnum", Integer.toString(item.getVolumeNumber(s)));
+                map.put("bdr:" + shortName, vol);
+            }
+        } else {
+            for (final ContentLocation cl : cll) {
+                for (final String volUri : vlist) {
+                    final Integer volNum = item.getVolumeNumber(volUri);
+                    if (volNum < cl.vol_start || volNum > cl.vol_end)
+                        continue;
+                    final Integer volPageStart = volNum == cl.vol_start ? cl.page_start : 1;
+                    final String shortName = getShortName(volUri);
+                    final String volPageEnd = volNum == cl.vol_end ? Integer.toString(cl.page_end) : "";
+                    final HashMap<String, String> vol = new HashMap<>();
+                    vol.put("link", Application.getProperty("iiifserv_baseurl") + "download/" + type + "/v:" + "bdr:"
+                            + shortName + "::" + volPageStart + "-" + volPageEnd);
+                    vol.put("volnum", Integer.toString(volNum));
+                    map.put("bdr:" + shortName, vol);
+                }
+            }
         }
         return map;
     }

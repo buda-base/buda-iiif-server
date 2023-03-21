@@ -150,7 +150,7 @@ public class ConcurrentResourceService<T> {
             futures.remove(resId);
             return res;
         }
-        if (!skipCache) {
+        if (!skipCache && resT != null) {
             putInCache(resId, resT);
         }
         res.complete(resT);
