@@ -89,38 +89,49 @@ public class IIIFImageApiController {
     private static boolean useCacheForSameAsS3 = false;
 
     @RequestMapping(value = "/setcookie")
-    ResponseEntity<String> getCookie(HttpServletRequest req, HttpServletResponse response)
+    ResponseEntity<String> getCookie(HttpServletRequest req, HttpServletResponse response, @RequestParam(required = false, value="urlToken") final String urlToken, @RequestParam(required = false, value="redirect") final String redirect)
             throws JsonProcessingException, UnsupportedEncodingException {
         HttpHeaders headers = new HttpHeaders();
         headers.add("Content-Type", "application/json");
         ResponseEntity<String> resp = null;
-        boolean valid = false;
         String token = getToken(req.getHeader("Authorization"));
+        if (token == null) {
+            token = urlToken;
+        }
         if (token == null) {
             Cookie[] cks = req.getCookies();
             if (cks == null) {
-                return new ResponseEntity<>("{\"success\":" + false + "}", headers, HttpStatus.BAD_REQUEST);
+                return new ResponseEntity<>("{\"success\": false}", headers, HttpStatus.BAD_REQUEST);
             }
             for (Cookie ck : cks) {
                 if (ck.getName().equals(AuthProps.getProperty("cookieKey"))) {
                     // invalidates cookie if present and token is null
                     ck.setMaxAge(0);
                     response.addCookie(ck);
-                    return new ResponseEntity<>("{\"success\":" + true + "}", headers, HttpStatus.OK);
+                    if (redirect != null) {
+                        headers.add("Location", redirect);
+                        return new ResponseEntity<>("{\"success\": true}", headers, HttpStatus.FOUND);
+                    } else {
+                        return new ResponseEntity<>("{\"success\": true}", headers, HttpStatus.OK);
+                    }
                 }
             }
-            return new ResponseEntity<>("{\"success\":" + valid + "}", headers, HttpStatus.FORBIDDEN);
+            return new ResponseEntity<>("{\"success\": false}", headers, HttpStatus.FORBIDDEN);
         }
-        TokenValidation tkVal = new TokenValidation(token);
-        valid = tkVal.isValid();
-        if (valid) {
-            Cookie c = new Cookie(AuthProps.getProperty("cookieKey"), URLEncoder.encode(token, "UTF-8"));
+        final TokenValidation tkVal = new TokenValidation(token);
+        if (tkVal.isValid()) {
+            final Cookie c = new Cookie(AuthProps.getProperty("cookieKey"), URLEncoder.encode(token, "UTF-8"));
             c.setMaxAge(computeExpires(tkVal));
             c.setHttpOnly(true);
             response.addCookie(c);
-            resp = new ResponseEntity<>("{\"success\":" + valid + "}", headers, HttpStatus.OK);
+            if (redirect != null) {
+                headers.add("Location", redirect);
+                return new ResponseEntity<>("{\"success\": true}", headers, HttpStatus.FOUND);
+            } else {
+                return new ResponseEntity<>("{\"success\": true}", headers, HttpStatus.OK);
+            }
         } else {
-            resp = new ResponseEntity<>("{\"success\":" + valid + "}", headers, HttpStatus.FORBIDDEN);
+            resp = new ResponseEntity<>("{\"success\": false}", headers, HttpStatus.FORBIDDEN);
         }
         return resp;
     }
