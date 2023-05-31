@@ -101,7 +101,7 @@ public class IIIFImageApiController {
         if (token == null) {
             Cookie[] cks = req.getCookies();
             if (cks == null) {
-                return new ResponseEntity<>("{\"success\": false}", headers, HttpStatus.BAD_REQUEST);
+                return new ResponseEntity<>("{\"success\": false, \"error\": \"missing cookie\"}", headers, HttpStatus.BAD_REQUEST);
             }
             for (Cookie ck : cks) {
                 if (ck.getName().equals(AuthProps.getProperty("cookieKey"))) {
@@ -131,7 +131,7 @@ public class IIIFImageApiController {
                 return new ResponseEntity<>("{\"success\": true}", headers, HttpStatus.OK);
             }
         } else {
-            resp = new ResponseEntity<>("{\"success\": false}", headers, HttpStatus.FORBIDDEN);
+            resp = new ResponseEntity<>("{\"success\": false, \"error\": \"invalid token\"}", headers, HttpStatus.FORBIDDEN);
         }
         return resp;
     }
