@@ -123,6 +123,8 @@ public class TokenController {
         String test = GeoLocation.getCountryCode(ipAddress);
         rootNode.put("inChina", test == null || "CN".equalsIgnoreCase(test));
         rootNode.put("isAdmin", acc.isAdmin());
+        rootNode.put("isEditor", acc.isAdmin());
+        rootNode.put("isContributor", acc.isContributor());
         return new ResponseEntity<StreamingResponseBody>(IIIFImageApiController.streamingResponseFrom(mapper.writeValueAsString(rootNode)),
                 headers, HttpStatus.OK);
         

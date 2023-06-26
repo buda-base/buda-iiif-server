@@ -37,4 +37,24 @@ public class APIKeyNormalAccessInfo implements AccessInfo {
         return false;
     }
 
+    @Override
+    public boolean isEditor() {
+        return false;
+    }
+
+    @Override
+    public boolean isContributor() {
+        return false;
+    }
+
+    @Override
+    public String getId() {
+        return "65ad85e7-e248-4983-be55-33bdd4379d5a";
+    }
+
+    @Override
+    public boolean hasEndpointAccess() {
+        return false;
+    }
+
 }
