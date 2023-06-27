@@ -114,8 +114,12 @@ public class TokenController {
         rootNode.put("access", acc.toString());
         if (acc instanceof AccessInfoAuthImpl) {
             List<String> personalAccessL = RdfAuthModel.getPersonalAccess(RdfConstants.AUTH_RESOURCE_BASE + ((AccessInfoAuthImpl) acc).getUser().getUserId());
-            ArrayNode an = mapper.valueToTree(personalAccessL);
-            rootNode.putArray("personalAccess").addAll(an);
+            if (personalAccessL == null) {
+                rootNode.putNull("personalAccess");
+            } else {
+                ArrayNode an = mapper.valueToTree(personalAccessL);
+                rootNode.putArray("personalAccess").addAll(an);
+            }
         }
         final String ipAddress = request.getHeader(GeoLocation.HEADER_NAME);
         rootNode.put("ip", ipAddress);
