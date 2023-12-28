@@ -73,11 +73,11 @@ public class HeaderFilter implements Filter {
             HttpServletResponse response = (HttpServletResponse) res;
             response.setHeader("Access-Control-Allow-Origin", orig);
             response.setHeader("Access-Control-Allow-Headers",
-                    "Origin, Authorization, Keep-Alive, User-Agent, If-Modified-Since, If-None-Match, Cache-Control");
+                    "Origin, Authorization, Keep-Alive, User-Agent, If-Modified-Since, If-None-Match, Cache-Control, Accept-Encoding");
             response.setHeader("Access-Control-Allow-Credentials", "true");
             response.setHeader("Access-Control-Allow-Methods", "GET, POST, HEAD, OPTIONS");
             response.setHeader("Access-Control-Expose-Headers",
-                    "Cache-Control,ETag, Last-Modified, Content-Type, Cache-Control, Vary, Access-Control-Max-Age, Content-Disposition");
+                    "Cache-Control,ETag, Last-Modified, Content-Type, Cache-Control, Vary, Access-Control-Max-Age, Content-Disposition, Content-Encoding");
             chain.doFilter(req, res);
         } catch (IOException | ServletException e) {
             log.error("Header filter failed ! Message: " + e.getMessage());
