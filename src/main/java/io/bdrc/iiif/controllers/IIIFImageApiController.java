@@ -1,6 +1,8 @@
 package io.bdrc.iiif.controllers;
 
 import java.io.IOException;
+
+import static io.bdrc.iiif.resolver.AppConstants.BDR;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
@@ -55,6 +57,7 @@ import io.bdrc.iiif.core.EHServerCache;
 import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.iiif.exceptions.InvalidParametersException;
 import io.bdrc.iiif.exceptions.UnsupportedFormatException;
+import io.bdrc.iiif.image.service.ImageGroupInfoService;
 import io.bdrc.iiif.image.service.ImageInfoListService;
 import io.bdrc.iiif.image.service.ImageProviderService;
 import io.bdrc.iiif.image.service.ImageService;
@@ -74,6 +77,7 @@ import io.bdrc.iiif.model.SizeRequest;
 import io.bdrc.iiif.model.TileInfo;
 import io.bdrc.iiif.resolver.AccessType;
 import io.bdrc.iiif.resolver.IdentifierInfo;
+import io.bdrc.iiif.resolver.ImageGroupInfo;
 import io.bdrc.iiif.resolver.ImageInfo;
 
 @RestController
@@ -154,6 +158,38 @@ public class IIIFImageApiController {
         response.sendRedirect(redirectUrl);
     }
     
+    public boolean likelyHasIntroImages(List<ImageInfo> iil, final String i_qname) {
+        if (i_qname.startsWith("bdr:I1NLM") || i_qname.startsWith("bdr:I1FPL") || i_qname.startsWith("bdr:I1FEMC"))
+            return false;
+        if (iil.size() < 2)
+            return false;
+        // case for more recent images
+        if (iil.get(0).width == 2550 && iil.get(1).width == 2550 && iil.get(0).height == 3300 && iil.get(1).height == 3300)
+            return true;
+        // if not tiffs, return false
+        if (!iil.get(0).filename.toLowerCase().endsWith("tiff") && !iil.get(0).filename.toLowerCase().endsWith("tif"))
+            return false;
+        if (!iil.get(1).filename.toLowerCase().endsWith("tiff") && !iil.get(1).filename.toLowerCase().endsWith("tif"))
+            return false;
+        // if wrong format:
+        if (iil.get(0).width > iil.get(0).height)
+            return false;
+        // might have some false positives...
+        return true;
+    }
+    
+    public Integer getBestThumbnailIdx(final List<ImageInfo> iil, final String i_qname) {
+        int idx = 0;
+        if (likelyHasIntroImages(iil, i_qname))
+            idx = 2;
+        while (idx < iil.size()) {
+            final ImageInfo ii = iil.get(idx);
+            if (ii.size == null || ii.size < 2000000)
+                return idx;
+        }
+        return null;
+    }
+    
     @RequestMapping(value = "/{identifier}/{region}/{size}/{rotation}/{quality}.{format}")
     public ResponseEntity<StreamingResponseBody> getImageRepresentation(@PathVariable String identifier, @PathVariable final String region,
             @PathVariable final String size, @PathVariable final String rotation, @PathVariable final String quality,
@@ -175,11 +211,27 @@ public class IIIFImageApiController {
         String[] doubleColonParts = decodedIdentifier.split("::");
         if (doubleColonParts.length > 1) {
             if (doubleColonParts[1].equals("thumbnail")) {
-                final String w_qname = doubleColonParts[0];
-                final String thumbnailUri = ThumbnailService.Instance.getAsync(w_qname).get();
+                String thumbnailUri = null;
                 final String iiifprefix = Application.getProperty("iiifprefix");
-                if (thumbnailUri == null)
-                    throw new IIIFException(404, 5000, "could not find thumbnail for "+w_qname);
+                if (doubleColonParts[0].startsWith("bdr:W")) {
+                    final String w_qname = doubleColonParts[0];
+                    thumbnailUri = ThumbnailService.Instance.getAsync(w_qname).get();
+                    if (thumbnailUri == null)
+                        throw new IIIFException(404, 5000, "could not find thumbnail for "+w_qname);
+                } else if (doubleColonParts[0].startsWith("bdr:I")) {
+                    final String i_qname = doubleColonParts[0];
+                    final ImageGroupInfo igi = ImageGroupInfoService.Instance.getAsync(i_qname).get();
+                    if (igi == null)
+                        throw new IIIFException(404, 5000, "could not find info for image group "+i_qname);
+                    final String w_lname = igi.imageInstanceUri.substring(BDR.length());
+                    final List<ImageInfo> imglist = ImageInfoListService.Instance.getAsync(ImageInfoListService.getKey(w_lname, i_qname.substring(4))).get();
+                    if (imglist == null)
+                        throw new IIIFException(404, 5000, "could not find image list for "+i_qname);
+                    final Integer thumbnailIdx = getBestThumbnailIdx(imglist, i_qname);
+                    if (thumbnailIdx == null)
+                        throw new IIIFException(404, 5000, "could not find thumbnail for "+i_qname);
+                    thumbnailUri = Application.getProperty("iiifprefix")+i_qname+"::"+imglist.get(thumbnailIdx).filename;
+                }
                 if ("dflt".equals(format)) {
                     if (img.endsWith("tif") || img.endsWith("tiff"))
                         format = "png";
@@ -340,10 +392,48 @@ public class IIIFImageApiController {
         long maxAge = Long.parseLong(Application.getProperty("maxage"));
         ObjectMapper objectMapper = new ObjectMapper();
         String img = "";
+        final HttpHeaders headers = new HttpHeaders();
+        String decodedIdentifier = URLDecoder.decode(identifier, "UTF-8");
+        String[] doubleColonParts = decodedIdentifier.split("::");
         boolean staticImg = false;
-        if (identifier.split("::").length > 1) {
-            img = identifier.split("::")[1];
-            staticImg = identifier.split("::")[0].trim().equals("static");
+        if (doubleColonParts.length > 1) {
+            if (doubleColonParts[1].equals("thumbnail")) {
+                String thumbnailUri = null;
+                final String iiifprefix = Application.getProperty("iiifprefix");
+                if (doubleColonParts[0].startsWith("bdr:W")) {
+                    final String w_qname = doubleColonParts[0];
+                    thumbnailUri = ThumbnailService.Instance.getAsync(w_qname).get();
+                    if (thumbnailUri == null)
+                        throw new IIIFException(404, 5000, "could not find thumbnail for "+w_qname);
+                } else if (doubleColonParts[0].startsWith("bdr:I")) {
+                    final String i_qname = doubleColonParts[0];
+                    final ImageGroupInfo igi = ImageGroupInfoService.Instance.getAsync(i_qname).get();
+                    if (igi == null)
+                        throw new IIIFException(404, 5000, "could not find info for image group "+i_qname);
+                    final String w_lname = igi.imageInstanceUri.substring(BDR.length());
+                    final List<ImageInfo> imglist = ImageInfoListService.Instance.getAsync(ImageInfoListService.getKey(w_lname, i_qname.substring(4))).get();
+                    if (imglist == null)
+                        throw new IIIFException(404, 5000, "could not find image list for "+i_qname);
+                    final Integer thumbnailIdx = getBestThumbnailIdx(imglist, i_qname);
+                    if (thumbnailIdx == null)
+                        throw new IIIFException(404, 5000, "could not find thumbnail for "+i_qname);
+                    thumbnailUri = Application.getProperty("iiifprefix")+i_qname+"::"+imglist.get(thumbnailIdx).filename;
+                }
+                if (thumbnailUri.startsWith(iiifprefix)) {
+                    decodedIdentifier = URLDecoder.decode(thumbnailUri.substring(iiifprefix.length()), "UTF-8");
+                    doubleColonParts = decodedIdentifier.split("::");
+                    headers.add("Link", "<"+thumbnailUri+"/info.json>; rel=\"canonical\"");
+                } else {
+                    try {
+                        headers.setLocation(new URI(thumbnailUri+"/info.json"));
+                    } catch (URISyntaxException e) {
+                        // can't really happen
+                    }
+                    return ResponseEntity.status(301).headers(headers).body(null);
+                }
+            }
+            img = doubleColonParts[1];
+            staticImg = doubleColonParts[0].trim().equals("static");
         }
         log.info("Entering endpoint getInfo for {}", identifier);
         boolean unAuthorized = false;
@@ -367,7 +457,6 @@ public class IIIFImageApiController {
         if (pngOutput(identifier)) {
             info.setPreferredFormats(pngHint);
         }
-        HttpHeaders headers = new HttpHeaders();
         try {
             headers.setDate("Last-Modified", getImageModificationDate(identifier).toEpochMilli());
         } catch (IIIFException e) {
