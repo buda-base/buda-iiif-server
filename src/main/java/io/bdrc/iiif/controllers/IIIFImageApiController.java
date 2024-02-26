@@ -230,6 +230,7 @@ public class IIIFImageApiController {
                     final Integer thumbnailIdx = getBestThumbnailIdx(imglist, i_qname);
                     if (thumbnailIdx == null)
                         throw new IIIFException(404, 5000, "could not find thumbnail for "+i_qname);
+                    doubleColonParts[1] = imglist.get(thumbnailIdx).filename;
                     thumbnailUri = Application.getProperty("iiifprefix")+i_qname+"::"+imglist.get(thumbnailIdx).filename;
                 }
                 if ("dflt".equals(format)) {
