@@ -417,6 +417,7 @@ public class IIIFImageApiController {
                     final Integer thumbnailIdx = getBestThumbnailIdx(imglist, i_qname);
                     if (thumbnailIdx == null)
                         throw new IIIFException(404, 5000, "could not find thumbnail for "+i_qname);
+                    doubleColonParts[1] = imglist.get(thumbnailIdx).filename;
                     thumbnailUri = Application.getProperty("iiifprefix")+i_qname+"::"+imglist.get(thumbnailIdx).filename;
                 }
                 if (thumbnailUri.startsWith(iiifprefix)) {
@@ -439,7 +440,7 @@ public class IIIFImageApiController {
         boolean unAuthorized = false;
         IdentifierInfo idi = new IdentifierInfo(identifier);
         ImageService info = new ImageService(Application.getProperty("iiifserv_baseurl") + identifier);
-        ImageInfo imgInf = idi.getImageInfo(idi.imageName);
+        ImageInfo imgInf = idi.getImageInfo(doubleColonParts[1]);
         if (imgInf == null) {
             log.error("couldn't find {} in image list");
             return new ResponseEntity<>("Resource was not found (image not listed) for identifier " + identifier,
