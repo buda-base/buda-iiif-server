@@ -6,6 +6,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -83,6 +84,14 @@ public class ArchiveBuilder {
         buildPdf(al, inf, idf, output, origin, os, null);
     }
     
+    public static final List<String> imageLastFour = Arrays.asList(new String[] {".jpg", "jpeg", ".tif", "tiff", ".png"});
+    public static boolean isLikelyImage(final String fname) {
+        if (fname.length() < 4)
+            return false;
+        final String lastFour = fname.substring(fname.length()-4).toLowerCase();
+        return imageLastFour.contains(lastFour);
+    }
+    
     public static void buildPdf(AccessLevel al, IdentifierInfo inf, Identifier idf, String output, String origin, OutputStream os, Map<String, Double> jobs)
             throws IIIFException {
         long deb = System.currentTimeMillis();
@@ -107,7 +116,7 @@ public class ArchiveBuilder {
             int nbImagesTried = 1;
             int nbImagesAdded = 1;
             for (ImageInfo imgInf : imgInfo) {
-                if (imgInf.size == null || imgInf.size <= limitsize) {
+                if (isLikelyImage(imgInf.filename) && (imgInf.size == null || imgInf.size <= limitsize)) {
                     log.debug("adding {}", imgInf.filename);
                     // ArchiveImageProducer tmp = null;
                     Object[] obj = ArchiveImageProducer.getImageInputStream(inf, imgInf.filename, origin);
