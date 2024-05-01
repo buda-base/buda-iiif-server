@@ -55,7 +55,7 @@ public class ImageGroupInfo {
 
     private static final Logger logger = LoggerFactory.getLogger(ImageGroupInfo.class);
 
-    static final Property volumeOfP = ResourceFactory.createProperty(Models.BDO + "volumeOf");
+    static final Property instanceHasVolumeP = ResourceFactory.createProperty(Models.BDO + "instanceHasVolume");
     static final Property nbVolumesP = ResourceFactory.createProperty(Models.BDO + "numberOfVolumes");
     static final Property adminAboutP = ResourceFactory.createProperty(Models.ADM + "adminAbout");
     static final Property accessP = ResourceFactory.createProperty(Models.ADM + "access");
@@ -76,12 +76,12 @@ public class ImageGroupInfo {
             this.imageGroup = volumeId;
         }
         final Resource ig = m.getResource(Models.BDR+this.imageGroup);
-        final Resource ii = ig.getPropertyResourceValue(volumeOfP);
-        if (ii == null) {
+        final ResIterator iiL = m.listSubjectsWithProperty(instanceHasVolumeP, ig);
+        if (!iiL.hasNext()) {
             logger.error("can't find image instance in model");
             return;
         }
-        
+        final Resource ii = iiL.next();
         final ResIterator admAboutiiIt = m.listResourcesWithProperty(adminAboutP, ii);
         if (!admAboutiiIt.hasNext()) {
             logger.error("can't find admin data in model");
