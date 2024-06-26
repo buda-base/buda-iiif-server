@@ -213,7 +213,7 @@ public class IIIFImageApiController {
             if (doubleColonParts[1].equals("thumbnail")) {
                 String thumbnailUri = null;
                 final String iiifprefix = Application.getProperty("iiifprefix");
-                if (doubleColonParts[0].startsWith("bdr:W")) {
+                if (doubleColonParts[0].startsWith("bdr:W") || doubleColonParts[0].startsWith("bdr:MW")) {
                     final String w_qname = doubleColonParts[0];
                     thumbnailUri = ThumbnailService.Instance.getAsync(w_qname).get();
                     if (thumbnailUri == null)
@@ -401,7 +401,7 @@ public class IIIFImageApiController {
             if (doubleColonParts[1].equals("thumbnail")) {
                 String thumbnailUri = null;
                 final String iiifprefix = Application.getProperty("iiifprefix");
-                if (doubleColonParts[0].startsWith("bdr:W")) {
+                if (doubleColonParts[0].startsWith("bdr:W") || doubleColonParts[0].startsWith("bdr:MW")) {
                     final String w_qname = doubleColonParts[0];
                     thumbnailUri = ThumbnailService.Instance.getAsync(w_qname).get();
                     if (thumbnailUri == null)
@@ -439,8 +439,8 @@ public class IIIFImageApiController {
         }
         log.info("Entering endpoint getInfo for {}", identifier);
         boolean unAuthorized = false;
-        IdentifierInfo idi = new IdentifierInfo(identifier);
-        ImageService info = new ImageService(Application.getProperty("iiifserv_baseurl") + identifier);
+        IdentifierInfo idi = new IdentifierInfo(decodedIdentifier);
+        ImageService info = new ImageService(Application.getProperty("iiifserv_baseurl") + decodedIdentifier);
         ImageInfo imgInf = idi.getImageInfo(doubleColonParts[1]);
         if (imgInf == null) {
             log.error("couldn't find {} in image list");
@@ -456,7 +456,7 @@ public class IIIFImageApiController {
         if (unAuthorized && serviceInfo.authEnabled() && serviceInfo.hasValidProperties()) {
             info.addService(serviceInfo);
         }
-        if (pngOutput(identifier)) {
+        if (pngOutput(decodedIdentifier)) {
             info.setPreferredFormats(pngHint);
         }
         try {
