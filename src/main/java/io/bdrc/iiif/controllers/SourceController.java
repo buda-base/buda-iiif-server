@@ -5,8 +5,8 @@ import java.io.InputStream;
 import java.net.URLConnection;
 import java.util.concurrent.ExecutionException;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.apache.http.client.ClientProtocolException;
 import org.slf4j.Logger;

@@ -25,11 +25,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
-import com.sun.media.jai.codec.ImageCodec;
-import com.sun.media.jai.codec.ImageEncodeParam;
-import com.sun.media.jai.codec.ImageEncoder;
-import com.sun.media.jai.codec.PNGEncodeParam;
-
 import ar.com.hjg.pngj.ImageInfo;
 import ar.com.hjg.pngj.ImageLineByte;
 import ar.com.hjg.pngj.PngWriter;
@@ -187,9 +182,7 @@ public class WriteImageProcess {
 
     public static void pngToOS(OutputStream os, BufferedImage bi) throws IOException {
         // this is pretty slow
-        ImageEncodeParam param = PNGEncodeParam.getDefaultEncodeParam(bi);
-        ImageEncoder encoder = ImageCodec.createImageEncoder("PNG", os, param);
-        encoder.encode(bi);
+    	ImageIO.write(bi, "PNG", os);
     }
     
     

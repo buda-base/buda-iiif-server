@@ -10,10 +10,8 @@ import java.awt.image.ColorConvertOp;
 import java.awt.image.ColorModel;
 import java.awt.image.ComponentColorModel;
 import java.awt.image.DataBufferByte;
-import java.awt.image.DataBufferInt;
 import java.awt.image.MultiPixelPackedSampleModel;
 import java.awt.image.SampleModel;
-import java.awt.image.SinglePixelPackedSampleModel;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -43,10 +41,6 @@ import org.apache.commons.io.IOUtils;
 import org.w3c.dom.NodeList;
 
 import com.google.common.collect.Streams;
-import com.sun.media.jai.codec.ImageCodec;
-import com.sun.media.jai.codec.ImageEncodeParam;
-import com.sun.media.jai.codec.ImageEncoder;
-import com.sun.media.jai.codec.PNGEncodeParam;
 import com.twelvemonkeys.imageio.plugins.jpeg.JPEGImageReader;
 import com.twelvemonkeys.imageio.plugins.jpeg.JPEGImageWriter;
 
@@ -330,15 +324,10 @@ public class ImageTest {
         p.setDestinationType(its);
 
         BufferedImage bi = r.read(0, p);
-
-        ImageEncodeParam param = PNGEncodeParam.getDefaultEncodeParam(bi);
-        String format = "PNG";
         
         FileOutputStream out = new FileOutputStream(new File("testpng-sun.png"));
         long deb1 = System.currentTimeMillis();
-        ImageEncoder encoder = ImageCodec.createImageEncoder(format, out, param);
-        System.out.println("using encoder: " + encoder.toString());
-        encoder.encode(bi);
+        ImageIO.write(bi, "PNG", out);
         out.flush();
         out.close();
         System.out.println(System.currentTimeMillis()-deb1);

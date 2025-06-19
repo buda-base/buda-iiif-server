@@ -6,8 +6,8 @@ import java.time.Instant;
 import java.util.Calendar;
 import java.util.concurrent.TimeUnit;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.apache.jena.atlas.logging.Log;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,7 +31,6 @@ import io.bdrc.iiif.exceptions.IIIFException;
 import io.bdrc.iiif.exceptions.InvalidParametersException;
 import io.bdrc.iiif.exceptions.UnsupportedFormatException;
 import io.bdrc.iiif.image.service.ImageService;
-import io.bdrc.iiif.image.service.ReadImageProcess;
 import io.bdrc.iiif.model.ImageApiProfile.Format;
 import io.bdrc.iiif.model.ImageApiProfile.Quality;
 import io.bdrc.iiif.model.ImageApiSelector;
