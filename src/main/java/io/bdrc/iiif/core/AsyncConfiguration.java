@@ -19,7 +19,7 @@ public class AsyncConfiguration implements WebMvcConfigurer {
   @Value("${iiifserv.async.queue-capacity:32}")
   private int queueCapacity;
 
-  @Value("${iiifserv.async.priority-worker-count:2}")
+  @Value("${iiifserv.async.priority-worker-count:4}")
   private int priorityWorkerCount;
 
   @Value("${iiifserv.async.priority-queue-capacity:16}")

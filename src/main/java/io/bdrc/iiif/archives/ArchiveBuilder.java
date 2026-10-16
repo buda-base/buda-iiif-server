@@ -9,9 +9,11 @@ import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -47,7 +49,9 @@ public class ArchiveBuilder {
 
     public final static Logger log = LoggerFactory.getLogger(ArchiveBuilder.class.getName());
 
-    public static ExecutorService service = Executors.newFixedThreadPool(50);
+    public static ExecutorService service = new ThreadPoolExecutor(
+            8, 8, 0L, TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(32),
+            new ThreadPoolExecutor.AbortPolicy());
     
     public static Map<String, Double> pdfjobs = new ConcurrentHashMap<>();
     public static Map<String, Double> zipjobs = new ConcurrentHashMap<>();
@@ -125,12 +129,13 @@ public class ArchiveBuilder {
                         log.error("couldn't find {}", imgInf.filename);
                     } else {
                         // unfortunately it seems there's no way around copying in memory with iText
-                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                        IOUtils.copy(bmg, baos);
-                        bmg.close();
-                        baos.flush();
-                        ImageData imageData = ImageDataFactory.create(baos.toByteArray());
-                        baos.close();
+                        ImageData imageData;
+                        try (InputStream imageInput = bmg;
+                                ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+                            IOUtils.copy(imageInput, baos);
+                            baos.flush();
+                            imageData = ImageDataFactory.create(baos.toByteArray());
+                        }
                         Image pdfImg = new Image(imageData);
                         doc.addNewPage(new PageSize(imgInf.getWidth(), imgInf.getHeight()));
                         //PdfPage page = doc.getPage(k);
@@ -224,8 +229,9 @@ public class ArchiveBuilder {
                 }
                 ZipEntry zipEntry = new ZipEntry(imgInf.filename);
                 zipOut.putNextEntry(zipEntry);
-                IOUtils.copy(bmg, zipOut);
-                bmg.close();
+                try (InputStream imageInput = bmg) {
+                    IOUtils.copy(imageInput, zipOut);
+                }
                 zipOut.closeEntry();
                 zipOut.flush();
                 os.flush();

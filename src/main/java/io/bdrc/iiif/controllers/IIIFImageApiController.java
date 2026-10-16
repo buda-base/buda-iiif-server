@@ -358,9 +358,11 @@ public class IIIFImageApiController {
         return new StreamingResponseBody() {
             @Override
             public void writeTo(final OutputStream os) throws IOException {
-                IOUtils.copy(is,  os);
-                is.close();
-                os.close();
+                // S3 object streams hold a pooled HTTP connection until closed.
+                // Always release it, including when the client disconnects mid-copy.
+                try (InputStream input = is) {
+                    IOUtils.copy(input, os);
+                }
             }
         };
     }

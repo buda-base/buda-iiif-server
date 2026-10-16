@@ -2,6 +2,7 @@ package io.bdrc.iiif.core;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.RejectedExecutionException;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -13,12 +14,18 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import com.amazonaws.SdkClientException;
+
 import io.bdrc.auth.AccessInfo;
 
 @RestControllerAdvice
 public class OverloadExceptionHandler {
 
-    @ExceptionHandler(TaskRejectedException.class)
+    @ExceptionHandler({
+            TaskRejectedException.class,
+            RejectedExecutionException.class,
+            SdkClientException.class
+    })
     public ResponseEntity<Map<String, String>> serviceOverloaded(HttpServletRequest request) {
         HttpHeaders headers = new HttpHeaders();
         headers.setCacheControl(CacheControl.noStore());
