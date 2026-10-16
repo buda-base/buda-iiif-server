@@ -11,6 +11,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -51,10 +52,23 @@ public class PriorityAsyncTaskExecutorTest {
 
     @Test
     public void overloadResponseIsServiceUnavailableAndRetryable() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        ResponseEntity<?> response = new OverloadExceptionHandler().serviceOverloaded(request);
+
         assertEquals(HttpStatus.SERVICE_UNAVAILABLE,
-                new OverloadExceptionHandler().serviceOverloaded().getStatusCode());
-        assertEquals("5",
-                new OverloadExceptionHandler().serviceOverloaded().getHeaders().getFirst("Retry-After"));
+                response.getStatusCode());
+        assertEquals("5", response.getHeaders().getFirst("Retry-After"));
+        assertEquals("Please log in for priority access, or retry shortly",
+                new OverloadExceptionHandler().serviceOverloaded(request).getBody().get("message"));
+    }
+
+    @Test
+    public void authenticatedOverloadResponseDoesNotAskUserToLogIn() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setAttribute("access", APIKeyNormalAccessInfo.INSTANCE);
+
+        assertEquals("Please retry shortly",
+                new OverloadExceptionHandler().serviceOverloaded(request).getBody().get("message"));
     }
 
     private static void bindRequest(Object access) {
