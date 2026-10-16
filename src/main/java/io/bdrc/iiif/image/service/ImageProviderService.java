@@ -36,6 +36,7 @@ public class ImageProviderService extends ConcurrentCacheAccessService {
     public static final ImageProviderService InstanceArchive = new ImageProviderService(bucketNameArchive, "archive:");
     public String bucketName;
     private static AmazonS3ClientBuilder clientBuilder = null;
+    private static volatile AmazonS3 s3Client = null;
     private String cachePrefix;
     boolean isS3 = false;
     
@@ -54,7 +55,17 @@ public class ImageProviderService extends ConcurrentCacheAccessService {
     }
 
     public static AmazonS3 getClient() {
-        return clientBuilder.build();
+        AmazonS3 client = s3Client;
+        if (client == null) {
+            synchronized (ImageProviderService.class) {
+                client = s3Client;
+                if (client == null) {
+                    client = clientBuilder.build();
+                    s3Client = client;
+                }
+            }
+        }
+        return client;
     }
 
     public static String getKey(final IdentifierInfo idf) {

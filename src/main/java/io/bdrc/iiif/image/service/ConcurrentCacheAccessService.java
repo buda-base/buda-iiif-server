@@ -7,6 +7,8 @@ import static io.bdrc.iiif.resolver.AppConstants.BDR_len;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,12 +19,22 @@ public class ConcurrentCacheAccessService {
 
     static Logger logger = LoggerFactory.getLogger(ConcurrentResourceService.class);
     
-    int INCACHE = 1;
-    int ERROR = 0;
+    static final long DEFAULT_WAIT_TIMEOUT_SECONDS = 30;
 
-    Map<String, CompletableFuture<Integer>> futuresCache = new ConcurrentHashMap<>();
+    final int INCACHE = 1;
+    final int ERROR = 0;
+
+    final Map<String, CompletableFuture<Integer>> futuresCache = new ConcurrentHashMap<>();
+    private final long waitTimeout;
+    private final TimeUnit waitTimeoutUnit;
 
     public ConcurrentCacheAccessService() {
+        this(DEFAULT_WAIT_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+    }
+
+    ConcurrentCacheAccessService(final long waitTimeout, final TimeUnit waitTimeoutUnit) {
+        this.waitTimeout = waitTimeout;
+        this.waitTimeoutUnit = waitTimeoutUnit;
     }
     
     boolean isInCache(final String resId) {
@@ -49,9 +61,9 @@ public class ConcurrentCacheAccessService {
      * 
      */
     public CompletableFuture<Integer> ensureCacheReady(String resId) {
-        resId = normalizeId(resId);
-        if (isInCache(resId)) {
-            logger.debug("found cache for {}", resId);
+        final String normalizedResId = normalizeId(resId);
+        if (isInCache(normalizedResId)) {
+            logger.debug("found cache for {}", normalizedResId);
             CompletableFuture<Integer> resCached = new CompletableFuture<>();
             resCached.complete(INCACHE);
             return resCached;
@@ -59,25 +71,33 @@ public class ConcurrentCacheAccessService {
         // unintuitive way to perform the (necessary) atomic operation in the
         // list
         CompletableFuture<Integer> res = new CompletableFuture<>();
-        CompletableFuture<Integer> resFromList = futuresCache.putIfAbsent(resId, res);
+        CompletableFuture<Integer> resFromList = futuresCache.putIfAbsent(normalizedResId, res);
         if (resFromList != null) {
             // this is the case of all the threads trying to access the resource
             // except the first one
-            return resFromList;
+            return resFromList.orTimeout(waitTimeout, waitTimeoutUnit).whenComplete((value, error) -> {
+                if (error instanceof TimeoutException) {
+                    logger.error("timed out waiting for cache resource {}", normalizedResId);
+                    futuresCache.remove(normalizedResId, resFromList);
+                }
+            });
         }
         try {
-            putInCache(resId);
-        } catch (IIIFException e) {
-            res.completeExceptionally(e);
-            // this means that each failed fetch will not be saved and the next
-            // API call will trigger a new one... this could be optimized by
-            // doing
-            // that every, say 10mn, so that we don't do too many external calls
-            futuresCache.remove(resId);
-            return res;
+            putInCache(normalizedResId);
+            res.complete(INCACHE);
+        } catch (Throwable error) {
+            // Completing the future is essential: otherwise every later request for
+            // this resource waits forever on an entry left behind by an unchecked
+            // exception or VM error.
+            res.completeExceptionally(error);
+            if (error instanceof Error) {
+                throw (Error) error;
+            }
+        } finally {
+            // Remove only our own future, as a timed-out waiter may already have
+            // installed a replacement fetch for this resource.
+            futuresCache.remove(normalizedResId, res);
         }
-        res.complete(INCACHE);
-        futuresCache.remove(resId);
         return res;
     }
 
