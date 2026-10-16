@@ -308,24 +308,20 @@ public class IIIFImageApiController {
                 s3key = ImageProviderService.getKey(idi);
                 service = ImageProviderService.InstanceArchive;
             }
-            InputStream is;
-            if (useCacheForSameAsS3) {
-                try {
-                    service.ensureCacheReady(s3key).get();
-                } catch (InterruptedException | ExecutionException e) {
-                    throw new IIIFException(404, 5000, e);
-                }
-                is = service.getFromCache(s3key);
-            } else {
-                if (service.isInCache(s3key)) {
-                    is = service.getFromCache(s3key);
-                } else {
-                    is = service.getNoCache(s3key);
-                }
-            }
-            Application.logPerf("got the bytes in {} ms for {}", (System.currentTimeMillis() - deb1), identifier);
             ImageMetrics.imageCount(ImageMetrics.IMG_CALLS_COMMON, (String) request.getAttribute("origin"));
-            return ResponseEntity.ok().headers(headers).body(streamingResponseFrom(is));
+            return ResponseEntity.ok().headers(headers).body(streamingResponseFrom(() -> {
+                InputStream input;
+                if (useCacheForSameAsS3) {
+                    service.ensureCacheReady(s3key).get();
+                    input = service.getFromCache(s3key);
+                } else if (service.isInCache(s3key)) {
+                    input = service.getFromCache(s3key);
+                } else {
+                    input = service.getNoCache(s3key);
+                }
+                Application.logPerf("got the bytes in {} ms for {}", (System.currentTimeMillis() - deb1), identifier);
+                return input;
+            }));
         }
         
         final StreamingResponseBody stream = new StreamingResponseBody() {
@@ -355,13 +351,30 @@ public class IIIFImageApiController {
     }
 
     public static StreamingResponseBody streamingResponseFrom(final InputStream is) {
+        return streamingResponseFrom(() -> is);
+    }
+
+    @FunctionalInterface
+    interface InputStreamSupplier {
+        InputStream get() throws Exception;
+    }
+
+    static StreamingResponseBody streamingResponseFrom(final InputStreamSupplier supplier) {
         return new StreamingResponseBody() {
             @Override
             public void writeTo(final OutputStream os) throws IOException {
-                // S3 object streams hold a pooled HTTP connection until closed.
-                // Always release it, including when the client disconnects mid-copy.
-                try (InputStream input = is) {
+                // Acquire S3 streams only after this request has been admitted to its
+                // public or priority executor, then release the pooled connection even
+                // when the client disconnects mid-copy.
+                try (InputStream input = supplier.get()) {
                     IOUtils.copy(input, os);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IOException(e);
+                } catch (IOException | RuntimeException e) {
+                    throw e;
+                } catch (Exception e) {
+                    throw new IOException(e);
                 }
             }
         };
