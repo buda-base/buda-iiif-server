@@ -28,6 +28,8 @@ public class ImageProviderService extends ConcurrentCacheAccessService {
 
     private static final ClientConfiguration config = new ClientConfiguration().withConnectionTimeout(5000).withMaxConnections(100)
             .withMaxErrorRetry(5).withSocketTimeout(5000);
+    private static final ClientConfiguration archiveConfig = new ClientConfiguration().withConnectionTimeout(5000).withMaxConnections(16)
+            .withMaxErrorRetry(5).withSocketTimeout(5000);
     // TODO: get from config
     final static String bucketNameArchive = "archive.tbrc.org";
     final static String bucketNameStatic = "static-images.bdrc.io";
@@ -36,13 +38,17 @@ public class ImageProviderService extends ConcurrentCacheAccessService {
     public static final ImageProviderService InstanceArchive = new ImageProviderService(bucketNameArchive, "archive:");
     public String bucketName;
     private static AmazonS3ClientBuilder clientBuilder = null;
+    private static AmazonS3ClientBuilder archiveClientBuilder = null;
     private static volatile AmazonS3 s3Client = null;
+    private static volatile AmazonS3 archiveS3Client = null;
     private String cachePrefix;
     boolean isS3 = false;
     
     static {
-        if ("s3".equals(AuthProps.getProperty("imageSourceType")))
+        if ("s3".equals(AuthProps.getProperty("imageSourceType"))) {
             clientBuilder = AmazonS3ClientBuilder.standard().withRegion(AuthProps.getProperty("awsRegion")).withClientConfiguration(config);
+            archiveClientBuilder = AmazonS3ClientBuilder.standard().withRegion(AuthProps.getProperty("awsRegion")).withClientConfiguration(archiveConfig);
+        }
     }
             
 
@@ -62,6 +68,20 @@ public class ImageProviderService extends ConcurrentCacheAccessService {
                 if (client == null) {
                     client = clientBuilder.build();
                     s3Client = client;
+                }
+            }
+        }
+        return client;
+    }
+
+    public static AmazonS3 getArchiveClient() {
+        AmazonS3 client = archiveS3Client;
+        if (client == null) {
+            synchronized (ImageProviderService.class) {
+                client = archiveS3Client;
+                if (client == null) {
+                    client = archiveClientBuilder.build();
+                    archiveS3Client = client;
                 }
             }
         }
@@ -116,40 +136,43 @@ public class ImageProviderService extends ConcurrentCacheAccessService {
             return;
         final AmazonS3 s3Client = getClient();
         logger.info("fetching s3 key {}", s3key);
-        S3Object object = null;
         final String cacheKey = this.cachePrefix + s3key;
-        try {
-            object = s3Client.getObject(new GetObjectRequest(bucketName, s3key));
-            InputStream objectData = object.getObjectContent();
-            OutputStream os = EHServerCache.IIIF_IMG.getOs(cacheKey);
+        try (S3Object object = s3Client.getObject(new GetObjectRequest(bucketName, s3key));
+                InputStream objectData = object.getObjectContent();
+                OutputStream os = EHServerCache.IIIF_IMG.getOs(cacheKey)) {
             IOUtils.copy(objectData, os);
-            objectData.close();
-            object.close();
-            os.close();
-            EHServerCache.IIIF_IMG.outputDone(cacheKey);
         } catch (AmazonS3Exception e) {
-            if (e.getErrorCode().equals("NoSuchKey")) {
+            EHServerCache.IIIF_IMG.remove(cacheKey, true);
+            if ("NoSuchKey".equals(e.getErrorCode())) {
                 logger.error("NoSuchKey: {}", s3key);
-                EHServerCache.IIIF_IMG.remove(s3key, true);
                 throw new IIIFException(404, 5000, "image not available in our archive");
             } else {
-                EHServerCache.IIIF_IMG.remove(s3key, true);
                 throw new IIIFException(500, 5000, e);
             }
         } catch (IOException e) {
-            if (object != null) {
-                try {
-                    object.close();
-                } catch (IOException e1) {
-                    logger.error("error closing s3 object", e1);
-                }
-            }
-            EHServerCache.IIIF_IMG.remove(s3key, true);
+            EHServerCache.IIIF_IMG.remove(cacheKey, true);
             throw new IIIFException(500, 5000, e);
+        } catch (RuntimeException e) {
+            EHServerCache.IIIF_IMG.remove(cacheKey, true);
+            throw e;
+        }
+        try {
+            EHServerCache.IIIF_IMG.outputDone(cacheKey);
+        } catch (RuntimeException e) {
+            EHServerCache.IIIF_IMG.remove(cacheKey, true);
+            throw e;
         }
     }
     
     final public InputStream getNoCache(final String s3key) throws IIIFException {
+        return getNoCache(s3key, false);
+    }
+
+    final public InputStream getNoCacheForArchive(final String s3key) throws IIIFException {
+        return getNoCache(s3key, true);
+    }
+
+    private InputStream getNoCache(final String s3key, final boolean archive) throws IIIFException {
         if (!isS3) {
             String rootDir = AuthProps.getProperty("imageSourceDiskRootDir");
             try {
@@ -158,7 +181,7 @@ public class ImageProviderService extends ConcurrentCacheAccessService {
                 throw new IIIFException("can't find file "+rootDir+s3key);
             }
         }
-        final AmazonS3 s3Client = getClient();
+        final AmazonS3 s3Client = archive ? getArchiveClient() : getClient();
         logger.info("fetching s3 key {}", s3key);
         S3Object object = null;
         try {

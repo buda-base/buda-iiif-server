@@ -86,40 +86,31 @@ public class ImageInfoListService extends ConcurrentResourceService<List<ImageIn
         case Application.S3_SOURCE:
             final AmazonS3 s3Client = getClient();
             logger.info("fetching s3 key {}", s3key);
-            final S3Object object;
-            try {
-                object = s3Client.getObject(new GetObjectRequest(bucketName, s3key));
+            try (S3Object object = s3Client.getObject(new GetObjectRequest(bucketName, s3key));
+                    InputStream objectData = object.getObjectContent();
+                    GZIPInputStream gis = new GZIPInputStream(objectData)) {
+                final List<ImageInfo> imageList = om.readValue(gis, new TypeReference<List<ImageInfo>>() {
+                });
+                imageList.removeIf(imageInfo -> imageInfo.filename.endsWith("json"));
+                return imageList;
             } catch (AmazonS3Exception e) {
-                if (e.getErrorCode().equals("NoSuchKey")) {
+                if ("NoSuchKey".equals(e.getErrorCode())) {
                     logger.error("NoSuchKey: {}", s3key);
                     throw new IIIFException(404, 5000, "sorry, BDRC did not complete the data migration for this Work");
                 } else {
                     logger.error("S3 error on: {}", s3key);
                     throw new IIIFException(500, 5000, e);
                 }
-            }
-            final InputStream objectData = object.getObjectContent();
-            try {
-                final GZIPInputStream gis = new GZIPInputStream(objectData);
-                final List<ImageInfo> imageList = om.readValue(gis, new TypeReference<List<ImageInfo>>() {
-                });
-                gis.close();
-                objectData.close();
-                imageList.removeIf(imageInfo -> imageInfo.filename.endsWith("json"));
-                return imageList;
             } catch (IOException e) {
                 throw new IIIFException(500, 5000, e);
             }
         case Application.DISK_SOURCE:
-            try {
-                String rootDir = Application.getProperty("imageSourceDiskRootDir");
-                FileInputStream in = new FileInputStream(new File(rootDir + s3key));
-                final GZIPInputStream gis = new GZIPInputStream(in);
+            try (FileInputStream in = new FileInputStream(new File(
+                    Application.getProperty("imageSourceDiskRootDir") + s3key));
+                    GZIPInputStream gis = new GZIPInputStream(in)) {
                 final List<ImageInfo> imageList = om.readValue(gis, new TypeReference<List<ImageInfo>>() {
                 });
                 imageList.removeIf(imageInfo -> imageInfo.filename.endsWith("json"));
-                gis.close();
-                in.close();
                 return imageList;
             } catch (Exception e) {
                 throw new IIIFException(500, 5000, e);

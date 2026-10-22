@@ -48,7 +48,7 @@ public class ArchiveImageProducer {
                 imgis = service.getFromCache(s3key);
             } else {
                 log.info("get image without cache {}", s3key);
-                imgis = service.getNoCache(s3key);
+                imgis = service.getNoCacheForArchive(s3key);
             }
         }
         obj[0] = imgis;

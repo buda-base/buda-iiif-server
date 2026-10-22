@@ -226,15 +226,18 @@ public class ArchiveBuilder {
                 if (bmg == null) {
                     log.error("Could not get Buffered Missing image from producer for page {} of volume {}", k,
                             inf.volumeId);
+                } else {
+                    // Own the S3 stream before writing anything to the destination. A full
+                    // disk or disconnected client can make putNextEntry fail.
+                    try (InputStream imageInput = bmg) {
+                        ZipEntry zipEntry = new ZipEntry(imgInf.filename);
+                        zipOut.putNextEntry(zipEntry);
+                        IOUtils.copy(imageInput, zipOut);
+                        zipOut.closeEntry();
+                    }
+                    zipOut.flush();
+                    os.flush();
                 }
-                ZipEntry zipEntry = new ZipEntry(imgInf.filename);
-                zipOut.putNextEntry(zipEntry);
-                try (InputStream imageInput = bmg) {
-                    IOUtils.copy(imageInput, zipOut);
-                }
-                zipOut.closeEntry();
-                zipOut.flush();
-                os.flush();
                 if ((k % 5) == 0 && jobs != null) {
                     // every 5 images, update the percentage
                     final double rate = k / ((double) totalImages);
