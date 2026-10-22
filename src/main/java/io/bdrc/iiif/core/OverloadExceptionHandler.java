@@ -33,6 +33,8 @@ public class OverloadExceptionHandler {
 
         Object access = request.getAttribute("access");
         boolean loggedIn = access instanceof AccessInfo && ((AccessInfo) access).isLogged();
+        headers.set("X-IIIF-Overloaded", "true");
+        headers.set("X-IIIF-Priority", loggedIn ? "authenticated" : "anonymous");
         Map<String, String> body = new LinkedHashMap<>();
         body.put("error", "Image service is temporarily overloaded");
         body.put("message", loggedIn
