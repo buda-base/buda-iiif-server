@@ -2,7 +2,9 @@ package io.bdrc.iiif.auth;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -55,6 +57,27 @@ public class AuthFilter implements Filter {
         if (faKeysS != null && !faKeysS.isEmpty()) {
             for (final String faKey : faKeysS.split(",")) {
                 apiKeys.put(faKey, APIKeyFullAccessInfo.INSTANCE);
+            }
+        }
+        // restricted keys: PDF access as a regular logged user, limited to volumes
+        // whose id starts with one of the given prefixes.
+        // format: key1:PREFIX1|PREFIX2,key2:PREFIX3
+        final String vpKeysS = props.getProperty("auth.apikeys.volprefix");
+        if (vpKeysS != null && !vpKeysS.isEmpty()) {
+            for (final String entry : vpKeysS.split(",")) {
+                final int sep = entry.indexOf(':');
+                if (sep <= 0 || sep == entry.length() - 1) {
+                    log.error("invalid auth.apikeys.volprefix entry (expected key:PREFIX1|PREFIX2): {}", entry);
+                    continue;
+                }
+                final String key = entry.substring(0, sep).trim();
+                final List<String> prefixes = Arrays.asList(entry.substring(sep + 1).split("\\|"));
+                final APIKeyVolumePrefixAccessInfo ai = new APIKeyVolumePrefixAccessInfo(prefixes);
+                if (ai.getVolumePrefixes().isEmpty()) {
+                    log.error("no volume prefix in auth.apikeys.volprefix entry: {}", entry);
+                    continue;
+                }
+                apiKeys.put(key, ai);
             }
         }
     }

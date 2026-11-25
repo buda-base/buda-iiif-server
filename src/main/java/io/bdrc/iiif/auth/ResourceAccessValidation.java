@@ -88,7 +88,13 @@ public class ResourceAccessValidation {
                 return AccessLevel.NOACCESS;
         log.info("Getting access level for accessShort= {} and statusShort={} and imageUri '}", accessShort, statusShort, imageInstanceUri);
         if (this.isPDFRequest) {
-            final AccessLevel res = access.hasResourcePDFAccess(accessShort, statusShort, imageInstanceUri, request.getHeader("X-Real-IP"), this.igi.inCollectionsLnames);
+            final AccessLevel res;
+            if (access instanceof APIKeyVolumePrefixAccessInfo) {
+                // the generic AccessInfo interface doesn't know about the volume, pass it explicitly
+                res = ((APIKeyVolumePrefixAccessInfo) access).hasVolumePDFAccess(accessShort, statusShort, this.igi.imageGroup);
+            } else {
+                res = access.hasResourcePDFAccess(accessShort, statusShort, imageInstanceUri, request.getHeader("X-Real-IP"), this.igi.inCollectionsLnames);
+            }
             if (inChina && (res == AccessLevel.FAIR_USE || "CopyrightInCopyright".equals(this.copyrightStatusLname) || "CopyrightClaimed".equals(this.copyrightStatusLname)))
                 return AccessLevel.NOACCESS;
             return res;
